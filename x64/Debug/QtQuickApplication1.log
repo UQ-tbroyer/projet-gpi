@@ -1,0 +1,6 @@
+﻿   Qt/MSBuild: 3.4.1.0
+  Reading Qt configuration (C:/Qt/6.8.3/msvc2022_64/bin/qmake)
+   Qt: 6.8.3
+  QtQuickApplication1.vcxproj -> C:\Users\Thomas\Documents\projet_gpi\QtQuickApplication1\QtQuickApplication1\x64\Debug\QtQuickApplication1.exe
+  'pwsh.exe' n'est pas reconnu en tant que commande interne
+  ou externe, un programme exécutable ou un fichier de commandes.
