@@ -19,6 +19,7 @@ public:
     Q_INVOKABLE QString currentUserName() const;
     Q_INVOKABLE QString currentUserEmail() const;
     Q_INVOKABLE void handleLogin(const QString& email, const QString& password);
+    User* getUser() { return m_currentUser; }
 
 signals:
     void loginSuccess();

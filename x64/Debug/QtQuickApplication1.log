@@ -1,6 +1,17 @@
 ﻿   Qt/MSBuild: 3.4.1.0
-  Reading Qt configuration (C:/Qt/6.8.3/msvc2022_64/bin/qmake)
    Qt: 6.8.3
+  DatabaseManager.cpp
+  LoginController.cpp
+  main.cpp
+  ProjectController.cpp
+  TaskController.cpp
+C:\Users\Thomas\Documents\projet_gpi\QtQuickApplication1\QtQuickApplication1\QtQuickApplication1\ProjectController.cpp(1,1): warning C4828: Le fichier contient un caractère qui débute à l'offset 0x2362 et qui est non conforme dans le jeu de caractères source actuel (page de codes 65001).
+C:\Users\Thomas\Documents\projet_gpi\QtQuickApplication1\QtQuickApplication1\QtQuickApplication1\LoginController.cpp(1,1): warning C4828: Le fichier contient un caractère qui débute à l'offset 0x823 et qui est non conforme dans le jeu de caractères source actuel (page de codes 65001).
+C:\Users\Thomas\Documents\projet_gpi\QtQuickApplication1\QtQuickApplication1\QtQuickApplication1\LoginController.cpp(1,1): warning C4828: Le fichier contient un caractère qui débute à l'offset 0x834 et qui est non conforme dans le jeu de caractères source actuel (page de codes 65001).
+  qrc_qml.cpp
+  moc_LoginController.cpp
+  moc_ProjectController.cpp
+  moc_TaskController.cpp
   QtQuickApplication1.vcxproj -> C:\Users\Thomas\Documents\projet_gpi\QtQuickApplication1\QtQuickApplication1\x64\Debug\QtQuickApplication1.exe
   'pwsh.exe' n'est pas reconnu en tant que commande interne
   ou externe, un programme exécutable ou un fichier de commandes.

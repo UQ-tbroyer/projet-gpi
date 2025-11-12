@@ -2,6 +2,10 @@
 #define DATABASEMANAGER_H
 
 #include <string>
+#include <vector>
+#include <utility>
+#include "ProjectData.h"
+#include "TaskData.h"
 
 // Forward declarations only - no <memory> in header!
 namespace sql {
@@ -35,6 +39,35 @@ public:
     bool testConnection();
     User* authenticateUser(const std::string& email, const std::string& password);
     User* findUserByEmail(const std::string& email);
+
+    // Project methods
+    std::vector<ProjectData> getAllProjects();
+    std::vector<ProjectData> getProjectsByUser(int userId);
+    std::vector<ProjectData> getProjectsByDepartment(int departmentId);
+    int createProject(const ProjectData& project);
+    bool updateProject(const ProjectData& project);
+    bool deleteProject(int projectId);
+    ProjectData getProjectById(int projectId);
+
+    // Client methods
+    std::vector<std::pair<int, std::string>> getAllClients();
+
+    // Task methods (supports hierarchical structure)
+    std::vector<TaskData> getTasksByProject(int projectId);  // Returns only root tasks
+    int createTask(const TaskData& task);  // Can create root or child task
+    bool updateTask(const TaskData& task);
+    bool deleteTask(int taskId);
+    TaskData getTaskById(int taskId);
+    bool assignTaskToEmployee(int taskId, int employeeId);
+
+    // Recursive SubTask methods (subtasks are tasks with parent references)
+    std::vector<TaskData> getSubTasksByTask(int parentTaskId);
+    int createSubTask(int parentTaskId, const TaskData& subTask);
+    bool deleteSubTask(int taskId);  // Recursively deletes task and all children
+
+    // Employee methods
+    std::vector<std::tuple<int, std::string, std::string>> getAllEmployees();
+    std::vector<std::tuple<int, std::string, std::string>> getEmployeesByDepartment(int departmentId);
 };
 
 #endif

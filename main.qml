@@ -107,13 +107,19 @@ ApplicationWindow {
             
             Connections {
                 target: loginController
-                
+    
                 function onLoginSuccess() {
                     console.log("Login successful, navigating to main2...")
                     busyIndicator.running = false
-                    stackView.push("file:///C:/Users/Thomas/Documents/projet_gpi/QtQuickApplication1/QtQuickApplication1/QtQuickApplication1/main2.qml")
+        
+                    // Use relative path - QML will find it in the same directory
+                    stackView.push("main2.qml", {
+                        "projectController": projectController,
+                        "taskController": taskController,
+                        "loginController": loginController
+                    })
                 }
-                
+    
                 function onLoginFailed(errorMessage) {
                     busyIndicator.running = false
                     errorLabel.text = errorMessage

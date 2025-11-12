@@ -4,7 +4,10 @@
 #include <QDebug>
 #include "DatabaseManager.h"
 #include "LoginController.h"
+#include "ProjectController.h"
+#include "TaskController.h"
 #include "config.h"
+#include "User.h"
 
 int main(int argc, char* argv[])
 {
@@ -39,11 +42,32 @@ int main(int argc, char* argv[])
     // Create login controller
     LoginController* loginController = new LoginController(dbManager, &app);
 
+    // CREATE PROJECT CONTROLLER with nullptr user initially (will be set after login)
+    ProjectController* projectController = new ProjectController(dbManager, nullptr, &app);
+
+    // CREATE TASK CONTROLLER with nullptr user initially (will be set after login)
+    TaskController* taskController = new TaskController(dbManager, nullptr, &app);
+
+    // Connect login success to update controllers with current user
+    QObject::connect(loginController, &LoginController::loginSuccess, [=]() {
+        User* currentUser = loginController->getUser();
+        if (currentUser) {
+            projectController->setCurrentUser(currentUser);
+            taskController->setCurrentUser(currentUser);
+            qDebug() << "Controllers updated with current user:" << currentUser->getId();
+        }
+        else {
+            qWarning() << "Login succeeded but no current user found!";
+        }
+        });
+
     // Setup QML engine
     QQmlApplicationEngine engine;
 
-    // Expose loginController to QML as a context property
+    // Expose controllers to QML as context properties
     engine.rootContext()->setContextProperty("loginController", loginController);
+    engine.rootContext()->setContextProperty("projectController", projectController);
+    engine.rootContext()->setContextProperty("taskController", taskController);
 
     // Load the login QML file
     const QUrl url(QUrl::fromLocalFile("C:/Users/Thomas/Documents/projet_gpi/QtQuickApplication1/QtQuickApplication1/QtQuickApplication1/main.qml"));
@@ -56,32 +80,23 @@ int main(int argc, char* argv[])
 
     if (engine.rootObjects().isEmpty()) {
         qCritical() << "Failed to load QML file";
+        delete taskController;
+        delete projectController;
         delete loginController;
         delete dbManager;
         return -1;
     }
 
+    qDebug() << "Application started successfully";
+
     // Run the application
     int resultCode = app.exec();
 
     // Cleanup
+    delete taskController;
+    delete projectController;
     delete loginController;
     delete dbManager;
 
     return resultCode;
 }
-/*
-int main(int argc, char* argv[])
-{
-    QGuiApplication app(argc, argv);
-
-    QQmlApplicationEngine engine;
-    // Chemin local, pas une ressource .qrc
-    engine.load(QUrl::fromLocalFile("C:/Users/Thomas/Documents/projet_gpi/QtQuickApplication1/QtQuickApplication1/QtQuickApplication1/main.qml"));
-
-    if (engine.rootObjects().isEmpty())
-        return -1;
-
-    return app.exec();
-}
-*/

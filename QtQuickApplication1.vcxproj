@@ -122,21 +122,28 @@
       <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).moc</QtMocFileName>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="maintest.cpp" />
+    <ClCompile Include="ProjectController.cpp" />
     <ClCompile Include="Security.cpp" />
+    <ClCompile Include="TaskController.cpp" />
     <ClCompile Include="User.cpp" />
-    <None Include="main2.qml" />
-    <None Include="main3.qml" />
     <QtRcc Include="qml.qrc" />
-    <None Include="main.qml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
     <ClInclude Include="DatabaseManager.h" />
     <QtMoc Include="LoginController.h" />
+    <QtMoc Include="ProjectController.h" />
+    <ClInclude Include="ProjectData.h" />
     <ClInclude Include="Role.h" />
     <ClInclude Include="Security.h" />
+    <QtMoc Include="TaskController.h" />
+    <ClInclude Include="TaskData.h" />
     <ClInclude Include="User.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="main.qml" />
+    <None Include="main2.qml" />
+    <None Include="main3.qml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

@@ -29,9 +29,6 @@
     <QtRcc Include="qml.qrc">
       <Filter>Resource Files</Filter>
     </QtRcc>
-    <None Include="main.qml">
-      <Filter>Source Files</Filter>
-    </None>
     <ClCompile Include="User.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -41,20 +38,15 @@
     <ClCompile Include="DatabaseManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="maintest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="LoginController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="main2.qml">
+    <ClCompile Include="ProjectController.cpp">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include="main3.qml">
+    </ClCompile>
+    <ClCompile Include="TaskController.cpp">
       <Filter>Source Files</Filter>
-    </None>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="User.h">
@@ -72,10 +64,33 @@
     <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ProjectData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TaskData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="LoginController.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="ProjectController.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="TaskController.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="main.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="main2.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="main3.qml">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
