@@ -60,13 +60,13 @@ static constexpr auto qt_meta_stringdata_ZN14TaskControllerE = QtMocHelpers::str
     "createTask",
     "taskName",
     "description",
+    "idParentTache",
     "assignedToId",
     "estimatedTime",
-    "taskDate",
-    "updateTask",
     "dateDebut",
     "dateFin",
     "etat",
+    "updateTask",
     "deleteTask",
     "assignTask",
     "getTaskDetails",
@@ -101,7 +101,7 @@ Q_CONSTINIT static const uint qt_meta_data_ZN14TaskControllerE[] = {
        0,       // classname
        0,    0, // classinfo
       28,   14, // methods
-       3,  292, // properties
+       3,  298, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
@@ -124,22 +124,22 @@ Q_CONSTINIT static const uint qt_meta_data_ZN14TaskControllerE[] = {
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
       17,    1,  214,    2, 0x0a,   26 /* Public */,
       19,    0,  217,    2, 0x0a,   28 /* Public */,
-      20,    6,  218,    2, 0x0a,   29 /* Public */,
-      26,    8,  231,    2, 0x0a,   36 /* Public */,
-      30,    1,  248,    2, 0x0a,   45 /* Public */,
-      31,    2,  251,    2, 0x0a,   47 /* Public */,
-      32,    1,  256,    2, 0x0a,   50 /* Public */,
-      34,    1,  259,    2, 0x0a,   52 /* Public */,
-      36,    6,  262,    2, 0x0a,   54 /* Public */,
-      40,    1,  275,    2, 0x0a,   61 /* Public */,
-      41,    1,  278,    2, 0x0a,   63 /* Public */,
-      42,    0,  281,    2, 0x0a,   65 /* Public */,
-      43,    0,  282,    2, 0x0a,   66 /* Public */,
-      44,    1,  283,    2, 0x0a,   67 /* Public */,
+      20,    9,  218,    2, 0x0a,   29 /* Public */,
+      29,    8,  237,    2, 0x0a,   39 /* Public */,
+      30,    1,  254,    2, 0x0a,   48 /* Public */,
+      31,    2,  257,    2, 0x0a,   50 /* Public */,
+      32,    1,  262,    2, 0x0a,   53 /* Public */,
+      34,    1,  265,    2, 0x0a,   55 /* Public */,
+      36,    6,  268,    2, 0x0a,   57 /* Public */,
+      40,    1,  281,    2, 0x0a,   64 /* Public */,
+      41,    1,  284,    2, 0x0a,   66 /* Public */,
+      42,    0,  287,    2, 0x0a,   68 /* Public */,
+      43,    0,  288,    2, 0x0a,   69 /* Public */,
+      44,    1,  289,    2, 0x0a,   70 /* Public */,
 
  // methods: name, argc, parameters, tag, flags, initial metatype offsets
-      45,    0,  286,    2, 0x102,   69 /* Public | MethodIsConst  */,
-      47,    2,  287,    2, 0x02,   70 /* Public */,
+      45,    0,  292,    2, 0x102,   72 /* Public | MethodIsConst  */,
+      47,    2,  293,    2, 0x02,   73 /* Public */,
 
  // signals: parameters
     QMetaType::Void,
@@ -158,13 +158,13 @@ Q_CONSTINIT static const uint qt_meta_data_ZN14TaskControllerE[] = {
  // slots: parameters
     QMetaType::Void, QMetaType::Int,   18,
     QMetaType::Void,
-    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::QString,   18,   21,   22,   23,   24,   25,
-    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::QString, QMetaType::QString,    6,   21,   22,   23,   24,   27,   28,   29,
+    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::Int, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::QString,   18,   21,   22,   23,   24,   25,   26,   27,   28,
+    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::QString, QMetaType::QString,    6,   21,   22,   24,   25,   26,   27,   28,
     QMetaType::Bool, QMetaType::Int,    6,
     QMetaType::Bool, QMetaType::Int, QMetaType::Int,    6,   10,
     0x80000000 | 33, QMetaType::Int,    6,
     0x80000000 | 35, QMetaType::Int,    6,
-    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::QString,   37,   38,   22,   23,   24,   39,
+    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::QString,   37,   38,   22,   24,   25,   39,
     QMetaType::Bool, QMetaType::Int,    6,
     0x80000000 | 33, QMetaType::Int,    6,
     0x80000000 | 35,
@@ -243,6 +243,9 @@ Q_CONSTINIT const QMetaObject TaskController::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'updateTask'
@@ -318,7 +321,7 @@ void TaskController::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
         case 11: _t->taskAssignmentFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         case 12: _t->loadTasksForProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
         case 13: _t->loadTasksForCurrentProject(); break;
-        case 14: { bool _r = _t->createTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[6])));
+        case 14: { bool _r = _t->createTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[8])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[9])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
         case 15: { bool _r = _t->updateTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[8])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;

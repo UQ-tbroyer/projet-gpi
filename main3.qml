@@ -130,19 +130,84 @@ ApplicationWindow {
                                 // === Add new task ===
                                 Button {
                                     text: "+ Ajouter une tâche"
-                                    onClicked: {
-                                        taskController.createTask(
-                                            projectId,
-                                            "Nouvelle tâche",
-                                            "",                     // description vide
-                                            taskController.getCurrentUser().id,
-                                            10,                     // durée par défaut
-                                            columnName,             // statut
-                                            new Date(),              // dateDebut
-                                            new Date()               // dateFin
-                                        )
+                                    onClicked:{
+                                        addTaskDialog.currentColumn = columnName;
+                                        addTaskDialog.open()
                                     }
                                 }
+                                Dialog {
+                                    id: addTaskDialog
+                                    title: "Créer une nouvelle tâche"
+                                    modal: true
+                                    standardButtons: Dialog.Ok | Dialog.Cancel
+
+                                    property string currentColumn: ""  // the Kanban column name
+
+                                    onAccepted: {
+                                        var assignedId = -1
+                                        if (assignedUserField.currentIndex >= 0) {
+                                            assignedId = assignedUserField.model[assignedUserField.currentIndex]["idEmploye"]
+                                        }
+
+                                        var success = taskController.createTask(
+                                            window.projectId,
+                                            taskNameField.text,
+                                            descriptionField.text,
+                                            -1,
+                                            assignedId,
+                                            parseInt(estimatedTimeField.text),
+                                            startDateField.text,
+                                            endDateField.text,
+                                            currentColumn
+                                        )
+
+                                        if (success) {
+                                            console.log("Task created successfully")
+                                            taskRepeater.model = taskController.getTasksForProjectByStatus(
+                                                window.projectId,
+                                                currentColumn
+                                            )
+                                            createTaskDialog.close()
+                                        } else {
+                                            console.log("Erreur création tâche:", taskController.lastError)
+                                        }
+                                    }
+
+                                    contentItem: ColumnLayout {
+                                        spacing: 10
+                                        width: 300
+
+                                        Label { text: "Nom de la tâche:" }
+                                        TextField { id: taskNameField; placeholderText: "Nouvelle tâche" }
+
+                                        Label { text: "Description:" }
+                                        TextArea { id: descriptionField; placeholderText: "Description"; height: 80 }
+
+                                        Label { text: "Assigné à:" }
+                                        ComboBox {
+                                            id: assignedUserField
+                                            model: taskController.getAvailableEmployees()
+                                            textRole: "fullName"  // matches your QVariantMap key
+                                            currentIndex: -1
+
+                                            //model: ListModel { id: employeesListModel }
+
+                                        }
+
+
+                                        Label { text: "Temps estimé (minutes):" }
+                                        TextField { id: estimatedTimeField; placeholderText: "10"; inputMethodHints: Qt.ImhDigitsOnly }
+
+                                        Label { text: "Date de début (YYYY-MM-D):" }
+                                        TextField { id: startDateField; placeholderText: "2025-11-20" }
+
+                                        Label { text: "Date de fin (YYYY-MM-DD):" }
+                                        TextField { id: endDateField; placeholderText: "2025-11-21" }
+                                    }
+
+                                 
+                                }
+                                
                             }
                         }
                     }
@@ -215,4 +280,6 @@ ApplicationWindow {
             }
         }
     }
+
+    
 }

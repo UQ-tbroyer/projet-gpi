@@ -50,9 +50,12 @@ public slots:
     bool createTask(int projectId,
         const QString& taskName,
         const QString& description,
+        int idParentTache,
         int assignedToId,
-        const QString& estimatedTime,
-        const QString& taskDate);
+        const int estimatedTime,
+        const QString& dateDebut,
+        const QString& dateFin,
+        const QString& etat);
 
     bool updateTask(int taskId,
         const QString& taskName,

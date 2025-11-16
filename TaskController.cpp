@@ -107,9 +107,12 @@ void TaskController::loadTasksForCurrentProject()
 bool TaskController::createTask(int projectId,
     const QString& taskName,
     const QString& description,
+    int idParentTache,
     int assignedToId,
-    const QString& estimatedTime,
-    const QString& taskDate)
+    const int estimatedTime,
+    const QString& dateDebut,
+    const QString& dateFin,
+    const QString& etat)
 {
     if (!m_currentUser) {
         emit taskCreationFailed("Aucun utilisateur connecte");
@@ -131,14 +134,14 @@ bool TaskController::createTask(int projectId,
         newTask.nomTache = taskName.toStdString();
         newTask.descTache = description.toStdString();
         newTask.memProcessigner = assignedToId;
-        newTask.idParentTache = 0; // tâche normale
+        newTask.idParentTache = idParentTache; // tâche normale
 
         QString today = QDate::currentDate().toString("yyyy-MM-dd");
-        newTask.dateDebut = taskDate.isEmpty() ? today.toStdString() : taskDate.toStdString();
-        newTask.dateFin = newTask.dateDebut;
+        newTask.dateDebut = dateDebut.isEmpty() ? today.toStdString() : dateDebut.toStdString();
+        newTask.dateFin = dateFin.toStdString();
 
-        newTask.tempsTache = estimatedTime.isEmpty() ? 0 : estimatedTime.toInt();
-        newTask.etat = "À Faire";
+        newTask.tempsTache = estimatedTime;
+        newTask.etat = etat.toStdString();
 
         // assigneeName laissé par défaut : ""
 
