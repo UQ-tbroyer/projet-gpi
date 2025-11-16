@@ -635,14 +635,16 @@ std::vector<TaskData> DatabaseManager::getSubTasksByTask(int parentTaskId) {
     std::vector<TaskData> subTasks;
 
     try {
+        std::cout << "=== Getting SubTasks for parent task: " << parentTaskId << " ===" << std::endl;
+
         const std::string sql =
             "SELECT t.idTache, t.idProject, t.memProcessigner, t.idParentTache, "
-            "t.nomTache, t.descTache, t.dateFin, t.tempsTache, "
+            "t.nomTache, t.descTache, t.dateDebut, t.dateFin, t.tempsTache, t.etat, "
             "CONCAT(e.prenomEmploye, ' ', e.nomEmploye) as assigneeName "
             "FROM Tache t "
             "LEFT JOIN Employe e ON t.memProcessigner = e.idEmploye "
             "WHERE t.idParentTache = ? "
-            "ORDER BY t.dateFin DESC";
+            "ORDER BY t.dateDebut ASC";
 
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
         stmt->setInt(1, parentTaskId);
@@ -656,12 +658,19 @@ std::vector<TaskData> DatabaseManager::getSubTasksByTask(int parentTaskId) {
             task.idParentTache = res->getInt("idParentTache");
             task.nomTache = res->getString("nomTache");
             task.descTache = res->getString("descTache");
+            task.dateDebut = res->getString("dateDebut");  // NOW INCLUDED
             task.dateFin = res->getString("dateFin");
             task.tempsTache = res->getInt("tempsTache");
+            task.etat = res->getString("etat");  // NOW INCLUDED
             task.assigneeName = res->getString("assigneeName");
+
+            std::cout << "Found subtask: " << task.nomTache << " (ID: " << task.idTache
+                << ", etat: " << task.etat << ", dateDebut: " << task.dateDebut << ")" << std::endl;
 
             subTasks.push_back(task);
         }
+
+        std::cout << "Total subtasks found: " << subTasks.size() << std::endl;
     }
     catch (const sql::SQLException& e) {
         std::cerr << "SQL Error in getSubTasksByTask: " << e.what() << std::endl;
@@ -673,7 +682,17 @@ std::vector<TaskData> DatabaseManager::getSubTasksByTask(int parentTaskId) {
 
 int DatabaseManager::createSubTask(int parentTaskId, const TaskData& subTask) {
     try {
-        // First verify that parent task exists
+        std::cout << "=== Creating SubTask ===" << std::endl;
+        std::cout << "parentTaskId: " << parentTaskId << std::endl;
+        std::cout << "nomTache: " << subTask.nomTache << std::endl;
+        std::cout << "descTache: " << subTask.descTache << std::endl;
+        std::cout << "memProcessigner: " << subTask.memProcessigner << std::endl;
+        std::cout << "dateDebut: " << subTask.dateDebut << std::endl;
+        std::cout << "dateFin: " << subTask.dateFin << std::endl;
+        std::cout << "tempsTache: " << subTask.tempsTache << std::endl;
+        std::cout << "etat: " << subTask.etat << std::endl;
+
+        // First verify that parent task exists and get its project
         const std::string checkSql = "SELECT idProject FROM Tache WHERE idTache = ?";
         std::unique_ptr<sql::PreparedStatement> checkStmt(connection->prepareStatement(checkSql));
         checkStmt->setInt(1, parentTaskId);
@@ -684,37 +703,53 @@ int DatabaseManager::createSubTask(int parentTaskId, const TaskData& subTask) {
         }
 
         int projectId = checkRes->getInt("idProject");
+        std::cout << "Parent task found, projectId: " << projectId << std::endl;
 
-        // Create subtask with parent reference
+        // Create subtask with parent reference - NOW INCLUDING ALL FIELDS
         const std::string sql =
             "INSERT INTO Tache (idProject, memProcessigner, idParentTache, nomTache, "
-            "descTache, dateFin, tempsTache) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            "descTache, dateDebut, dateFin, tempsTache, etat) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
         stmt->setInt(1, projectId);  // Use parent's project
-        stmt->setInt(2, subTask.memProcessigner);
+
+        // Handle NULL for memProcessigner
+        if (subTask.memProcessigner > 0)
+            stmt->setInt(2, subTask.memProcessigner);
+        else
+            stmt->setNull(2, 0);
+
         stmt->setInt(3, parentTaskId);  // Set parent reference
         stmt->setString(4, subTask.nomTache);
         stmt->setString(5, subTask.descTache);
-        stmt->setString(6, subTask.dateFin);
-        stmt->setInt(7, subTask.tempsTache);
+        stmt->setString(6, subTask.dateDebut);   // NOW INCLUDED
+        stmt->setString(7, subTask.dateFin);     // NOW INCLUDED
+        stmt->setInt(8, subTask.tempsTache);
+        stmt->setString(9, subTask.etat);        // NOW INCLUDED
 
+        std::cout << "Executing SQL insert for subtask..." << std::endl;
         int affectedRows = stmt->executeUpdate();
+        std::cout << "Affected rows: " << affectedRows << std::endl;
 
         if (affectedRows > 0) {
             std::unique_ptr<sql::Statement> idStmt(connection->createStatement());
             std::unique_ptr<sql::ResultSet> res(idStmt->executeQuery("SELECT LAST_INSERT_ID()"));
             if (res->next()) {
-                return res->getInt(1);
+                int newId = res->getInt(1);
+                std::cout << "SubTask created with ID: " << newId << std::endl;
+                return newId;
             }
         }
 
         return -1;
     }
     catch (const sql::SQLException& e) {
-        std::cerr << "SQL Error in createSubTask: " << e.what() << std::endl;
-        throw std::runtime_error("Failed to create subtask in database");
+        std::cerr << "=== SQL Error in createSubTask ===" << std::endl;
+        std::cerr << "Error message: " << e.what() << std::endl;
+        std::cerr << "Error code: " << e.getErrorCode() << std::endl;
+        std::cerr << "SQL state: " << e.getSQLState() << std::endl;
+        throw std::runtime_error(std::string("Failed to create subtask: ") + e.what());
     }
 }
 

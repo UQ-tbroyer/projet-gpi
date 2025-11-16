@@ -270,71 +270,33 @@ QVariantMap TaskController::getTaskDetails(int taskId)
     }
 }
 
-// --- Sous-tâches ---
 QVariantList TaskController::getSubTasks(int taskId)
 {
+    qDebug() << "=== TaskController::getSubTasks called for taskId:" << taskId << "===";
     QVariantList subTaskList;
     try {
         std::vector<TaskData> subTasksData = m_dbManager->getSubTasksByTask(taskId);
-        for (const auto& subTask : subTasksData)
-            subTaskList.append(taskDataToVariantMap(subTask));
+        qDebug() << "Retrieved" << subTasksData.size() << "subtasks from database";
+
+        for (const auto& subTask : subTasksData) {
+            QVariantMap taskMap = taskDataToVariantMap(subTask);
+            qDebug() << "  SubTask:" << taskMap["nomTache"].toString()
+                << "| etat:" << taskMap["etat"].toString()
+                << "| dateDebut:" << taskMap["dateDebut"].toString();
+            subTaskList.append(taskMap);
+        }
+
+        qDebug() << "Returning" << subTaskList.size() << "subtasks to QML";
     }
     catch (const std::exception& e) {
         QString errorMsg = "Erreur lors du chargement des sous-tâches: ";
         errorMsg += QString::fromUtf8(e.what());
+        qCritical() << errorMsg;
         emit errorOccurred(errorMsg);
     }
     return subTaskList;
 }
 
-bool TaskController::createSubTask(int parentTaskId,
-    const QString& subTaskName,
-    const QString& description,
-    int assignedToId,
-    const QString& estimatedTime,
-    const QString& subTaskDate)
-{
-    if (!m_currentUser) {
-        emit taskCreationFailed("Aucun utilisateur connecte");
-        return false;
-    }
-    if (subTaskName.isEmpty()) {
-        emit taskCreationFailed("Le nom de la sous-tâche est requis");
-        return false;
-    }
-    if (parentTaskId <= 0) {
-        emit taskCreationFailed("Tâche parent invalide");
-        return false;
-    }
-
-    try {
-        TaskData newSubTask;
-        newSubTask.nomTache = subTaskName.toStdString();
-        newSubTask.descTache = description.toStdString();
-        newSubTask.memProcessigner = assignedToId;
-
-        QString today = QDate::currentDate().toString("yyyy-MM-dd");
-        newSubTask.dateDebut = subTaskDate.isEmpty() ? today.toStdString() : subTaskDate.toStdString();
-        newSubTask.dateFin = newSubTask.dateDebut;
-
-        newSubTask.tempsTache = estimatedTime.toInt();
-        newSubTask.etat = "À Faire";
-
-        int subTaskId = m_dbManager->createSubTask(parentTaskId, newSubTask);
-        if (subTaskId > 0) {
-            emit taskCreated(subTaskId);
-            if (m_currentProjectId > 0)
-                loadTasksForProject(m_currentProjectId);
-            return true;
-        }
-        emit taskCreationFailed("Échec de la création de la sous-tâche");
-        return false;
-    }
-    catch (const std::exception& e) {
-        emit taskCreationFailed(QString("Erreur: ") + e.what());
-        return false;
-    }
-}
 
 
 bool TaskController::deleteSubTask(int taskId)
@@ -447,5 +409,81 @@ QVariantList TaskController::getTasksForProjectByStatus(int projectId, const QSt
 
     return filteredTasks;
 }
+// Add/Update these methods in your TaskController.cpp file
 
+// Get subtasks filtered by status
+QVariantList TaskController::getSubTasksByStatus(int parentTaskId, const QString& status)
+{
+    QVariantList filteredSubTasks;
 
+    try {
+        std::vector<TaskData> allSubTasks = m_dbManager->getSubTasksByTask(parentTaskId);
+
+        for (const auto& subTask : allSubTasks) {
+            if (QString::fromStdString(subTask.etat) == status) {
+                filteredSubTasks.append(taskDataToVariantMap(subTask));
+            }
+        }
+    }
+    catch (const std::exception& e) {
+        QString errorMsg = "Erreur lors du chargement des sous-tâches: ";
+        errorMsg += QString::fromUtf8(e.what());
+        emit errorOccurred(errorMsg);
+    }
+
+    return filteredSubTasks;
+}
+
+// Updated createSubTask with same parameters as createTask
+bool TaskController::createSubTask(int parentTaskId,
+    const QString& subTaskName,
+    const QString& description,
+    int assignedToId,
+    const int estimatedTime,
+    const QString& dateDebut,
+    const QString& dateFin,
+    const QString& etat)
+{
+    if (!m_currentUser) {
+        emit taskCreationFailed("Aucun utilisateur connecte");
+        return false;
+    }
+    if (subTaskName.isEmpty()) {
+        emit taskCreationFailed("Le nom de la sous-tâche est requis");
+        return false;
+    }
+    if (parentTaskId <= 0) {
+        emit taskCreationFailed("Tâche parent invalide");
+        return false;
+    }
+
+    try {
+        TaskData newSubTask;
+        newSubTask.nomTache = subTaskName.toStdString();
+        newSubTask.descTache = description.toStdString();
+        newSubTask.memProcessigner = assignedToId;
+
+        QString today = QDate::currentDate().toString("yyyy-MM-dd");
+        newSubTask.dateDebut = dateDebut.isEmpty() ? today.toStdString() : dateDebut.toStdString();
+        newSubTask.dateFin = dateFin.isEmpty() ? today.toStdString() : dateFin.toStdString();
+
+        newSubTask.tempsTache = estimatedTime;
+        newSubTask.etat = etat.isEmpty() ? "A faire" : etat.toStdString();
+
+        int subTaskId = m_dbManager->createSubTask(parentTaskId, newSubTask);
+        if (subTaskId > 0) {
+            emit taskCreated(subTaskId);
+            // Emit a specific signal for subtask refresh
+            emit subTasksChanged(parentTaskId);
+            if (m_currentProjectId > 0)
+                loadTasksForProject(m_currentProjectId);
+            return true;
+        }
+        emit taskCreationFailed("Échec de la création de la sous-tâche");
+        return false;
+    }
+    catch (const std::exception& e) {
+        emit taskCreationFailed(QString("Erreur: ") + e.what());
+        return false;
+    }
+}

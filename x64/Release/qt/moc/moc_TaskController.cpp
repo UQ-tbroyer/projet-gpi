@@ -42,6 +42,8 @@ static constexpr auto qt_meta_stringdata_ZN14TaskControllerE = QtMocHelpers::str
     "",
     "loadingChanged",
     "tasksChanged",
+    "subTasksChanged",
+    "parentTaskId",
     "taskCreated",
     "taskId",
     "taskUpdated",
@@ -74,9 +76,7 @@ static constexpr auto qt_meta_stringdata_ZN14TaskControllerE = QtMocHelpers::str
     "getSubTasks",
     "QVariantList",
     "createSubTask",
-    "parentTaskId",
     "subTaskName",
-    "subTaskDate",
     "deleteSubTask",
     "getTaskHierarchy",
     "getAvailableEmployees",
@@ -86,6 +86,7 @@ static constexpr auto qt_meta_stringdata_ZN14TaskControllerE = QtMocHelpers::str
     "User*",
     "getTasksForProjectByStatus",
     "status",
+    "getSubTasksByStatus",
     "currentProjectId",
     "loading",
     "tasks"
@@ -100,85 +101,89 @@ Q_CONSTINIT static const uint qt_meta_data_ZN14TaskControllerE[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-      28,   14, // methods
-       3,  298, // properties
+      30,   14, // methods
+       3,  322, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-      12,       // signalCount
+      13,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,  182,    2, 0x06,    4 /* Public */,
-       3,    0,  183,    2, 0x06,    5 /* Public */,
-       4,    0,  184,    2, 0x06,    6 /* Public */,
-       5,    1,  185,    2, 0x06,    7 /* Public */,
-       7,    1,  188,    2, 0x06,    9 /* Public */,
-       8,    1,  191,    2, 0x06,   11 /* Public */,
-       9,    2,  194,    2, 0x06,   13 /* Public */,
-      11,    1,  199,    2, 0x06,   16 /* Public */,
-      13,    1,  202,    2, 0x06,   18 /* Public */,
-      14,    1,  205,    2, 0x06,   20 /* Public */,
-      15,    1,  208,    2, 0x06,   22 /* Public */,
-      16,    1,  211,    2, 0x06,   24 /* Public */,
+       1,    0,  194,    2, 0x06,    4 /* Public */,
+       3,    0,  195,    2, 0x06,    5 /* Public */,
+       4,    0,  196,    2, 0x06,    6 /* Public */,
+       5,    1,  197,    2, 0x06,    7 /* Public */,
+       7,    1,  200,    2, 0x06,    9 /* Public */,
+       9,    1,  203,    2, 0x06,   11 /* Public */,
+      10,    1,  206,    2, 0x06,   13 /* Public */,
+      11,    2,  209,    2, 0x06,   15 /* Public */,
+      13,    1,  214,    2, 0x06,   18 /* Public */,
+      15,    1,  217,    2, 0x06,   20 /* Public */,
+      16,    1,  220,    2, 0x06,   22 /* Public */,
+      17,    1,  223,    2, 0x06,   24 /* Public */,
+      18,    1,  226,    2, 0x06,   26 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-      17,    1,  214,    2, 0x0a,   26 /* Public */,
-      19,    0,  217,    2, 0x0a,   28 /* Public */,
-      20,    9,  218,    2, 0x0a,   29 /* Public */,
-      29,    8,  237,    2, 0x0a,   39 /* Public */,
-      30,    1,  254,    2, 0x0a,   48 /* Public */,
-      31,    2,  257,    2, 0x0a,   50 /* Public */,
-      32,    1,  262,    2, 0x0a,   53 /* Public */,
-      34,    1,  265,    2, 0x0a,   55 /* Public */,
-      36,    6,  268,    2, 0x0a,   57 /* Public */,
-      40,    1,  281,    2, 0x0a,   64 /* Public */,
-      41,    1,  284,    2, 0x0a,   66 /* Public */,
-      42,    0,  287,    2, 0x0a,   68 /* Public */,
-      43,    0,  288,    2, 0x0a,   69 /* Public */,
-      44,    1,  289,    2, 0x0a,   70 /* Public */,
+      19,    1,  229,    2, 0x0a,   28 /* Public */,
+      21,    0,  232,    2, 0x0a,   30 /* Public */,
+      22,    9,  233,    2, 0x0a,   31 /* Public */,
+      31,    8,  252,    2, 0x0a,   41 /* Public */,
+      32,    1,  269,    2, 0x0a,   50 /* Public */,
+      33,    2,  272,    2, 0x0a,   52 /* Public */,
+      34,    1,  277,    2, 0x0a,   55 /* Public */,
+      36,    1,  280,    2, 0x0a,   57 /* Public */,
+      38,    8,  283,    2, 0x0a,   59 /* Public */,
+      40,    1,  300,    2, 0x0a,   68 /* Public */,
+      41,    1,  303,    2, 0x0a,   70 /* Public */,
+      42,    0,  306,    2, 0x0a,   72 /* Public */,
+      43,    0,  307,    2, 0x0a,   73 /* Public */,
+      44,    1,  308,    2, 0x0a,   74 /* Public */,
 
  // methods: name, argc, parameters, tag, flags, initial metatype offsets
-      45,    0,  292,    2, 0x102,   72 /* Public | MethodIsConst  */,
-      47,    2,  293,    2, 0x02,   73 /* Public */,
+      45,    0,  311,    2, 0x102,   76 /* Public | MethodIsConst  */,
+      47,    2,  312,    2, 0x02,   77 /* Public */,
+      49,    2,  317,    2, 0x02,   80 /* Public */,
 
  // signals: parameters
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void, QMetaType::Int,    6,
-    QMetaType::Void, QMetaType::Int,    6,
-    QMetaType::Void, QMetaType::Int,    6,
-    QMetaType::Void, QMetaType::Int, QMetaType::Int,    6,   10,
-    QMetaType::Void, QMetaType::QString,   12,
-    QMetaType::Void, QMetaType::QString,   12,
-    QMetaType::Void, QMetaType::QString,   12,
-    QMetaType::Void, QMetaType::QString,   12,
-    QMetaType::Void, QMetaType::QString,   12,
+    QMetaType::Void, QMetaType::Int,    8,
+    QMetaType::Void, QMetaType::Int,    8,
+    QMetaType::Void, QMetaType::Int,    8,
+    QMetaType::Void, QMetaType::Int, QMetaType::Int,    8,   12,
+    QMetaType::Void, QMetaType::QString,   14,
+    QMetaType::Void, QMetaType::QString,   14,
+    QMetaType::Void, QMetaType::QString,   14,
+    QMetaType::Void, QMetaType::QString,   14,
+    QMetaType::Void, QMetaType::QString,   14,
 
  // slots: parameters
-    QMetaType::Void, QMetaType::Int,   18,
+    QMetaType::Void, QMetaType::Int,   20,
     QMetaType::Void,
-    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::Int, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::QString,   18,   21,   22,   23,   24,   25,   26,   27,   28,
-    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::QString, QMetaType::QString,    6,   21,   22,   24,   25,   26,   27,   28,
-    QMetaType::Bool, QMetaType::Int,    6,
-    QMetaType::Bool, QMetaType::Int, QMetaType::Int,    6,   10,
-    0x80000000 | 33, QMetaType::Int,    6,
-    0x80000000 | 35, QMetaType::Int,    6,
-    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::QString,   37,   38,   22,   24,   25,   39,
-    QMetaType::Bool, QMetaType::Int,    6,
-    0x80000000 | 33, QMetaType::Int,    6,
-    0x80000000 | 35,
-    0x80000000 | 35,
-    0x80000000 | 35, QMetaType::Int,   18,
+    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::Int, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::QString,   20,   23,   24,   25,   26,   27,   28,   29,   30,
+    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::QString, QMetaType::QString,    8,   23,   24,   26,   27,   28,   29,   30,
+    QMetaType::Bool, QMetaType::Int,    8,
+    QMetaType::Bool, QMetaType::Int, QMetaType::Int,    8,   12,
+    0x80000000 | 35, QMetaType::Int,    8,
+    0x80000000 | 37, QMetaType::Int,    8,
+    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::QString,    6,   39,   24,   26,   27,   28,   29,   30,
+    QMetaType::Bool, QMetaType::Int,    8,
+    0x80000000 | 35, QMetaType::Int,    8,
+    0x80000000 | 37,
+    0x80000000 | 37,
+    0x80000000 | 37, QMetaType::Int,   20,
 
  // methods: parameters
     0x80000000 | 46,
-    0x80000000 | 35, QMetaType::Int, QMetaType::QString,   18,   48,
+    0x80000000 | 37, QMetaType::Int, QMetaType::QString,   20,   48,
+    0x80000000 | 37, QMetaType::Int, QMetaType::QString,    6,   48,
 
  // properties: name, type, flags, notifyId, revision
-      49, QMetaType::Int, 0x00015103, uint(0), 0,
-      50, QMetaType::Bool, 0x00015103, uint(1), 0,
-      51, 0x80000000 | 35, 0x00015009, uint(2), 0,
+      50, QMetaType::Int, 0x00015103, uint(0), 0,
+      51, QMetaType::Bool, 0x00015103, uint(1), 0,
+      52, 0x80000000 | 37, 0x00015009, uint(2), 0,
 
        0        // eod
 };
@@ -204,6 +209,9 @@ Q_CONSTINIT const QMetaObject TaskController::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'tasksChanged'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'subTasksChanged'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
         // method 'taskCreated'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
@@ -277,6 +285,8 @@ Q_CONSTINIT const QMetaObject TaskController::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'deleteSubTask'
@@ -297,6 +307,10 @@ Q_CONSTINIT const QMetaObject TaskController::staticMetaObject = { {
         // method 'getTasksForProjectByStatus'
         QtPrivate::TypeAndForceComplete<QVariantList, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'getSubTasksByStatus'
+        QtPrivate::TypeAndForceComplete<QVariantList, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>
     >,
     nullptr
@@ -310,44 +324,47 @@ void TaskController::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
         case 0: _t->currentProjectIdChanged(); break;
         case 1: _t->loadingChanged(); break;
         case 2: _t->tasksChanged(); break;
-        case 3: _t->taskCreated((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
-        case 4: _t->taskUpdated((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
-        case 5: _t->taskDeleted((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
-        case 6: _t->taskAssigned((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2]))); break;
-        case 7: _t->errorOccurred((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 8: _t->taskCreationFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 9: _t->taskUpdateFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 10: _t->taskDeletionFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 11: _t->taskAssignmentFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 12: _t->loadTasksForProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
-        case 13: _t->loadTasksForCurrentProject(); break;
-        case 14: { bool _r = _t->createTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[8])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[9])));
+        case 3: _t->subTasksChanged((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 4: _t->taskCreated((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 5: _t->taskUpdated((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 6: _t->taskDeleted((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 7: _t->taskAssigned((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2]))); break;
+        case 8: _t->errorOccurred((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 9: _t->taskCreationFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 10: _t->taskUpdateFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 11: _t->taskDeletionFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 12: _t->taskAssignmentFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 13: _t->loadTasksForProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 14: _t->loadTasksForCurrentProject(); break;
+        case 15: { bool _r = _t->createTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[8])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[9])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 15: { bool _r = _t->updateTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[8])));
+        case 16: { bool _r = _t->updateTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[8])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 16: { bool _r = _t->deleteTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+        case 17: { bool _r = _t->deleteTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 17: { bool _r = _t->assignTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])));
+        case 18: { bool _r = _t->assignTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 18: { QVariantMap _r = _t->getTaskDetails((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+        case 19: { QVariantMap _r = _t->getTaskDetails((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
             if (_a[0]) *reinterpret_cast< QVariantMap*>(_a[0]) = std::move(_r); }  break;
-        case 19: { QVariantList _r = _t->getSubTasks((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+        case 20: { QVariantList _r = _t->getSubTasks((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
-        case 20: { bool _r = _t->createSubTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[6])));
+        case 21: { bool _r = _t->createSubTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[8])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 21: { bool _r = _t->deleteSubTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+        case 22: { bool _r = _t->deleteSubTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 22: { QVariantMap _r = _t->getTaskHierarchy((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+        case 23: { QVariantMap _r = _t->getTaskHierarchy((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
             if (_a[0]) *reinterpret_cast< QVariantMap*>(_a[0]) = std::move(_r); }  break;
-        case 23: { QVariantList _r = _t->getAvailableEmployees();
+        case 24: { QVariantList _r = _t->getAvailableEmployees();
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
-        case 24: { QVariantList _r = _t->getDepartmentEmployees();
+        case 25: { QVariantList _r = _t->getDepartmentEmployees();
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
-        case 25: { QVariantList _r = _t->getTasksForProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+        case 26: { QVariantList _r = _t->getTasksForProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
-        case 26: { User* _r = _t->getCurrentUser();
+        case 27: { User* _r = _t->getCurrentUser();
             if (_a[0]) *reinterpret_cast< User**>(_a[0]) = std::move(_r); }  break;
-        case 27: { QVariantList _r = _t->getTasksForProjectByStatus((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])));
+        case 28: { QVariantList _r = _t->getTasksForProjectByStatus((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])));
+            if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
+        case 29: { QVariantList _r = _t->getSubTasksByStatus((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])));
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
         default: ;
         }
@@ -377,64 +394,71 @@ void TaskController::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
         }
         {
             using _q_method_type = void (TaskController::*)(int );
-            if (_q_method_type _q_method = &TaskController::taskCreated; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+            if (_q_method_type _q_method = &TaskController::subTasksChanged; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
                 *result = 3;
                 return;
             }
         }
         {
             using _q_method_type = void (TaskController::*)(int );
-            if (_q_method_type _q_method = &TaskController::taskUpdated; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+            if (_q_method_type _q_method = &TaskController::taskCreated; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
                 *result = 4;
                 return;
             }
         }
         {
             using _q_method_type = void (TaskController::*)(int );
-            if (_q_method_type _q_method = &TaskController::taskDeleted; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+            if (_q_method_type _q_method = &TaskController::taskUpdated; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
                 *result = 5;
+                return;
+            }
+        }
+        {
+            using _q_method_type = void (TaskController::*)(int );
+            if (_q_method_type _q_method = &TaskController::taskDeleted; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+                *result = 6;
                 return;
             }
         }
         {
             using _q_method_type = void (TaskController::*)(int , int );
             if (_q_method_type _q_method = &TaskController::taskAssigned; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
-                *result = 6;
-                return;
-            }
-        }
-        {
-            using _q_method_type = void (TaskController::*)(const QString & );
-            if (_q_method_type _q_method = &TaskController::errorOccurred; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
                 *result = 7;
                 return;
             }
         }
         {
             using _q_method_type = void (TaskController::*)(const QString & );
-            if (_q_method_type _q_method = &TaskController::taskCreationFailed; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+            if (_q_method_type _q_method = &TaskController::errorOccurred; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
                 *result = 8;
                 return;
             }
         }
         {
             using _q_method_type = void (TaskController::*)(const QString & );
-            if (_q_method_type _q_method = &TaskController::taskUpdateFailed; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+            if (_q_method_type _q_method = &TaskController::taskCreationFailed; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
                 *result = 9;
                 return;
             }
         }
         {
             using _q_method_type = void (TaskController::*)(const QString & );
-            if (_q_method_type _q_method = &TaskController::taskDeletionFailed; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+            if (_q_method_type _q_method = &TaskController::taskUpdateFailed; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
                 *result = 10;
                 return;
             }
         }
         {
             using _q_method_type = void (TaskController::*)(const QString & );
-            if (_q_method_type _q_method = &TaskController::taskAssignmentFailed; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+            if (_q_method_type _q_method = &TaskController::taskDeletionFailed; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
                 *result = 11;
+                return;
+            }
+        }
+        {
+            using _q_method_type = void (TaskController::*)(const QString & );
+            if (_q_method_type _q_method = &TaskController::taskAssignmentFailed; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+                *result = 12;
                 return;
             }
         }
@@ -477,14 +501,14 @@ int TaskController::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 28)
+        if (_id < 30)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 28;
+        _id -= 30;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 28)
+        if (_id < 30)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 28;
+        _id -= 30;
     }
     if (_c == QMetaObject::ReadProperty || _c == QMetaObject::WriteProperty
             || _c == QMetaObject::ResetProperty || _c == QMetaObject::BindableProperty
@@ -514,65 +538,72 @@ void TaskController::tasksChanged()
 }
 
 // SIGNAL 3
-void TaskController::taskCreated(int _t1)
+void TaskController::subTasksChanged(int _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 3, _a);
 }
 
 // SIGNAL 4
-void TaskController::taskUpdated(int _t1)
+void TaskController::taskCreated(int _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 4, _a);
 }
 
 // SIGNAL 5
-void TaskController::taskDeleted(int _t1)
+void TaskController::taskUpdated(int _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 5, _a);
 }
 
 // SIGNAL 6
-void TaskController::taskAssigned(int _t1, int _t2)
+void TaskController::taskDeleted(int _t1)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 6, _a);
 }
 
 // SIGNAL 7
-void TaskController::errorOccurred(const QString & _t1)
+void TaskController::taskAssigned(int _t1, int _t2)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 7, _a);
 }
 
 // SIGNAL 8
-void TaskController::taskCreationFailed(const QString & _t1)
+void TaskController::errorOccurred(const QString & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 8, _a);
 }
 
 // SIGNAL 9
-void TaskController::taskUpdateFailed(const QString & _t1)
+void TaskController::taskCreationFailed(const QString & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 9, _a);
 }
 
 // SIGNAL 10
-void TaskController::taskDeletionFailed(const QString & _t1)
+void TaskController::taskUpdateFailed(const QString & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 10, _a);
 }
 
 // SIGNAL 11
-void TaskController::taskAssignmentFailed(const QString & _t1)
+void TaskController::taskDeletionFailed(const QString & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 11, _a);
+}
+
+// SIGNAL 12
+void TaskController::taskAssignmentFailed(const QString & _t1)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 12, _a);
 }
 QT_WARNING_POP

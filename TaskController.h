@@ -39,7 +39,9 @@ public:
     QVariantMap taskDataToVariantMap(const TaskData& task) const;
     QString formatTimeForDisplay(int timeMinutes) const;
     Q_INVOKABLE QVariantList getTasksForProjectByStatus(int projectId, const QString& status);
-
+    Q_INVOKABLE QVariantList getSubTasksByStatus(int parentTaskId, const QString& status);
+    
+  
 public slots:
 
     // --- Chargement ---
@@ -79,8 +81,11 @@ public slots:
         const QString& subTaskName,
         const QString& description,
         int assignedToId,
-        const QString& estimatedTime,
-        const QString& subTaskDate);
+        const int estimatedTime,
+        const QString& dateDebut,
+        const QString& dateFin,
+        const QString& etat);
+
 
     bool deleteSubTask(int taskId);
 
@@ -99,6 +104,7 @@ signals:
     void currentProjectIdChanged();
     void loadingChanged();
     void tasksChanged();
+    void subTasksChanged(int parentTaskId);
 
     // Success
     void taskCreated(int taskId);
@@ -112,6 +118,7 @@ signals:
     void taskUpdateFailed(const QString& errorMessage);
     void taskDeletionFailed(const QString& errorMessage);
     void taskAssignmentFailed(const QString& errorMessage);
+
 
 private:
     DatabaseManager* m_dbManager;

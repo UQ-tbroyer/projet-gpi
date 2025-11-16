@@ -92,5 +92,8 @@
     <None Include="main3.qml">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="TaskDetailsView.qml">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
