@@ -1,80 +1,78 @@
 ﻿import QtQuick 6.5
 import QtQuick.Controls 6.5
+import QtQuick.Controls.impl 6.5  // Add this import for better styling
 import QtQuick.Layouts 6.5
+import QtQuick.Dialogs 6.5
 
-Item {
-    id: mainPage
-    
-    // Controller properties - these should be set from C++
+Page {
+     id: mainPage
+
+    // PUT THIS INSTEAD OF "color"
+    background: Rectangle { color: "white" }
+
+    // Controller properties with safe defaults
     property var projectController
     property var taskController
-    property var loginController  // ADD THIS
-    
-    // --- En-tête ---
-    Row {
-        id: header
-        spacing: 20
+    property var loginController
+
+    // --- Rectangle Accueil ---
+    Rectangle {
+        id: accueilRect
+        width: 200
+        height: 60
+        radius: 10
+        border.color: "black"
+        border.width: 1
+        color: "transparent"
         anchors.top: parent.top
         anchors.topMargin: 20
-        anchors.left: parent.left
-        anchors.leftMargin: 200  
-        
-        Rectangle {
-            radius: 10
-            border.color: "black"
-            border.width: 1
-            color: "transparent"
-            width: 200
-            height: 60
-            Text {
-                anchors.centerIn: parent
-                text: "Accueil"
-                color: "black"
-                font.bold: true
-                font.pointSize: 18
-            }
-        }
-        
-        Button {
-            id: logoutButton
-            text: "Déconnexion"
-            width: 150
-            height: 60
-            
-            background: Rectangle {
-                color: "transparent"
-                border.color: "black"
-                border.width: 1
-                radius: 10
-            }
-            
-            contentItem: Text {
-                text: logoutButton.text
-                color: "black"
-                font.pointSize: 12
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-            }
-            
-            onClicked: {
-                console.log("Déconnexion...")
-                StackView.view.pop()
-            }
+        anchors.horizontalCenter: parent.horizontalCenter
+
+        Text {
+            anchors.centerIn: parent
+            text: "Accueil"
+            color: "black"
+            font.bold: true
+            font.pointSize: 18
         }
     }
-    
+
     // --- Welcome message ---
     Text {
         id: welcomeText
-        text: "Bienvenue, " + loginController.currentUserName()
+        text: {
+            if (loginController && loginController.currentUserName) {
+                return "Bienvenue, " + loginController.currentUserName()
+            } else {
+                return "Bienvenue"
+            }
+        }
         font.pointSize: 14
         font.bold: true
         color: "#333333"
-        anchors.top: header.bottom
-        anchors.topMargin: 20
+        anchors.top: accueilRect.bottom
+        anchors.topMargin: 10
         anchors.horizontalCenter: parent.horizontalCenter
     }
-    
+
+    // --- Bouton déconnexion ---
+    Button {
+        id: deconnexionBtn
+        width: 120
+        height: 40
+        text: "Déconnexion"
+        anchors.right: parent.right
+        anchors.rightMargin: 20
+        anchors.verticalCenter: accueilRect.verticalCenter
+
+        onClicked: {
+            console.log("Déconnexion cliquée")
+            window.close()
+        }
+
+        // REMOVED custom background and contentItem to fix styling errors
+    }
+
     // --- Menu de navigation ---
     Row {
         id: navigationMenu
@@ -87,7 +85,11 @@ Item {
             text: "Tous les Projets"
             onClicked: {
                 console.log("Chargement de tous les projets...")
-                projectController.loadProjects()
+                if (projectController && projectController.loadProjects) {
+                    projectController.loadProjects()
+                } else {
+                    console.log("ERROR: loadProjects method not available")
+                }
             }
         }
         
@@ -95,7 +97,11 @@ Item {
             text: "Mes Projets"
             onClicked: {
                 console.log("Chargement de mes projets...")
-                projectController.loadProjectsByUser()
+                if (projectController && projectController.loadProjectsByUser) {
+                    projectController.loadProjectsByUser()
+                } else {
+                    console.log("ERROR: loadProjectsByUser method not available")
+                }
             }
         }
         
@@ -103,41 +109,83 @@ Item {
             text: "Projets Département"
             onClicked: {
                 console.log("Chargement des projets du département...")
-                projectController.loadProjectsByDepartment()
-            }
-        }
-        
-        Button {
-            text: "Nouveau Projet"
-            onClicked: {
-                projectCreationDialog.open()
+                if (projectController && projectController.loadProjectsByDepartment) {
+                    projectController.loadProjectsByDepartment()
+                } else {
+                    console.log("ERROR: loadProjectsByDepartment method not available")
+                }
             }
         }
     }
-    
-    // --- ScrollView horizontale pour les projets ---
+
+    // --- ScrollView des projets ---
     ScrollView {
         id: scrollView
         width: parent.width * 0.9
-        height: 300
-        anchors.horizontalCenter: parent.horizontalCenter
+        height: 400
         anchors.top: navigationMenu.bottom
         anchors.topMargin: 30
+        anchors.horizontalCenter: parent.horizontalCenter
         clip: true
-        
+
         ScrollBar.horizontal: ScrollBar {
             policy: ScrollBar.AsNeeded
             height: 10
         }
         
+        ScrollBar.vertical: ScrollBar {
+            policy: ScrollBar.AsNeeded
+            width: 10
+        }
+
         Row {
             id: projectRow
             spacing: 20
             padding: 10
-            
+
+            // Bouton "+ ajouter un projet"
+            Rectangle {
+                id: addProjectBtn
+                width: 180
+                height: 220
+                radius: 15
+                border.color: "black"
+                border.width: 1
+                color: "transparent"
+
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 10
+                    
+                    Text {
+                        text: "+"
+                        font.pointSize: 24
+                        color: "black"
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                    
+                    Text {
+                        text: "ajouter un projet"
+                        font.pointSize: 12
+                        color: "black"
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        console.log("Opening project creation dialog")
+                        projectCreationDialog.open()
+                    }
+                }
+            }
+
+            // Projects from C++ controller
             Repeater {
                 id: projectRepeater
-                model: projectController ? projectController.projects : []
+                model: projectController && projectController.projects ? projectController.projects : []
                 
                 delegate: Rectangle {
                     required property var modelData
@@ -178,7 +226,7 @@ Item {
                         }
                         
                         Text {
-                            text: "Coût: " + projectCost.toFixed(2) + " €"
+                            text: "Coût: " + (projectCost ? projectCost.toFixed(2) : "0.00") + " €"
                             font.pointSize: 10
                             color: "#495057"
                             Layout.fillWidth: true
@@ -199,23 +247,23 @@ Item {
                                 console.log("=== OUVRIR BUTTON CLICKED ===")
                                 console.log("Project ID:", projectId)
                                 console.log("Project Name:", projectName)
-                                console.log("taskController exists:", taskController !== null && taskController !== undefined)
-                                console.log("projectDetailDialog exists:", typeof projectDetailDialog !== 'undefined')
-        
-                                if (taskController) {
-                                    console.log("Setting current project ID...")
-                                    taskController.setCurrentProjectId(projectId)
+                                console.log("taskController exists:", taskController !== null)
+                                
+                                // Create and show project detail window
+                                var component = Qt.createComponent("main3.qml")
+                                if (component.status === Component.Ready) {
+                                    var projectDetailWindow = component.createObject(null, {
+                                        projectId: projectId,
+                                        projectName: projectName,
+                                        taskController: taskController,
+                                        projectController: projectController
+                                    })
+                                    projectDetailWindow.show()
                                 } else {
-                                    console.log("ERROR: taskController is null!")
+                                    console.log("Error loading main3.qml:", component.errorString())
+                                    errorDialog.text = "Erreur: Impossible de charger la page de détails du projet"
+                                    errorDialog.open()
                                 }
-        
-                                console.log("Setting dialog properties...")
-                                projectDetailDialog.projectId = projectId
-                                projectDetailDialog.projectName = projectName
-        
-                                console.log("Opening dialog...")
-                                projectDetailDialog.open()
-                                console.log("=== END OUVRIR ===")
                             }
                         }
 
@@ -223,85 +271,85 @@ Item {
                             text: "Supprimer"
                             Layout.alignment: Qt.AlignHCenter
                             Layout.preferredWidth: 80
-                            background: Rectangle { 
-                                color: "#dc3545"
-                                radius: 4
-                            }
-                            contentItem: Text {
-                                text: "Supprimer"
-                                color: "white"
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
+                            
+                            // REMOVED custom background and contentItem
                             onClicked: {
                                 console.log("=== SUPPRIMER BUTTON CLICKED ===")
                                 console.log("Project ID:", projectId)
                                 console.log("Project Name:", projectName)
-                                console.log("deleteProjectDialog exists:", typeof deleteProjectDialog !== 'undefined')
-        
+                                
                                 deleteProjectDialog.projectId = projectId
                                 deleteProjectDialog.projectName = projectName
-        
-                                console.log("Opening delete dialog...")
                                 deleteProjectDialog.open()
-                                console.log("=== END SUPPRIMER ===")
                             }
                         }
                     }
-                    /*
-                    MouseArea {
-                        anchors.fill: parent
-                        propagateComposedEvents: true  // ADD THIS
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            console.log("Projet cliqué:", projectId)
-                            mouse.accepted = false  // ADD THIS - let clicks pass through to buttons
-                        }
-                    }*/
                 }
             }
         }
     }
-    
+
     // --- Indicateur de chargement ---
     BusyIndicator {
         id: loadingIndicator
-        running: projectController ? projectController.loading : false
+        running: projectController && projectController.loading !== undefined ? projectController.loading : false
         visible: running
         anchors.centerIn: scrollView
         width: 50
         height: 50
     }
-    
-    // --- Bouton de gestion de temps ---
-    Rectangle {
+
+    // --- Message si aucun projet ---
+    Text {
+        id: noProjectsText
+        visible: projectController && projectController.projects && projectController.projects.length === 0 && !loadingIndicator.running
+        text: "Aucun projet trouvé.\nCliquez sur '+' pour créer un nouveau projet."
+        font.pointSize: 14
+        color: "#6c757d"
+        horizontalAlignment: Text.AlignHCenter
+        anchors.centerIn: scrollView
+    }
+
+    // --- Debug info ---
+    Text {
+        id: debugInfo
+        visible: true // Set to true for debugging
+        text: {
+            var info = "Debug Info:\n"
+            info += "projectController: " + (projectController ? "✓" : "✗") + "\n"
+            info += "taskController: " + (taskController ? "✓" : "✗") + "\n"
+            info += "loginController: " + (loginController ? "✓" : "✗") + "\n"
+            if (projectController) {
+                info += "Has loadProjects: " + (projectController.loadProjects ? "✓" : "✗") + "\n"
+                info += "Has projects: " + (projectController.projects ? "✓" : "✗") + "\n"
+                if (projectController.projects) {
+                    info += "Projects count: " + projectController.projects.length + "\n"
+                }
+                info += "Has loading: " + (projectController.loading !== undefined ? "✓" : "✗")
+            }
+            return info
+        }
+        color: "red"
+        font.pointSize: 10
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.margins: 10
+    }
+
+    // --- Bouton gestion de temps ---
+    Button {
+        id: btntemps
         width: 200
         height: 60
-        radius: 10
-        border.color: "black"
-        border.width: 1
-        color: "#e9ecef"
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 40
-        
-        Text {
-            anchors.centerIn: parent
-            text: "Gestion de Temps"
-            color: "black"
-            font.pointSize: 12
-        }
-        
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                console.log("Gestion de temps cliquée")
-                // TODO: Implement time management functionality
-            }
-            cursorShape: Qt.PointingHandCursor
-        }
+
+        onClicked: console.log("Gestion de temps cliquée")
+
+        // REMOVED custom background and contentItem
     }
-    
+
     // --- Dialogue de création de projet ---
     Dialog {
         id: projectCreationDialog
@@ -331,14 +379,6 @@ Item {
                 model: projectCreationDialog.clientsList
                 textRole: "nomClient"
                 valueRole: "idClient"
-            
-                Component.onCompleted: {
-                    console.log("Client ComboBox created")
-                    console.log("Model count:", count)
-                }
-                onModelChanged: {
-                    console.log("ComboBox model changed, new count:", count)
-                }
             }
         
             Label { text: "Répertoire"; font.bold: true }
@@ -380,17 +420,23 @@ Item {
                     enabled: projectNameField.text !== "" && clientComboBox.currentValue > 0
                     onClicked: {
                         console.log("Creating project with:", projectNameField.text, "client:", clientComboBox.currentValue)
-                        var success = projectController.createProject(
-                            projectNameField.text,
-                            clientComboBox.currentValue,
-                            repositoryField.text,
-                            parseFloat(costField.text || "0"),
-                            projectDateField.text
-                        )
-                    
-                        if (success) {
-                            projectCreationDialog.close()
-                            resetForm()
+                        if (projectController && projectController.createProject) {
+                            var success = projectController.createProject(
+                                projectNameField.text,
+                                clientComboBox.currentValue,
+                                repositoryField.text,
+                                parseFloat(costField.text || "0"),
+                                projectDateField.text
+                            )
+                        
+                            if (success) {
+                                projectCreationDialog.close()
+                                resetForm()
+                            }
+                        } else {
+                            console.log("ERROR: projectController or createProject not available")
+                            errorDialog.text = "Erreur: Contrôleur de projet non disponible"
+                            errorDialog.open()
                         }
                     }
                 }
@@ -399,19 +445,17 @@ Item {
     
         function loadClientsData() {
             console.log("Loading clients data...")
-            if (projectController) {
+            if (projectController && projectController.getClients) {
                 var clients = projectController.getClients()
-                console.log("Raw clients data:", clients)
-                console.log("Number of clients:", clients.length)
+                console.log("Number of clients:", clients ? clients.length : 0)
         
-                // Just use the clients directly - no need to add default option
-                // since C++ already includes it
-                projectCreationDialog.clientsList = clients
-                console.log("Final clients list length:", projectCreationDialog.clientsList.length)
-        
-                // Force ComboBox refresh
+                projectCreationDialog.clientsList = clients || []
                 clientComboBox.model = projectCreationDialog.clientsList
-                clientComboBox.currentIndex = 0
+                if (clientComboBox.count > 0) {
+                    clientComboBox.currentIndex = 0
+                }
+            } else {
+                console.log("ERROR: Cannot load clients - controller or method not available")
             }
         }
     
@@ -431,297 +475,12 @@ Item {
             projectNameField.forceActiveFocus()
         }
     }
-    
-    // --- Dialogue de détail de projet ---
-    Dialog {
-        id: projectDetailDialog
-        title: "Détails du Projet - " + projectName
-        parent: Overlay.overlay  // ADD THIS - ensures dialog appears on top
-        anchors.centerIn: parent
-        width: 600
-        height: 500
-        modal: true
-    
-        property int projectId: 0
-        property string projectName: ""
-    
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: 10
-        
-            Text {
-                text: "Tâches du projet: " + projectDetailDialog.projectName
-                font.bold: true
-                font.pointSize: 14
-                Layout.alignment: Qt.AlignHCenter
-            }
-        
-            Button {
-                text: "Nouvelle Tâche"
-                onClicked: {
-                    console.log("Opening task creation dialog for project:", projectDetailDialog.projectId)
-                    taskCreationDialog.projectId = projectDetailDialog.projectId
-                    taskCreationDialog.open()
-                }
-                Layout.alignment: Qt.AlignRight
-            }
-        
-            ListView {
-                id: taskListView
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                model: taskController ? taskController.tasks : []
-                spacing: 5
-                clip: true
-            
-                delegate: Rectangle {
-                    required property var modelData
-                    width: taskListView.width
-                    height: 80
-                    radius: 8
-                    color: "#f8f9fa"
-                    border.color: "#dee2e6"
-                    border.width: 1
-                
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 10
-                        spacing: 10
-                    
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 2
-                        
-                            Text {
-                                text: modelData.nomTache || "Sans nom"
-                                font.bold: true
-                                font.pointSize: 12
-                                color: "#212529"
-                            }
-                        
-                            Text {
-                                text: modelData.descTache || "Aucune description"
-                                font.pointSize: 10
-                                color: "#6c757d"
-                                elide: Text.ElideRight
-                                maximumLineCount: 1
-                            }
-                        
-                            Text {
-                                text: "Assigné à: " + (modelData.assigneeName || "Non assigné")
-                                font.pointSize: 9
-                                color: "#495057"
-                            }
-                        
-                            Text {
-                                text: "Temps estimé: " + (modelData.tempsTache || "00:00:00")
-                                font.pointSize: 9
-                                color: "#495057"
-                            }
-                        }
-                    
-                        Button {
-                            text: "Sous-tâches"
-                            onClicked: {
-                                console.log("Voir sous-tâches pour:", modelData.idTache)
-                                // TODO: Implement subtask view
-                            }
-                        }
-                    
-                        Button {
-                            text: "Supprimer"
-                            background: Rectangle { 
-                                color: "#dc3545"
-                                radius: 4
-                            }
-                            contentItem: Text {
-                                text: "Supprimer"
-                                color: "white"
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            onClicked: {
-                                console.log("Deleting task:", modelData.idTache)
-                                taskController.deleteTask(modelData.idTache)
-                            }
-                        }
-                    }
-                }
-            }
-        
-            Button {
-                text: "Fermer"
-                onClicked: projectDetailDialog.close()
-                Layout.alignment: Qt.AlignRight
-            }
-        }
-    
-        onOpened: {
-            console.log("=== PROJECT DETAIL DIALOG OPENED ===")
-            console.log("Project ID:", projectId)
-            console.log("Project Name:", projectName)
-            console.log("taskController exists:", taskController !== null)
-        
-            if (projectId > 0 && taskController) {
-                console.log("Loading tasks for project:", projectId)
-                taskController.loadTasksForProject(projectId)
-            } else {
-                console.log("ERROR: Cannot load tasks - projectId:", projectId, "taskController:", taskController !== null)
-            }
-        }
-    }
-    
-    Dialog {
-        id: taskCreationDialog
-        title: "Nouvelle Tâche"
-        anchors.centerIn: parent
-        parent: Overlay.overlay
-        width: 400
-        height: 450
-        modal: true
-    
-        property int projectId: 0
-        property var employeesList: []  // ADD THIS to store employees
-    
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: 10
-        
-            Label { text: "Nom de la tâche"; font.bold: true }
-            TextField {
-                id: taskNameField
-                placeholderText: "Entrez le nom de la tâche"
-                Layout.fillWidth: true
-            }
-        
-            Label { text: "Description"; font.bold: true }
-            TextArea {
-                id: taskDescriptionField
-                placeholderText: "Description de la tâche"
-                Layout.fillWidth: true
-                Layout.preferredHeight: 80
-            }
-        
-            Label { text: "Assigné à"; font.bold: true }
-            ComboBox {
-                id: assigneeComboBox
-                Layout.fillWidth: true
-                model: taskCreationDialog.employeesList  // Use the dialog's property
-                textRole: "fullName"
-                valueRole: "idEmploye"
-            
-                Component.onCompleted: {
-                    console.log("Assignee ComboBox created")
-                }
-            
-                onModelChanged: {
-                    console.log("Assignee ComboBox model changed, count:", count)
-                }
-            }
-        
-            Label { text: "Temps estimé (HH:MM:SS)"; font.bold: true }
-            TextField {
-                id: estimatedTimeField
-                placeholderText: "00:00:00"
-                Layout.fillWidth: true
-                text: "00:00:00"
-            }
-        
-            Label { text: "Date de la tâche"; font.bold: true }
-            TextField {
-                id: taskDateField
-                placeholderText: "AAAA-MM-JJ"
-                Layout.fillWidth: true
-                text: new Date().toISOString().split('T')[0]
-            }
-        
-            RowLayout {
-                Layout.alignment: Qt.AlignRight
-                spacing: 10
-            
-                Button {
-                    text: "Annuler"
-                    onClicked: taskCreationDialog.close()
-                }
-            
-                Button {
-                    text: "Créer"
-                    enabled: taskNameField.text !== "" && taskCreationDialog.projectId > 0
-                    onClicked: {
-                        console.log("Creating task with assignee:", assigneeComboBox.currentValue)
-                        var success = taskController.createTask(
-                            taskCreationDialog.projectId,
-                            taskNameField.text,
-                            taskDescriptionField.text,
-                            assigneeComboBox.currentValue || 0,
-                            estimatedTimeField.text,
-                            taskDateField.text
-                        )
-                    
-                        if (success) {
-                            taskCreationDialog.close()
-                            resetForm()
-                        }
-                    }
-                }
-            }
-        }
-    
-        function loadEmployees() {
-            console.log("Loading employees for task assignment...")
-            if (taskController) {
-                var employees = taskController.getDepartmentEmployees()
-                console.log("Got employees:", employees.length)
-            
-                // Create a new list with default option
-                var newEmployeesList = []
-            
-                // Add default "Non assigné" option
-                newEmployeesList.push({
-                    "idEmploye": 0,
-                    "fullName": "Non assigné"
-                })
-            
-                // Add actual employees
-                for (var i = 0; i < employees.length; i++) {
-                    console.log("Employee:", employees[i].fullName)
-                    newEmployeesList.push(employees[i])
-                }
-            
-                // Update the property
-                taskCreationDialog.employeesList = newEmployeesList
-                console.log("Employees list updated, total:", taskCreationDialog.employeesList.length)
-            
-                // Force ComboBox refresh
-                assigneeComboBox.model = taskCreationDialog.employeesList
-                assigneeComboBox.currentIndex = 0
-            }
-        }
-    
-        function resetForm() {
-            taskNameField.text = ""
-            taskDescriptionField.text = ""
-            estimatedTimeField.text = "00:00:00"
-            taskDateField.text = new Date().toISOString().split('T')[0]
-            if (assigneeComboBox.count > 0) {
-                assigneeComboBox.currentIndex = 0
-            }
-        }
-    
-        onOpened: {
-            console.log("=== TASK CREATION DIALOG OPENED ===")
-            console.log("Project ID:", projectId)
-            loadEmployees()  // LOAD EMPLOYEES WHEN DIALOG OPENS
-            taskNameField.forceActiveFocus()
-        }
-    }
-    
+
     // --- Dialogue de confirmation de suppression ---
-    
     Dialog {
         id: deleteProjectDialog
         title: "Confirmation de suppression"
-        parent: Overlay.overlay  // ADD THIS
+        parent: Overlay.overlay
         anchors.centerIn: parent
         width: 300
         height: 150
@@ -754,39 +513,55 @@ Item {
             
                 Button {
                     text: "Supprimer"
-                    background: Rectangle { 
-                        color: "#dc3545"
-                        radius: 4
-                    }
-                    contentItem: Text {
-                        text: "Supprimer"
-                        color: "white"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
                     onClicked: {
                         console.log("Deleting project:", deleteProjectDialog.projectId)
-                        if (projectController) {
+                        if (projectController && projectController.deleteProject) {
                             projectController.deleteProject(deleteProjectDialog.projectId)
+                        } else {
+                            console.log("ERROR: projectController or deleteProject not available")
                         }
                         deleteProjectDialog.close()
                     }
                 }
             }
         }
-    
-        onOpened: {
-            console.log("=== DELETE DIALOG OPENED ===")
-            console.log("Project to delete:", projectName, "ID:", projectId)
+    }
+
+    // --- Error dialog ---
+    Dialog {
+        id: errorDialog
+        title: "Erreur"
+        anchors.centerIn: parent
+        width: 300
+        height: 150
+        modal: true
+        
+        property string text: ""
+        
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 10
+            
+            Text {
+                text: errorDialog.text
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+            
+            Button {
+                text: "OK"
+                onClicked: errorDialog.close()
+                Layout.alignment: Qt.AlignHCenter
+            }
         }
     }
-    
+
     // --- Connexions aux signaux ---
     Connections {
         target: projectController
         
         function onProjectsChanged() {
-            console.log("Liste des projets mise à jour")
+            console.log("Liste des projets mise à jour - count:", projectController.projects ? projectController.projects.length : 0)
         }
         
         function onProjectCreated(projectId) {
@@ -795,6 +570,8 @@ Item {
         
         function onProjectCreationFailed(error) {
             console.log("Erreur création projet:", error)
+            errorDialog.text = "Erreur lors de la création du projet: " + error
+            errorDialog.open()
         }
         
         function onProjectDeleted(projectId) {
@@ -817,12 +594,43 @@ Item {
             console.log("Erreur création tâche:", error)
         }
     }
-    
+
     // --- Initialisation ---
     Component.onCompleted: {
-        console.log("MainPage chargée - Chargement des projets du département...")
+        console.log("MainPage chargée - Vérification des contrôleurs...")
+        console.log("projectController exists:", projectController !== null)
+        console.log("taskController exists:", taskController !== null)
+        console.log("loginController exists:", loginController !== null)
+        
+        // Check what methods are available
         if (projectController) {
-            projectController.loadProjectsByDepartment()
+            console.log("Available projectController methods:")
+            console.log(" - loadProjects:", !!projectController.loadProjects)
+            console.log(" - loadProjectsByUser:", !!projectController.loadProjectsByUser)
+            console.log(" - loadProjectsByDepartment:", !!projectController.loadProjectsByDepartment)
+            console.log(" - createProject:", !!projectController.createProject)
+            console.log(" - deleteProject:", !!projectController.deleteProject)
+            console.log(" - getClients:", !!projectController.getClients)
+            console.log(" - projects property:", !!projectController.projects)
+            console.log(" - loading property:", projectController.loading !== undefined)
+            
+            // Try to load projects if method exists
+            if (projectController.loadProjects) {
+                console.log("Calling loadProjects...")
+                projectController.loadProjects()
+            } else {
+                console.log("loadProjects method not available - checking for other load methods")
+                // Try alternative method names
+                if (projectController.loadAllProjects) {
+                    console.log("Calling loadAllProjects...")
+                    projectController.loadAllProjects()
+                } else if (projectController.load) {
+                    console.log("Calling load...")
+                    projectController.load()
+                }
+            }
+        } else {
+            console.log("ERROR: projectController is null")
         }
     }
 }

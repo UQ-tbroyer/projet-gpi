@@ -1,6 +1,4 @@
-#include "TaskController.h"
-#include "DatabaseManager.h"
-#include "User.h"
+﻿#include "TaskController.h"
 #include <QDebug>
 #include <QDateTime>
 
@@ -16,10 +14,7 @@ TaskController::TaskController(DatabaseManager* dbManager, User* currentUser, QO
     }
 }
 
-TaskController::~TaskController()
-{
-    // Don't delete m_dbManager or m_currentUser - they're owned by main.cpp
-}
+TaskController::~TaskController() {}
 
 void TaskController::setCurrentUser(User* user)
 {
@@ -31,8 +26,6 @@ void TaskController::setCurrentProjectId(int projectId)
     if (m_currentProjectId != projectId) {
         m_currentProjectId = projectId;
         emit currentProjectIdChanged();
-
-        // Auto-load tasks when project changes
         if (projectId > 0) {
             loadTasksForProject(projectId);
         }
@@ -47,12 +40,11 @@ void TaskController::setLoading(bool loading)
     }
 }
 
-QString TaskController::formatTimeForDisplay(const std::string& timeStr) const
+QString TaskController::formatTimeForDisplay(int timeMinutes) const
 {
-    if (timeStr.empty()) {
-        return "00:00:00";
-    }
-    return QString::fromStdString(timeStr);
+    int hours = timeMinutes / 60;
+    int minutes = timeMinutes % 60;
+    return QString("%1:%2:00").arg(hours, 2, 10, QChar('0')).arg(minutes, 2, 10, QChar('0'));
 }
 
 QVariantMap TaskController::taskDataToVariantMap(const TaskData& task) const
@@ -62,52 +54,56 @@ QVariantMap TaskController::taskDataToVariantMap(const TaskData& task) const
     map["idProject"] = task.idProject;
     map["memProcessigner"] = task.memProcessigner;
     map["idParentTache"] = task.idParentTache;
+
+    // sous-tâche
     map["isSubTask"] = (task.idParentTache > 0);
+
+    // strings
     map["nomTache"] = QString::fromStdString(task.nomTache);
     map["descTache"] = QString::fromStdString(task.descTache);
-    map["dataTache"] = QString::fromStdString(task.dataTache);
-    map["tempsTache"] = formatTimeForDisplay(task.tempsTache);
+    map["dateDebut"] = QString::fromStdString(task.dateDebut);
+    map["dateFin"] = QString::fromStdString(task.dateFin);
+    map["etat"] = QString::fromStdString(task.etat);
     map["assigneeName"] = QString::fromStdString(task.assigneeName);
+
+    // temps
+    map["tempsTache"] = task.tempsTache;
+
     return map;
 }
+
 
 void TaskController::loadTasksForProject(int projectId)
 {
     qDebug() << "TaskController: Loading tasks for project" << projectId;
     setLoading(true);
-
     try {
         std::vector<TaskData> tasksData = m_dbManager->getTasksByProject(projectId);
-
         m_tasks.clear();
         for (const auto& task : tasksData) {
             m_tasks.append(taskDataToVariantMap(task));
         }
-
         emit tasksChanged();
-        qDebug() << "TaskController: Loaded" << m_tasks.size() << "tasks";
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error loading tasks:" << e.what();
         QString errorMsg = "Erreur lors du chargement des taches: ";
         errorMsg += QString::fromUtf8(e.what());
         emit errorOccurred(errorMsg);
     }
-
     setLoading(false);
 }
 
 void TaskController::loadTasksForCurrentProject()
 {
-    if (m_currentProjectId > 0) {
+    if (m_currentProjectId > 0){
         loadTasksForProject(m_currentProjectId);
     }
     else {
-        qWarning() << "TaskController: No current project set";
         emit errorOccurred("Aucun projet selectionne");
     }
 }
 
+// --- Création d'une tâche ---
 bool TaskController::createTask(int projectId,
     const QString& taskName,
     const QString& description,
@@ -116,142 +112,115 @@ bool TaskController::createTask(int projectId,
     const QString& taskDate)
 {
     if (!m_currentUser) {
-        qWarning() << "TaskController: No current user set";
         emit taskCreationFailed("Aucun utilisateur connecte");
         return false;
     }
-
     if (taskName.isEmpty()) {
-        emit taskCreationFailed("Le nom de la tache est requis");
+        emit taskCreationFailed("Le nom de la tâche est requis");
         return false;
     }
-
     if (projectId <= 0) {
         emit taskCreationFailed("Projet invalide");
         return false;
     }
 
-    qDebug() << "TaskController: Creating task:" << taskName << "for project" << projectId;
-
     try {
         TaskData newTask;
+
         newTask.idProject = projectId;
         newTask.nomTache = taskName.toStdString();
         newTask.descTache = description.toStdString();
         newTask.memProcessigner = assignedToId;
-        newTask.idParentTache = 0;
+        newTask.idParentTache = 0; // tâche normale
 
-        // Set date
-        if (taskDate.isEmpty()) {
-            newTask.dataTache = QDateTime::currentDateTime().toString("yyyy-MM-dd").toStdString();
-        }
-        else {
-            newTask.dataTache = taskDate.toStdString();
-        }
+        QString today = QDate::currentDate().toString("yyyy-MM-dd");
+        newTask.dateDebut = taskDate.isEmpty() ? today.toStdString() : taskDate.toStdString();
+        newTask.dateFin = newTask.dateDebut;
 
-        // Set estimated time (default to 00:00:00 if empty)
-        if (estimatedTime.isEmpty()) {
-            newTask.tempsTache = "00:00:00";
-        }
-        else {
-            newTask.tempsTache = estimatedTime.toStdString();
-        }
+        newTask.tempsTache = estimatedTime.isEmpty() ? 0 : estimatedTime.toInt();
+        newTask.etat = "À Faire";
+
+        // assigneeName laissé par défaut : ""
 
         int taskId = m_dbManager->createTask(newTask);
-
         if (taskId > 0) {
-            qDebug() << "TaskController: Task created successfully with ID:" << taskId;
             emit taskCreated(taskId);
-
-            // Reload tasks for this project
             loadTasksForProject(projectId);
             return true;
         }
-        else {
-            emit taskCreationFailed("Echec de la creation de la tache");
-            return false;
-        }
+        emit taskCreationFailed("Échec de la création de la tâche");
+        return false;
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error creating task:" << e.what();
-        QString errorMsg = "Erreur: ";
-        errorMsg += QString::fromUtf8(e.what());
-        emit taskCreationFailed(errorMsg);
+        emit taskCreationFailed(QString("Erreur: ") + e.what());
         return false;
     }
 }
 
+// --- Mise à jour d'une tâche ---
 bool TaskController::updateTask(int taskId,
     const QString& taskName,
     const QString& description,
     int assignedToId,
-    const QString& estimatedTime)
+    const QString& estimatedTime,
+    const QString& dateDebut,
+    const QString& dateFin,
+    const QString& etat)
 {
     if (taskName.isEmpty()) {
-        emit taskUpdateFailed("Le nom de la tache est requis");
+        emit taskUpdateFailed("Le nom de la tâche est requis");
         return false;
     }
 
-    qDebug() << "TaskController: Updating task:" << taskId;
-
     try {
         TaskData updatedTask;
+
         updatedTask.idTache = taskId;
         updatedTask.nomTache = taskName.toStdString();
         updatedTask.descTache = description.toStdString();
         updatedTask.memProcessigner = assignedToId;
-        updatedTask.tempsTache = estimatedTime.toStdString();
+
+        updatedTask.tempsTache = estimatedTime.isEmpty() ? 0 : estimatedTime.toInt();
+        updatedTask.dateDebut = dateDebut.toStdString();
+        updatedTask.dateFin = dateFin.toStdString();
+        updatedTask.etat = etat.toStdString();
+
+        // les champs non modifiés restent à 0/"" → c'est le DBManager qui remplit
 
         bool success = m_dbManager->updateTask(updatedTask);
-
         if (success) {
-            qDebug() << "TaskController: Task updated successfully";
             emit taskUpdated(taskId);
-
-            // Reload tasks for current project
-            if (m_currentProjectId > 0) {
+            if (m_currentProjectId > 0)
                 loadTasksForProject(m_currentProjectId);
-            }
             return true;
         }
-        else {
-            emit taskUpdateFailed("Echec de la mise a jour de la tache");
-            return false;
-        }
+
+        emit taskUpdateFailed("Échec de la mise à jour de la tâche");
+        return false;
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error updating task:" << e.what();
-        QString errorMsg = "Erreur: ";
-        errorMsg += QString::fromUtf8(e.what());
-        emit taskUpdateFailed(errorMsg);
+        emit taskUpdateFailed(QString("Erreur: ") + e.what());
         return false;
     }
 }
 
+// --- Suppression ---
 bool TaskController::deleteTask(int taskId)
 {
-    qDebug() << "TaskController: Deleting task:" << taskId;
-
     try {
         bool success = m_dbManager->deleteTask(taskId);
-
         if (success) {
-            qDebug() << "TaskController: Task deleted successfully";
             emit taskDeleted(taskId);
-
-            // Reload tasks for current project
-            if (m_currentProjectId > 0) {
+            if (m_currentProjectId > 0)
                 loadTasksForProject(m_currentProjectId);
-            }
             return true;
         }
         else {
-            emit taskDeletionFailed("Echec de la suppression de la tache");
+            emit taskDeletionFailed("Échec de la suppression de la tâche");
             return false;
         }
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error deleting task:" << e.what();
         QString errorMsg = "Erreur: ";
         errorMsg += QString::fromUtf8(e.what());
         emit taskDeletionFailed(errorMsg);
@@ -259,30 +228,23 @@ bool TaskController::deleteTask(int taskId)
     }
 }
 
+// --- Assignation ---
 bool TaskController::assignTask(int taskId, int employeeId)
 {
-    qDebug() << "TaskController: Assigning task" << taskId << "to employee" << employeeId;
-
     try {
         bool success = m_dbManager->assignTaskToEmployee(taskId, employeeId);
-
         if (success) {
-            qDebug() << "TaskController: Task assigned successfully";
             emit taskAssigned(taskId, employeeId);
-
-            // Reload tasks for current project
-            if (m_currentProjectId > 0) {
+            if (m_currentProjectId > 0)
                 loadTasksForProject(m_currentProjectId);
-            }
             return true;
         }
         else {
-            emit taskAssignmentFailed("Echec de l'affectation de la tache");
+            emit taskAssignmentFailed("Échec de l'affectation de la tâche");
             return false;
         }
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error assigning task:" << e.what();
         QString errorMsg = "Erreur: ";
         errorMsg += QString::fromUtf8(e.what());
         emit taskAssignmentFailed(errorMsg);
@@ -290,44 +252,35 @@ bool TaskController::assignTask(int taskId, int employeeId)
     }
 }
 
+// --- Récupération détails ---
 QVariantMap TaskController::getTaskDetails(int taskId)
 {
-    qDebug() << "TaskController: Getting task details for ID:" << taskId;
-
     try {
         TaskData task = m_dbManager->getTaskById(taskId);
         return taskDataToVariantMap(task);
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error getting task details:" << e.what();
-        QString errorMsg = "Erreur lors du chargement de la tache: ";
+        QString errorMsg = "Erreur lors du chargement de la tâche: ";
         errorMsg += QString::fromUtf8(e.what());
         emit errorOccurred(errorMsg);
         return QVariantMap();
     }
 }
 
+// --- Sous-tâches ---
 QVariantList TaskController::getSubTasks(int taskId)
 {
-    qDebug() << "TaskController: Loading subtasks for task" << taskId;
     QVariantList subTaskList;
-
     try {
         std::vector<TaskData> subTasksData = m_dbManager->getSubTasksByTask(taskId);
-
-        for (const auto& subTask : subTasksData) {
+        for (const auto& subTask : subTasksData)
             subTaskList.append(taskDataToVariantMap(subTask));
-        }
-
-        qDebug() << "TaskController: Loaded" << subTaskList.size() << "subtasks";
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error loading subtasks:" << e.what();
-        QString errorMsg = "Erreur lors du chargement des sous-taches: ";
+        QString errorMsg = "Erreur lors du chargement des sous-tâches: ";
         errorMsg += QString::fromUtf8(e.what());
         emit errorOccurred(errorMsg);
     }
-
     return subTaskList;
 }
 
@@ -339,22 +292,17 @@ bool TaskController::createSubTask(int parentTaskId,
     const QString& subTaskDate)
 {
     if (!m_currentUser) {
-        qWarning() << "TaskController: No current user set";
         emit taskCreationFailed("Aucun utilisateur connecte");
         return false;
     }
-
     if (subTaskName.isEmpty()) {
-        emit taskCreationFailed("Le nom de la sous-tache est requis");
+        emit taskCreationFailed("Le nom de la sous-tâche est requis");
         return false;
     }
-
     if (parentTaskId <= 0) {
-        emit taskCreationFailed("Tache parent invalide");
+        emit taskCreationFailed("Tâche parent invalide");
         return false;
     }
-
-    qDebug() << "TaskController: Creating subtask:" << subTaskName << "for task" << parentTaskId;
 
     try {
         TaskData newSubTask;
@@ -362,73 +310,46 @@ bool TaskController::createSubTask(int parentTaskId,
         newSubTask.descTache = description.toStdString();
         newSubTask.memProcessigner = assignedToId;
 
-        // Set date
-        if (subTaskDate.isEmpty()) {
-            newSubTask.dataTache = QDateTime::currentDateTime().toString("yyyy-MM-dd").toStdString();
-        }
-        else {
-            newSubTask.dataTache = subTaskDate.toStdString();
-        }
+        QString today = QDate::currentDate().toString("yyyy-MM-dd");
+        newSubTask.dateDebut = subTaskDate.isEmpty() ? today.toStdString() : subTaskDate.toStdString();
+        newSubTask.dateFin = newSubTask.dateDebut;
 
-        // Set estimated time (default to 00:00:00 if empty)
-        if (estimatedTime.isEmpty()) {
-            newSubTask.tempsTache = "00:00:00";
-        }
-        else {
-            newSubTask.tempsTache = estimatedTime.toStdString();
-        }
+        newSubTask.tempsTache = estimatedTime.toInt();
+        newSubTask.etat = "À Faire";
 
         int subTaskId = m_dbManager->createSubTask(parentTaskId, newSubTask);
-
         if (subTaskId > 0) {
-            qDebug() << "TaskController: SubTask created successfully with ID:" << subTaskId;
             emit taskCreated(subTaskId);
-
-            // Optionally reload tasks for current project
-            if (m_currentProjectId > 0) {
+            if (m_currentProjectId > 0)
                 loadTasksForProject(m_currentProjectId);
-            }
-
             return true;
         }
-        else {
-            emit taskCreationFailed("Echec de la creation de la sous-tache");
-            return false;
-        }
+        emit taskCreationFailed("Échec de la création de la sous-tâche");
+        return false;
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error creating subtask:" << e.what();
-        QString errorMsg = "Erreur: ";
-        errorMsg += QString::fromUtf8(e.what());
-        emit taskCreationFailed(errorMsg);
+        emit taskCreationFailed(QString("Erreur: ") + e.what());
         return false;
     }
 }
 
+
 bool TaskController::deleteSubTask(int taskId)
 {
-    qDebug() << "TaskController: Deleting subtask (and all children):" << taskId;
-
     try {
         bool success = m_dbManager->deleteSubTask(taskId);
-
         if (success) {
-            qDebug() << "TaskController: SubTask deleted successfully";
             emit taskDeleted(taskId);
-
-            // Reload tasks for current project
-            if (m_currentProjectId > 0) {
+            if (m_currentProjectId > 0)
                 loadTasksForProject(m_currentProjectId);
-            }
             return true;
         }
         else {
-            emit taskDeletionFailed("Echec de la suppression de la sous-tache");
+            emit taskDeletionFailed("Échec de la suppression de la sous-tâche");
             return false;
         }
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error deleting subtask:" << e.what();
         QString errorMsg = "Erreur: ";
         errorMsg += QString::fromUtf8(e.what());
         emit taskDeletionFailed(errorMsg);
@@ -438,27 +359,18 @@ bool TaskController::deleteSubTask(int taskId)
 
 QVariantMap TaskController::getTaskHierarchy(int taskId)
 {
-    qDebug() << "TaskController: Getting task hierarchy for ID:" << taskId;
-
     try {
         TaskData task = m_dbManager->getTaskById(taskId);
         QVariantMap taskMap = taskDataToVariantMap(task);
-
-        // Recursively get subtasks
         QVariantList subTasks;
         std::vector<TaskData> subTasksData = m_dbManager->getSubTasksByTask(taskId);
-
-        for (const auto& subTask : subTasksData) {
-            // Recursive call to get full hierarchy
+        for (const auto& subTask : subTasksData)
             subTasks.append(getTaskHierarchy(subTask.idTache));
-        }
-
         taskMap["subTasks"] = subTasks;
         return taskMap;
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error getting task hierarchy:" << e.what();
-        QString errorMsg = "Erreur lors du chargement de la hierarchie: ";
+        QString errorMsg = "Erreur lors du chargement de la hiérarchie: ";
         errorMsg += QString::fromUtf8(e.what());
         emit errorOccurred(errorMsg);
         return QVariantMap();
@@ -467,65 +379,70 @@ QVariantMap TaskController::getTaskHierarchy(int taskId)
 
 QVariantList TaskController::getAvailableEmployees()
 {
-    qDebug() << "TaskController: Loading all employees";
     QVariantList employeeList;
-
     try {
         std::vector<std::tuple<int, std::string, std::string>> employees = m_dbManager->getAllEmployees();
-
-        for (const auto& employee : employees) {
-            QVariantMap employeeMap;
-            employeeMap["idEmploye"] = std::get<0>(employee);
-            employeeMap["nom"] = QString::fromStdString(std::get<1>(employee));
-            employeeMap["prenom"] = QString::fromStdString(std::get<2>(employee));
-            employeeMap["fullName"] = QString::fromStdString(std::get<2>(employee) + " " + std::get<1>(employee));
-            employeeList.append(employeeMap);
+        for (const auto& e : employees) {
+            QVariantMap emp;
+            emp["idEmploye"] = std::get<0>(e);
+            emp["nom"] = QString::fromStdString(std::get<1>(e));
+            emp["prenom"] = QString::fromStdString(std::get<2>(e));
+            emp["fullName"] = QString::fromStdString(std::get<2>(e) + " " + std::get<1>(e));
+            employeeList.append(emp);
         }
-
-        qDebug() << "TaskController: Loaded" << employeeList.size() << "employees";
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error loading employees:" << e.what();
-        QString errorMsg = "Erreur lors du chargement des employes: ";
+        QString errorMsg = "Erreur lors du chargement des employés: ";
         errorMsg += QString::fromUtf8(e.what());
         emit errorOccurred(errorMsg);
     }
-
     return employeeList;
 }
 
 QVariantList TaskController::getDepartmentEmployees()
 {
-    if (!m_currentUser) {
-        qWarning() << "TaskController: No current user set";
-        return QVariantList();
-    }
-
-    qDebug() << "TaskController: Loading employees for department" << m_currentUser->getDepartementId();
+    if (!m_currentUser) return QVariantList();
     QVariantList employeeList;
-
     try {
         std::vector<std::tuple<int, std::string, std::string>> employees =
             m_dbManager->getEmployeesByDepartment(m_currentUser->getDepartementId());
-
-        for (const auto& employee : employees) {
-            QVariantMap employeeMap;
-            employeeMap["idEmploye"] = std::get<0>(employee);
-            employeeMap["nom"] = QString::fromStdString(std::get<1>(employee));
-            employeeMap["prenom"] = QString::fromStdString(std::get<2>(employee));
-            employeeMap["fullName"] = QString::fromStdString(std::get<2>(employee) + " " + std::get<1>(employee));
-            employeeList.append(employeeMap);
+        for (const auto& e : employees) {
+            QVariantMap emp;
+            emp["idEmploye"] = std::get<0>(e);
+            emp["nom"] = QString::fromStdString(std::get<1>(e));
+            emp["prenom"] = QString::fromStdString(std::get<2>(e));
+            emp["fullName"] = QString::fromStdString(std::get<2>(e) + " " + std::get<1>(e));
+            employeeList.append(emp);
         }
-
-        qDebug() << "TaskController: Loaded" << employeeList.size() << "department employees";
     }
     catch (const std::exception& e) {
-        qCritical() << "TaskController: Error loading department employees:" << e.what();
-        QString errorMsg = "Erreur lors du chargement des employes: ";
+        QString errorMsg = "Erreur lors du chargement des employés du département: ";
         errorMsg += QString::fromUtf8(e.what());
         emit errorOccurred(errorMsg);
-        return QVariantList();
     }
-
     return employeeList;
 }
+
+QVariantList TaskController::getTasksForProject(int projectId) {
+    loadTasksForProject(projectId); 
+    return m_tasks;
+}
+
+QVariantList TaskController::getTasksForProjectByStatus(int projectId, const QString& status)
+{
+    QVariantList filteredTasks;
+
+    // On récupère toutes les tâches du projet
+    QVariantList allTasks = getTasksForProject(projectId);
+
+    for (const QVariant& taskVar : allTasks) {
+        QVariantMap taskMap = taskVar.toMap();
+        if (taskMap.contains("etat") && taskMap["etat"].toString() == status) {
+            filteredTasks.append(taskVar);
+        }
+    }
+
+    return filteredTasks;
+}
+
+

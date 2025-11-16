@@ -422,12 +422,12 @@ std::vector<TaskData> DatabaseManager::getTasksByProject(int projectId) {
     try {
         const std::string sql =
             "SELECT t.idTache, t.idProject, t.memProcessigner, t.idParentTache, "
-            "t.nomTache, t.descTache, t.dataTache, t.tempsTache, "
+            "t.nomTache, t.descTache, t.dateDebut, t.dateFin, t.tempsTache, t.etat, "
             "CONCAT(e.prenomEmploye, ' ', e.nomEmploye) as assigneeName "
             "FROM Tache t "
             "LEFT JOIN Employe e ON t.memProcessigner = e.idEmploye "
             "WHERE t.idProject = ? AND (t.idParentTache IS NULL OR t.idParentTache = 0) "
-            "ORDER BY t.dataTache DESC";
+            "ORDER BY t.dateDebut ASC";
 
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
         stmt->setInt(1, projectId);
@@ -441,8 +441,10 @@ std::vector<TaskData> DatabaseManager::getTasksByProject(int projectId) {
             task.idParentTache = res->isNull("idParentTache") ? 0 : res->getInt("idParentTache");
             task.nomTache = res->getString("nomTache");
             task.descTache = res->getString("descTache");
-            task.dataTache = res->getString("dataTache");
-            task.tempsTache = res->getString("tempsTache");
+            task.dateDebut = res->getString("dateDebut");
+            task.dateFin = res->getString("dateFin");
+            task.tempsTache = res->getInt("tempsTache");
+            task.etat = res->getString("etat");
             task.assigneeName = res->getString("assigneeName");
 
             tasks.push_back(task);
@@ -464,37 +466,33 @@ int DatabaseManager::createTask(const TaskData& task) {
         std::cout << "idParentTache: " << task.idParentTache << std::endl;
         std::cout << "nomTache: " << task.nomTache << std::endl;
         std::cout << "descTache: " << task.descTache << std::endl;
-        std::cout << "dataTache: " << task.dataTache << std::endl;
+        std::cout << "dateFin: " << task.dateFin << std::endl;
         std::cout << "tempsTache: " << task.tempsTache << std::endl;
 
         const std::string sql =
             "INSERT INTO Tache (idProject, memProcessigner, idParentTache, nomTache, "
-            "descTache, dataTache, tempsTache) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            "descTache, dateDebut, dateFin, tempsTache, etat) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
         stmt->setInt(1, task.idProject);
 
-        // Handle NULL assignment - if memProcessigner is 0, set to NULL
-        if (task.memProcessigner > 0) {
+        if (task.memProcessigner > 0)
             stmt->setInt(2, task.memProcessigner);
-        }
-        else {
+        else
             stmt->setNull(2, 0);
-        }
 
-        // Set parent task ID (NULL/0 for root tasks)
-        if (task.idParentTache > 0) {
+        if (task.idParentTache > 0)
             stmt->setInt(3, task.idParentTache);
-        }
-        else {
+        else
             stmt->setNull(3, 0);
-        }
 
         stmt->setString(4, task.nomTache);
         stmt->setString(5, task.descTache);
-        stmt->setString(6, task.dataTache);
-        stmt->setString(7, task.tempsTache);
+        stmt->setString(6, task.dateDebut);
+        stmt->setString(7, task.dateFin);
+        stmt->setInt(8, task.tempsTache);
+        stmt->setString(9, task.etat);
 
         std::cout << "Executing SQL insert..." << std::endl;
         int affectedRows = stmt->executeUpdate();
@@ -534,15 +532,20 @@ int DatabaseManager::createTask(const TaskData& task) {
 bool DatabaseManager::updateTask(const TaskData& task) {
     try {
         const std::string sql =
-            "UPDATE Tache SET nomTache = ?, descTache = ?, memProcessigner = ?, tempsTache = ? "
+            "UPDATE Tache SET nomTache = ?, descTache = ?, memProcessigner = ?, "
+            "tempsTache = ?, dateDebut = ?, dateFin = ?, etat = ? "
+            "WHERE idTache = ?";
             "WHERE idTache = ?";
 
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
         stmt->setString(1, task.nomTache);
         stmt->setString(2, task.descTache);
         stmt->setInt(3, task.memProcessigner);
-        stmt->setString(4, task.tempsTache);
-        stmt->setInt(5, task.idTache);
+        stmt->setInt(4, task.tempsTache);
+        stmt->setString(5, task.dateDebut);
+        stmt->setString(6, task.dateFin);
+        stmt->setString(7, task.etat);
+        stmt->setInt(8, task.idTache);
 
         int affectedRows = stmt->executeUpdate();
         return affectedRows > 0;
@@ -574,7 +577,7 @@ TaskData DatabaseManager::getTaskById(int taskId) {
     try {
         const std::string sql =
             "SELECT t.idTache, t.idProject, t.memProcessigner, t.nomTache, "
-            "t.descTache, t.dataTache, t.tempsTache, "
+            "t.descTache, t.dateFin, t.tempsTache, "
             "CONCAT(e.prenomEmploye, ' ', e.nomEmploye) as assigneeName "
             "FROM Tache t "
             "LEFT JOIN Employe e ON t.memProcessigner = e.idEmploye "
@@ -590,9 +593,14 @@ TaskData DatabaseManager::getTaskById(int taskId) {
             task.memProcessigner = res->getInt("memProcessigner");
             task.nomTache = res->getString("nomTache");
             task.descTache = res->getString("descTache");
-            task.dataTache = res->getString("dataTache");
-            task.tempsTache = res->getString("tempsTache");
+            task.tempsTache = res->getInt("tempsTache");
             task.assigneeName = res->getString("assigneeName");
+            task.dateDebut = res->getString("dateDebut");
+            task.dateFin = res->getString("dateFin");
+            task.tempsTache = res->getInt("tempsTache");
+            task.etat = res->getString("etat");
+            task.assigneeName = res->getString("assigneeName");
+
         }
         else {
             throw std::runtime_error("Task not found with ID: " + std::to_string(taskId));
@@ -629,12 +637,12 @@ std::vector<TaskData> DatabaseManager::getSubTasksByTask(int parentTaskId) {
     try {
         const std::string sql =
             "SELECT t.idTache, t.idProject, t.memProcessigner, t.idParentTache, "
-            "t.nomTache, t.descTache, t.dataTache, t.tempsTache, "
+            "t.nomTache, t.descTache, t.dateFin, t.tempsTache, "
             "CONCAT(e.prenomEmploye, ' ', e.nomEmploye) as assigneeName "
             "FROM Tache t "
             "LEFT JOIN Employe e ON t.memProcessigner = e.idEmploye "
             "WHERE t.idParentTache = ? "
-            "ORDER BY t.dataTache DESC";
+            "ORDER BY t.dateFin DESC";
 
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
         stmt->setInt(1, parentTaskId);
@@ -648,8 +656,8 @@ std::vector<TaskData> DatabaseManager::getSubTasksByTask(int parentTaskId) {
             task.idParentTache = res->getInt("idParentTache");
             task.nomTache = res->getString("nomTache");
             task.descTache = res->getString("descTache");
-            task.dataTache = res->getString("dataTache");
-            task.tempsTache = res->getString("tempsTache");
+            task.dateFin = res->getString("dateFin");
+            task.tempsTache = res->getInt("tempsTache");
             task.assigneeName = res->getString("assigneeName");
 
             subTasks.push_back(task);
@@ -680,7 +688,7 @@ int DatabaseManager::createSubTask(int parentTaskId, const TaskData& subTask) {
         // Create subtask with parent reference
         const std::string sql =
             "INSERT INTO Tache (idProject, memProcessigner, idParentTache, nomTache, "
-            "descTache, dataTache, tempsTache) "
+            "descTache, dateFin, tempsTache) "
             "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
@@ -689,8 +697,8 @@ int DatabaseManager::createSubTask(int parentTaskId, const TaskData& subTask) {
         stmt->setInt(3, parentTaskId);  // Set parent reference
         stmt->setString(4, subTask.nomTache);
         stmt->setString(5, subTask.descTache);
-        stmt->setString(6, subTask.dataTache);
-        stmt->setString(7, subTask.tempsTache);
+        stmt->setString(6, subTask.dateFin);
+        stmt->setInt(7, subTask.tempsTache);
 
         int affectedRows = stmt->executeUpdate();
 

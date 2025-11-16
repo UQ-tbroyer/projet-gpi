@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick 6.5
 import QtQuick.Controls 6.5
 import QtQuick.Layouts 6.5
@@ -109,16 +110,22 @@ ApplicationWindow {
                 target: loginController
     
                 function onLoginSuccess() {
-                    console.log("Login successful, navigating to main2...")
-                    busyIndicator.running = false
-        
-                    // Use relative path - QML will find it in the same directory
-                    stackView.push("main2.qml", {
-                        "projectController": projectController,
-                        "taskController": taskController,
-                        "loginController": loginController
-                    })
-                }
+                console.log("Login successful, navigating to main2...")
+                console.log("projectController available:", projectController !== null)
+                console.log("taskController available:", taskController !== null)
+                console.log("loginController available:", loginController !== null)
+    
+                busyIndicator.running = false
+
+                // Use StackView.push with properties
+               
+                stackView.push(Qt.resolvedUrl("main2.qml"), {
+                   projectController: projectController,
+                    taskController: taskController, 
+                    loginController: loginController
+                })
+                
+            }
     
                 function onLoginFailed(errorMessage) {
                     busyIndicator.running = false

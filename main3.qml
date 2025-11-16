@@ -1,17 +1,28 @@
 import QtQuick 6.5
 import QtQuick.Controls 6.5
 import QtQuick.Layouts 6.5
-import QtQuick.Shapes 6.5
+import QtQuick.Window 6.5
 
 ApplicationWindow {
     id: window
     width: 1000
     height: 600
     visible: true
-    title: "Page de projet"
+    title: projectName
     color: "white"
 
-    // --- Barre supérieure ---
+    property int projectId
+    property string projectName
+    property var taskController
+    property var projectController
+
+    // Charger les tâches quand la fenêtre est prête
+    Component.onCompleted: {
+        console.log("MAIN3: loading tasks for project", projectId)
+        taskController.loadTasksForProject(projectId)
+    }
+
+    // --- Top Bar ---
     Row {
         id: topBar
         spacing: 20
@@ -21,17 +32,18 @@ ApplicationWindow {
 
         Button {
             text: "<- Retour"
+            onClicked: window.close()
         }
 
         Text {
-            text: "Nom de projet"
+            text: projectName
             font.bold: true
             font.pointSize: 20
             anchors.verticalCenter: parent.verticalCenter
         }
     }
 
-    // --- Menu latéral gauche ---
+    // --- Left Menu ---
     Column {
         id: sideMenu
         spacing: 10
@@ -45,11 +57,6 @@ ApplicationWindow {
             text: "Kanban"
             width: 80
             height: 40
-            background: Rectangle {
-                color: stackView.currentIndex === 0 ? "green" : "white"
-                border.color: "black"
-                border.width: 1
-            }
             onClicked: stackView.currentIndex = 0
         }
 
@@ -58,16 +65,11 @@ ApplicationWindow {
             text: "Gantt"
             width: 80
             height: 40
-            background: Rectangle {
-                color: stackView.currentIndex === 1 ? "green" : "white"
-                border.color: "black"
-                border.width: 1
-            }
             onClicked: stackView.currentIndex = 1
         }
     }
 
-    // --- Contenu central (Kanban / Gantt) ---
+    // --- Main Content ---
     StackLayout {
         id: stackView
         anchors.top: topBar.bottom
@@ -77,172 +79,134 @@ ApplicationWindow {
         anchors.margins: 20
         currentIndex: 0
 
-        // ======= PAGE KANBAN =======
+        // =====================
+        // ===== KANBAN VIEW ===
+        // =====================
+
         Flickable {
-            contentWidth: kanbanRow.width
             clip: true
+            contentWidth: kanbanRow.width
 
             Row {
                 id: kanbanRow
                 spacing: 20
 
-                // Exemple de 4 colonnes Kanban
+                // Colonnes du Kanban
                 Repeater {
-                    model: ["À faire", "En cours", "À tester", "Terminée"]
+                    model: ["A faire", "En cours", "A tester", "Terminee"]
+
                     Column {
+                        property string columnName: modelData
                         spacing: 10
+
                         Rectangle {
-                            width: 150
-                            height: 350
-                            radius: 15
+                            width: 200
+                            height: 450
+                            radius: 10
                             border.color: "black"
-                            border.width: 1
+
                             Column {
                                 anchors.fill: parent
-                                anchors.margins: 10
+                                anchors.margins: 12
                                 spacing: 10
 
-                                Text {
-                                    text: modelData
-                                    font.bold: true
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                }
+                                Text { text: columnName; font.bold: true; anchors.horizontalCenter: parent.horizontalCenter }
 
-                                // Exemples de tâches
+                                // === Tasks filtered by status ===
                                 Repeater {
-                                    model: index === 0 ? ["tache 1", "tache 2"] :
-                                            index === 1 ? ["tache 3"] : []
-                                    Rectangle {
+                                    id: taskRepeater
+                                    model: taskController.getTasksForProjectByStatus(window.projectId, columnName) // filtrage côté C++
+                                    delegate: Rectangle {
                                         width: parent.width - 20
-                                        height: 40
+                                        height: 45
                                         radius: 6
                                         border.color: "black"
-                                        color: "white"
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: modelData
-                                        }
+                                        color: "lightyellow"
+
+                                        Text { anchors.centerIn: parent; text: modelData["nomTache"] }
                                     }
                                 }
 
-                                Rectangle {
-                                    width: parent.width - 20
-                                    height: 40
-                                    radius: 6
-                                    border.color: "transparent"
-                                    color: "transparent"
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "+ ajouter une tâche"
+                                // === Add new task ===
+                                Button {
+                                    text: "+ Ajouter une tâche"
+                                    onClicked: {
+                                        taskController.createTask(
+                                            projectId,
+                                            "Nouvelle tâche",
+                                            "",                     // description vide
+                                            taskController.getCurrentUser().id,
+                                            10,                     // durée par défaut
+                                            columnName,             // statut
+                                            new Date(),              // dateDebut
+                                            new Date()               // dateFin
+                                        )
                                     }
                                 }
                             }
                         }
-                    }
-                }
-
-                // Dernière colonne : ajout de colonne
-                Rectangle {
-                    width: 150
-                    height: 350
-                    radius: 15
-                    border.color: "black"
-                    border.width: 1
-                    border.dashPattern: [4, 4]
-                    color: "transparent"
-                    Text {
-                        anchors.centerIn: parent
-                        text: "+ ajouter une colonne"
                     }
                 }
             }
         }
 
-        // ======= PAGE GANTT =======
-        Item {
-            id: ganttPage
+        // ===================
+        // ===== GANTT =======
+        // ===================
 
-            Rectangle {
-                anchors.fill: parent
-                border.color: "black"
-                border.width: 1
+        Flickable {
+            clip: true
+            contentWidth: ganttContent.width
+
+            Item {
+                id: ganttContent
+                width: 1000
+                height: 600
 
                 Column {
                     anchors.fill: parent
-                    anchors.margins: 20
-                    spacing: 10
+                    spacing: 20
 
-                    // Ligne des mois
                     Row {
                         spacing: 40
                         anchors.horizontalCenter: parent.horizontalCenter
-                        Text { text: "sept" }
-                        Text { text: "oct" }
-                        Text { text: "nov" }
-                        Text { text: "dec" }
-                        Text { text: "jan" }
-                        Text { text: "fev" }
-                        Text { text: "mar" }
+                        Repeater {
+                            model: ["Sept","Oct","Nov","Dec","Jan","Feb","Mar"]
+                            Text { text: modelData }
+                        }
                     }
 
-                    // Exemple de tâches avec barres de Gantt
                     Row {
-                        spacing: 10
-                        anchors.topMargin: 20
+                        spacing: 20
+
+                        // Task names
                         Column {
                             spacing: 10
-                            Text { text: "Tâche 1" }
-                            Text { text: "Tâche 2" }
-                            Text { text: "Tâche 3" }
-                            Text { text: "Tâche 4" }
+                            Repeater {
+                                model: taskController.getTasksForProject(projectId)
+                                Text { text: modelData.nomTache }
+                            }
                         }
 
+                        // Gantt bars
                         Rectangle {
+                            id: ganttChart
                             width: 700
-                            height: 200
+                            height: 300
                             border.color: "black"
-                            border.width: 1
                             color: "transparent"
 
-                            // Barres des tâches
-                            Rectangle {
-                                x: 50; y: 20
-                                width: 100; height: 20
-                                border.color: "black"
-                                color: "white"
-                            }
-                            Rectangle {
-                                x: 100; y: 60
-                                width: 120; height: 20
-                                border.color: "black"
-                                color: "white"
-                            }
-                            Rectangle {
-                                x: 220; y: 100
-                                width: 140; height: 20
-                                border.color: "black"
-                                color: "white"
-                            }
-                            Rectangle {
-                                x: 360; y: 140
-                                width: 100; height: 20
-                                border.color: "black"
-                                color: "white"
-                            }
+                            Repeater {
+                                model: taskController.getTasksForProject(projectId)
 
-                            // Flèches entre tâches (Shape)
-                            Shape {
-                                ShapePath {
-                                    strokeColor: "black"
-                                    strokeWidth: 2
-                                    startX: 180; startY: 70
-                                    PathLine { x: 220; y: 110 }
-                                }
-                                ShapePath {
-                                    strokeColor: "black"
-                                    strokeWidth: 2
-                                    startX: 360; startY: 120
-                                    PathLine { x: 360; y: 140 }
+                                Rectangle {
+                                    x: 50
+                                    y: index * 40
+                                    width: 100
+                                    height: 30
+                                    color: "lightblue"
+                                    border.color: "black"
+                                    Text { anchors.centerIn: parent; text: modelData.nomTache }
                                 }
                             }
                         }
