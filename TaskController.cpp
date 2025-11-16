@@ -1,6 +1,9 @@
 ﻿#include "TaskController.h"
 #include <QDebug>
 #include <QDateTime>
+#include <QTimer>
+#include <QThread>
+#include <QtConcurrent/QtConcurrent>
 
 TaskController::TaskController(DatabaseManager* dbManager, User* currentUser, QObject* parent)
     : QObject(parent)
@@ -12,9 +15,21 @@ TaskController::TaskController(DatabaseManager* dbManager, User* currentUser, QO
     if (!m_dbManager) {
         qCritical() << "TaskController: DatabaseManager is null!";
     }
+
+    m_refreshTimer = new QTimer(this);
+    m_refreshTimer->setSingleShot(true);
+    m_refreshTimer->setInterval(200); // 200ms throttle
+    connect(m_refreshTimer, &QTimer::timeout, this, &TaskController::onRefreshTimerTimeout);
 }
 
 TaskController::~TaskController() {}
+
+void TaskController::loadTasksForProjectThrottled(int projectId) {
+    m_pendingRefreshProjectId = projectId;
+    if (!m_refreshTimer->isActive()) {
+        m_refreshTimer->start();
+    }
+}
 
 void TaskController::setCurrentUser(User* user)
 {
@@ -76,21 +91,23 @@ QVariantMap TaskController::taskDataToVariantMap(const TaskData& task) const
 void TaskController::loadTasksForProject(int projectId)
 {
     qDebug() << "TaskController: Loading tasks for project" << projectId;
-    setLoading(true);
+
     try {
         std::vector<TaskData> tasksData = m_dbManager->getTasksByProject(projectId);
         m_tasks.clear();
         for (const auto& task : tasksData) {
             m_tasks.append(taskDataToVariantMap(task));
         }
+
+        // Emit signal AFTER the data is loaded
         emit tasksChanged();
+        qDebug() << "TaskController: Loaded" << m_tasks.size() << "tasks for project" << projectId;
     }
     catch (const std::exception& e) {
         QString errorMsg = "Erreur lors du chargement des taches: ";
         errorMsg += QString::fromUtf8(e.what());
         emit errorOccurred(errorMsg);
     }
-    setLoading(false);
 }
 
 void TaskController::loadTasksForCurrentProject()
@@ -177,29 +194,40 @@ bool TaskController::updateTask(int taskId,
 
     try {
         TaskData updatedTask;
-
         updatedTask.idTache = taskId;
         updatedTask.nomTache = taskName.toStdString();
         updatedTask.descTache = description.toStdString();
         updatedTask.memProcessigner = assignedToId;
-
         updatedTask.tempsTache = estimatedTime.isEmpty() ? 0 : estimatedTime.toInt();
         updatedTask.dateDebut = dateDebut.toStdString();
         updatedTask.dateFin = dateFin.toStdString();
         updatedTask.etat = etat.toStdString();
 
-        // les champs non modifiés restent à 0/"" → c'est le DBManager qui remplit
-
         bool success = m_dbManager->updateTask(updatedTask);
+
         if (success) {
+            qDebug() << "TaskController: Task updated successfully, taskId:" << taskId;
+
+            // Emit signals to notify other windows
             emit taskUpdated(taskId);
-            if (m_currentProjectId > 0)
-                loadTasksForProject(m_currentProjectId);
+
+            // Check if this is a subtask and notify parent
+            try {
+                TaskData taskDetails = m_dbManager->getTaskById(taskId);
+                if (taskDetails.idParentTache > 0) {
+                    emit subTasksChanged(taskDetails.idParentTache);
+                }
+            }
+            catch (const std::exception& e) {
+                qWarning() << "Error checking task hierarchy:" << e.what();
+            }
+
             return true;
         }
-
-        emit taskUpdateFailed("Échec de la mise à jour de la tâche");
-        return false;
+        else {
+            emit taskUpdateFailed("Échec de la mise à jour de la tâche");
+            return false;
+        }
     }
     catch (const std::exception& e) {
         emit taskUpdateFailed(QString("Erreur: ") + e.what());
@@ -258,13 +286,35 @@ bool TaskController::assignTask(int taskId, int employeeId)
 // --- Récupération détails ---
 QVariantMap TaskController::getTaskDetails(int taskId)
 {
+    qDebug() << "TaskController::getTaskDetails called for taskId:" << taskId;
+
     try {
         TaskData task = m_dbManager->getTaskById(taskId);
-        return taskDataToVariantMap(task);
+
+        qDebug() << "Task retrieved from database:";
+        qDebug() << "  idTache:" << task.idTache;
+        qDebug() << "  nomTache:" << QString::fromStdString(task.nomTache);
+        qDebug() << "  descTache:" << QString::fromStdString(task.descTache);
+        qDebug() << "  etat:" << QString::fromStdString(task.etat);
+        qDebug() << "  memProcessigner:" << task.memProcessigner;
+        qDebug() << "  tempsTache:" << task.tempsTache;
+        qDebug() << "  dateDebut:" << QString::fromStdString(task.dateDebut);
+        qDebug() << "  dateFin:" << QString::fromStdString(task.dateFin);
+
+        QVariantMap taskMap = taskDataToVariantMap(task);
+
+        qDebug() << "Converted to QVariantMap:";
+        qDebug() << "  Keys:" << taskMap.keys();
+        for (auto key : taskMap.keys()) {
+            qDebug() << "    " << key << ":" << taskMap[key];
+        }
+
+        return taskMap;
     }
     catch (const std::exception& e) {
         QString errorMsg = "Erreur lors du chargement de la tâche: ";
         errorMsg += QString::fromUtf8(e.what());
+        qCritical() << errorMsg;
         emit errorOccurred(errorMsg);
         return QVariantMap();
     }

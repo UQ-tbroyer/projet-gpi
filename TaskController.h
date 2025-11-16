@@ -40,6 +40,8 @@ public:
     QString formatTimeForDisplay(int timeMinutes) const;
     Q_INVOKABLE QVariantList getTasksForProjectByStatus(int projectId, const QString& status);
     Q_INVOKABLE QVariantList getSubTasksByStatus(int parentTaskId, const QString& status);
+
+    void loadTasksForProjectThrottled(int projectId);
     
   
 public slots:
@@ -98,6 +100,14 @@ public slots:
     // --- Pour QML (retourne m_tasks après reload) ---
     QVariantList getTasksForProject(int projectId);
 
+    void onRefreshTimerTimeout() {
+        if (m_pendingRefreshProjectId > 0) {
+            loadTasksForProject(m_pendingRefreshProjectId);
+            m_pendingRefreshProjectId = -1;
+        }
+    }
+
+
 signals:
 
     // Propriétés
@@ -127,6 +137,9 @@ private:
 
     bool m_loading;
     QVariantList m_tasks;
+
+    QTimer* m_refreshTimer;
+    int m_pendingRefreshProjectId = -1;
 };
 
 #endif // TASKCONTROLLER_H

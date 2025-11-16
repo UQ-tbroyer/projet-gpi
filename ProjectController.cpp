@@ -306,11 +306,27 @@ void ProjectController::loadClients()
 
 QVariantMap ProjectController::getProjectDetails(int projectId)
 {
-    qDebug() << "ProjectController: Getting project details for ID:" << projectId;
+    qDebug() << "ProjectController::getProjectDetails called for projectId:" << projectId;
 
     try {
         ProjectData project = m_dbManager->getProjectById(projectId);
-        return projectDataToVariantMap(project);
+
+        qDebug() << "Project retrieved from database:";
+        qDebug() << "  idProject:" << project.idProject;
+        qDebug() << "  nomProject:" << QString::fromStdString(project.nomProject);
+        qDebug() << "  idClient:" << project.idClient;
+        qDebug() << "  tempRepository:" << QString::fromStdString(project.tempRepository);
+        qDebug() << "  coutService:" << project.coutService;
+
+        QVariantMap projectMap = projectDataToVariantMap(project);
+
+        qDebug() << "Converted to QVariantMap:";
+        qDebug() << "  Keys:" << projectMap.keys();
+        for (auto key : projectMap.keys()) {
+            qDebug() << "    " << key << ":" << projectMap[key];
+        }
+
+        return projectMap;
     }
     catch (const std::exception& e) {
         qCritical() << "ProjectController: Error getting project details:" << e.what();

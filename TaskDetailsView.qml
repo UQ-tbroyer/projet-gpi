@@ -1,4 +1,4 @@
-import QtQuick 6.5
+﻿import QtQuick 6.5
 import QtQuick.Controls 6.5
 import QtQuick.Layouts 6.5
 import QtQuick.Window 6.5
@@ -16,45 +16,248 @@ ApplicationWindow {
     property int projectId
     property var taskController
     property var projectController
-    property int refreshTrigger: 0  // Used to force refresh
+    property int refreshTrigger: 0
+    property var parentWindow: null
 
-    // Load subtasks when window is ready
     Component.onCompleted: {
         console.log("TaskDetailsView: loading subtasks for task", taskId)
         
-        // Connect to the subTasksChanged signal for auto-refresh
+        // Connect to subtask changes for THIS task (for subtask creation)
         taskController.subTasksChanged.connect(function(parentId) {
-            if (parentId === taskWindow.taskId) {
-                console.log("SubTasks changed for task", taskId, "- refreshing view")
-                refreshTrigger++  // Force all Repeaters to update
+            console.log("subTasksChanged received for parentId:", parentId, "current taskId:", taskId)
+            if (parentId === taskId) {
+                console.log("Refreshing subtasks for current task")
+                refreshTrigger++
             }
         })
     }
 
     // --- Top Bar ---
-    Row {
+    Rectangle {
         id: topBar
-        spacing: 20
         anchors.top: parent.top
         anchors.left: parent.left
+        anchors.right: parent.right
         anchors.margins: 20
+        height: 70
+        color: "transparent"
 
         Button {
+            id: backButton
             text: "<- Retour"
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
             onClicked: taskWindow.close()
         }
 
         Column {
             spacing: 5
+            anchors.centerIn: parent
+            
             Text {
-                text: "T�che: " + taskName
+                text: "Tâche: " + taskName
                 font.bold: true
                 font.pointSize: 18
+                anchors.horizontalCenter: parent.horizontalCenter
             }
             Text {
-                text: "Sous-t�ches"
+                text: "Sous-tâches"
                 font.pointSize: 12
                 color: "gray"
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+        }
+
+        // --- Task Actions Menu ---
+        Row {
+            spacing: 10
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+
+            Button {
+                text: "✏️ Modifier"
+                onClicked: editTaskDialog.open()
+            }
+
+            Button {
+                text: "🗑️ Supprimer"
+                onClicked: deleteTaskDialog.open()
+            }
+        }
+    }
+
+    // --- Edit Task Dialog ---
+    Dialog {
+        id: editTaskDialog
+        title: "Modifier la tâche"
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        anchors.centerIn: parent
+        width: 400
+
+        onAboutToShow: {
+            var taskDetails = taskController.getTaskDetails(taskId)
+            console.log("Loading task details for edit")
+            
+            editTaskNameField.text = taskDetails.nomTache || ""
+            editTaskDescField.text = taskDetails.descTache || ""
+            editTaskTimeField.text = taskDetails.tempsTache ? taskDetails.tempsTache.toString() : "0"
+            editTaskStartDateField.text = taskDetails.dateDebut || ""
+            editTaskEndDateField.text = taskDetails.dateFin || ""
+            
+            var statusList = ["A faire", "En cours", "A tester", "Terminee"]
+            editTaskStatusCombo.currentIndex = -1
+            for (var i = 0; i < statusList.length; i++) {
+                if (statusList[i] === taskDetails.etat) {
+                    editTaskStatusCombo.currentIndex = i
+                    break
+                }
+            }
+            
+            var employees = taskController.getAvailableEmployees()
+            editTaskAssignedCombo.model = employees
+            editTaskAssignedCombo.currentIndex = -1
+            
+            for (var j = 0; j < employees.length; j++) {
+                if (employees[j].idEmploye === taskDetails.memProcessigner) {
+                    editTaskAssignedCombo.currentIndex = j
+                    break
+                }
+            }
+        }
+
+        onAccepted: {
+            var assignedId = -1
+            if (editTaskAssignedCombo.currentIndex >= 0) {
+                assignedId = editTaskAssignedCombo.model[editTaskAssignedCombo.currentIndex].idEmploye
+            }
+
+            console.log("Updating task", taskId)
+            
+            var success = taskController.updateTask(
+                taskId,
+                editTaskNameField.text,
+                editTaskDescField.text,
+                assignedId,
+                editTaskTimeField.text,
+                editTaskStartDateField.text,
+                editTaskEndDateField.text,
+                editTaskStatusCombo.currentText
+            )
+
+            if (success) {
+                console.log("Task update completed - closing window")
+                
+                // Update window title immediately
+                taskWindow.taskName = editTaskNameField.text
+                taskWindow.title = editTaskNameField.text
+                
+                // Notify parent window to refresh
+                if (taskWindow.parentWindow && taskWindow.parentWindow.refreshTrigger !== undefined) {
+                    taskWindow.parentWindow.refreshTrigger++
+                }
+                
+                // Close this window after a short delay to ensure everything is saved
+                //closeTimer.start()
+                taskWindow.close()
+            } else {
+                console.log("Failed to update task")
+            }
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 10
+
+            Label { text: "Nom de la tâche:" }
+            TextField {
+                id: editTaskNameField
+                Layout.fillWidth: true
+                placeholderText: "Nom de la tâche"
+            }
+
+            Label { text: "Description:" }
+            TextArea {
+                id: editTaskDescField
+                Layout.fillWidth: true
+                Layout.preferredHeight: 80
+                placeholderText: "Description"
+            }
+
+            Label { text: "Assigné à:" }
+            ComboBox {
+                id: editTaskAssignedCombo
+                Layout.fillWidth: true
+                textRole: "fullName"
+            }
+
+            Label { text: "Temps estimé (minutes):" }
+            TextField {
+                id: editTaskTimeField
+                Layout.fillWidth: true
+                placeholderText: "0"
+                inputMethodHints: Qt.ImhDigitsOnly
+            }
+
+            Label { text: "Date de début (YYYY-MM-DD):" }
+            TextField {
+                id: editTaskStartDateField
+                Layout.fillWidth: true
+                placeholderText: "2025-11-20"
+            }
+
+            Label { text: "Date de fin (YYYY-MM-DD):" }
+            TextField {
+                id: editTaskEndDateField
+                Layout.fillWidth: true
+                placeholderText: "2025-11-21"
+            }
+
+            Label { text: "Statut:" }
+            ComboBox {
+                id: editTaskStatusCombo
+                Layout.fillWidth: true
+                model: ["A faire", "En cours", "A tester", "Terminee"]
+            }
+        }
+    }
+
+    // Timer to close window after successful modification
+    Timer {
+        id: closeTimer
+        interval: 50  // Short delay to ensure everything is saved
+        onTriggered: {
+            console.log("Closing task window after successful modification")
+            taskWindow.close()
+        }
+    }
+
+    // --- Delete Task Confirmation Dialog ---
+    Dialog {
+        id: deleteTaskDialog
+        title: "⚠️ Confirmer la suppression"
+        modal: true
+        standardButtons: Dialog.Yes | Dialog.No
+        anchors.centerIn: parent
+
+        Label {
+            text: "Êtes-vous sûr de vouloir supprimer cette tâche ?\n\n" +
+                  "Tâche: " + taskName + "\n\n" +
+                  "⚠️ Cette action est irréversible et supprimera toutes les sous-tâches associées!"
+            wrapMode: Text.WordWrap
+            width: 350
+        }
+
+        onAccepted: {
+            console.log("Deleting task:", taskId)
+            var success = taskController.deleteTask(taskId)
+            if (success) {
+                console.log("Task deleted successfully")
+                if (taskWindow.parentWindow && taskWindow.parentWindow.refreshTrigger !== undefined) {
+                    taskWindow.parentWindow.refreshTrigger++
+                }
+                taskWindow.close()
+            } else {
+                console.log("Failed to delete task")
             }
         }
     }
@@ -134,22 +337,15 @@ ApplicationWindow {
 
                                 // === Subtasks filtered by status ===
                                 Repeater {
-                                    id: subTaskRepeater
-                                    // Force refresh when refreshTrigger changes
                                     model: {
-                                        refreshTrigger  // dependency
-                                        console.log("=== Kanban Column:", columnName, "- Getting subtasks for task", taskWindow.taskId, "===")
+                                        refreshTrigger
                                         var allSubTasks = taskController.getSubTasks(taskWindow.taskId)
-                                        console.log("Total subtasks retrieved:", allSubTasks.length)
                                         var filtered = []
                                         for (var i = 0; i < allSubTasks.length; i++) {
-                                            console.log("  Checking subtask:", allSubTasks[i].nomTache, "| etat:", allSubTasks[i].etat, "| looking for:", columnName)
                                             if (allSubTasks[i].etat === columnName) {
                                                 filtered.push(allSubTasks[i])
-                                                console.log("    -> MATCHED! Adding to column")
                                             }
                                         }
-                                        console.log("Filtered count for", columnName, ":", filtered.length)
                                         return filtered
                                     }
 
@@ -166,7 +362,6 @@ ApplicationWindow {
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
                                             onClicked: {
-                                                // Recursively open this subtask's view
                                                 var component = Qt.createComponent("TaskDetailsView.qml")
                                                 if (component.status === Component.Ready) {
                                                     var window = component.createObject(null, {
@@ -174,11 +369,10 @@ ApplicationWindow {
                                                         taskName: modelData.nomTache,
                                                         projectId: taskWindow.projectId,
                                                         taskController: taskWindow.taskController,
-                                                        projectController: taskWindow.projectController
+                                                        projectController: taskWindow.projectController,
+                                                        parentWindow: taskWindow
                                                     })
                                                     window.show()
-                                                } else if (component.status === Component.Error) {
-                                                    console.error("Error loading component:", component.errorString())
                                                 }
                                             }
                                         }
@@ -193,7 +387,7 @@ ApplicationWindow {
                                                 anchors.horizontalCenter: parent.horizontalCenter
                                             }
                                             Text { 
-                                                text: "Assign�: " + (modelData.assigneeName || "Non assign�")
+                                                text: "Assigné: " + (modelData.assigneeName || "Non assigné")
                                                 font.pixelSize: 10
                                                 color: "gray"
                                                 anchors.horizontalCenter: parent.horizontalCenter
@@ -204,23 +398,23 @@ ApplicationWindow {
 
                                 // === Add new subtask ===
                                 Button {
-                                    text: "+ Ajouter une sous-t�che"
+                                    text: "+ Ajouter une sous-tâche"
                                     onClicked: {
                                         addSubTaskDialog.currentColumn = columnName
                                         addSubTaskDialog.open()
                                     }
                                 }
-
+                                
                                 Dialog {
                                     id: addSubTaskDialog
-                                    title: "Cr�er une nouvelle sous-t�che"
+                                    title: "Créer une nouvelle sous-tâche"
                                     modal: true
                                     standardButtons: Dialog.Ok | Dialog.Cancel
 
                                     property string currentColumn: ""
 
                                     onAccepted: {
-                                        console.log("=== Creating subtask in column:", currentColumn, "===")
+                                        console.log("Creating subtask in column:", currentColumn)
                                         
                                         var assignedId = -1
                                         if (assignedUserField.currentIndex >= 0) {
@@ -228,52 +422,34 @@ ApplicationWindow {
                                             assignedId = employees[assignedUserField.currentIndex].idEmploye
                                         }
 
-                                        console.log("Calling createSubTask with:")
-                                        console.log("  parentTaskId:", taskWindow.taskId)
-                                        console.log("  taskName:", subTaskNameField.text)
-                                        console.log("  assignedId:", assignedId)
-                                        console.log("  estimatedTime:", parseInt(subTaskTimeField.text || "0"))
-                                        console.log("  dateDebut:", subTaskStartDateField.text)
-                                        console.log("  dateFin:", subTaskEndDateField.text)
-                                        console.log("  etat:", currentColumn)
-
-                                        // Use same parameters as createTask
                                         var success = taskController.createSubTask(
-                                            taskWindow.taskId,         // parentTaskId
-                                            subTaskNameField.text,     // taskName
-                                            subTaskDescField.text,     // description
-                                            assignedId,                // assignedToId
-                                            parseInt(subTaskTimeField.text || "0"),  // estimatedTime
-                                            subTaskStartDateField.text,  // dateDebut
-                                            subTaskEndDateField.text,    // dateFin
-                                            currentColumn              // etat
+                                            taskWindow.taskId,
+                                            subTaskNameField.text,
+                                            subTaskDescField.text,
+                                            assignedId,
+                                            parseInt(subTaskTimeField.text || "0"),
+                                            subTaskStartDateField.text,
+                                            subTaskEndDateField.text,
+                                            currentColumn
                                         )
 
                                         if (success) {
-                                            console.log("SubTask created successfully - forcing refresh")
-                                            // Force immediate refresh
+                                            console.log("SubTask created successfully")
+                                            // Just refresh the current view - DON'T close the window
                                             refreshTrigger++
                                         } else {
-                                            console.log("Erreur cr�ation sous-t�che")
+                                            console.log("Erreur création sous-tâche")
                                         }
-
-                                        // Clear fields
-                                        subTaskNameField.text = ""
-                                        subTaskDescField.text = ""
-                                        subTaskTimeField.text = ""
-                                        subTaskStartDateField.text = ""
-                                        subTaskEndDateField.text = ""
-                                        assignedUserField.currentIndex = -1
                                     }
 
                                     contentItem: ColumnLayout {
                                         spacing: 10
                                         width: 300
 
-                                        Label { text: "Nom de la sous-t�che:" }
+                                        Label { text: "Nom de la sous-tâche:" }
                                         TextField { 
                                             id: subTaskNameField
-                                            placeholderText: "Nouvelle sous-t�che" 
+                                            placeholderText: "Nouvelle sous-tâche" 
                                         }
 
                                         Label { text: "Description:" }
@@ -283,7 +459,7 @@ ApplicationWindow {
                                             height: 80 
                                         }
 
-                                        Label { text: "Assign� �:" }
+                                        Label { text: "Assigné à:" }
                                         ComboBox {
                                             id: assignedUserField
                                             model: taskController.getAvailableEmployees()
@@ -291,14 +467,14 @@ ApplicationWindow {
                                             currentIndex: -1
                                         }
 
-                                        Label { text: "Temps estim� (minutes):" }
+                                        Label { text: "Temps estimé (minutes):" }
                                         TextField { 
                                             id: subTaskTimeField
                                             placeholderText: "10"
                                             inputMethodHints: Qt.ImhDigitsOnly 
                                         }
 
-                                        Label { text: "Date de d�but (YYYY-MM-DD):" }
+                                        Label { text: "Date de début (YYYY-MM-DD):" }
                                         TextField { 
                                             id: subTaskStartDateField
                                             placeholderText: "2025-11-20" 
@@ -351,9 +527,8 @@ ApplicationWindow {
                         Column {
                             spacing: 10
                             Repeater {
-                                // Force refresh when refreshTrigger changes
                                 model: {
-                                    refreshTrigger  // dependency
+                                    refreshTrigger
                                     return taskController.getSubTasks(taskWindow.taskId)
                                 }
                                 
@@ -376,7 +551,8 @@ ApplicationWindow {
                                                     taskName: modelData.nomTache,
                                                     projectId: taskWindow.projectId,
                                                     taskController: taskWindow.taskController,
-                                                    projectController: taskWindow.projectController
+                                                    projectController: taskWindow.projectController,
+                                                    parentWindow: taskWindow
                                                 })
                                                 window.show()
                                             }
@@ -400,9 +576,8 @@ ApplicationWindow {
                             color: "transparent"
 
                             Repeater {
-                                // Force refresh when refreshTrigger changes
                                 model: {
-                                    refreshTrigger  // dependency
+                                    refreshTrigger
                                     return taskController.getSubTasks(taskWindow.taskId)
                                 }
 
@@ -428,7 +603,8 @@ ApplicationWindow {
                                                     taskName: modelData.nomTache,
                                                     projectId: taskWindow.projectId,
                                                     taskController: taskWindow.taskController,
-                                                    projectController: taskWindow.projectController
+                                                    projectController: taskWindow.projectController,
+                                                    parentWindow: taskWindow
                                                 })
                                                 window.show()
                                             }

@@ -531,27 +531,47 @@ int DatabaseManager::createTask(const TaskData& task) {
 
 bool DatabaseManager::updateTask(const TaskData& task) {
     try {
+        std::cout << "=== Updating Task ===" << std::endl;
+        std::cout << "idTache: " << task.idTache << std::endl;
+        std::cout << "nomTache: " << task.nomTache << std::endl;
+        std::cout << "descTache: " << task.descTache << std::endl;
+        std::cout << "memProcessigner: " << task.memProcessigner << std::endl;
+        std::cout << "tempsTache: " << task.tempsTache << std::endl;
+        std::cout << "dateDebut: " << task.dateDebut << std::endl;
+        std::cout << "dateFin: " << task.dateFin << std::endl;
+        std::cout << "etat: " << task.etat << std::endl;
+
         const std::string sql =
             "UPDATE Tache SET nomTache = ?, descTache = ?, memProcessigner = ?, "
             "tempsTache = ?, dateDebut = ?, dateFin = ?, etat = ? "
-            "WHERE idTache = ?";
             "WHERE idTache = ?";
 
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
         stmt->setString(1, task.nomTache);
         stmt->setString(2, task.descTache);
-        stmt->setInt(3, task.memProcessigner);
+
+        // Handle NULL for memProcessigner
+        if (task.memProcessigner > 0)
+            stmt->setInt(3, task.memProcessigner);
+        else
+            stmt->setNull(3, 0);
+
         stmt->setInt(4, task.tempsTache);
         stmt->setString(5, task.dateDebut);
         stmt->setString(6, task.dateFin);
         stmt->setString(7, task.etat);
         stmt->setInt(8, task.idTache);
 
+        std::cout << "Executing UPDATE..." << std::endl;
         int affectedRows = stmt->executeUpdate();
+        std::cout << "Affected rows: " << affectedRows << std::endl;
+
         return affectedRows > 0;
     }
     catch (const sql::SQLException& e) {
-        std::cerr << "SQL Error in updateTask: " << e.what() << std::endl;
+        std::cerr << "=== SQL Error in updateTask ===" << std::endl;
+        std::cerr << "Error message: " << e.what() << std::endl;
+        std::cerr << "Error code: " << e.getErrorCode() << std::endl;
         throw std::runtime_error("Failed to update task in database");
     }
 }
@@ -575,9 +595,11 @@ TaskData DatabaseManager::getTaskById(int taskId) {
     TaskData task;
 
     try {
+        std::cout << "=== Getting Task by ID: " << taskId << " ===" << std::endl;
+
         const std::string sql =
-            "SELECT t.idTache, t.idProject, t.memProcessigner, t.nomTache, "
-            "t.descTache, t.dateFin, t.tempsTache, "
+            "SELECT t.idTache, t.idProject, t.memProcessigner, t.idParentTache, "
+            "t.nomTache, t.descTache, t.dateDebut, t.dateFin, t.tempsTache, t.etat, "
             "CONCAT(e.prenomEmploye, ' ', e.nomEmploye) as assigneeName "
             "FROM Tache t "
             "LEFT JOIN Employe e ON t.memProcessigner = e.idEmploye "
@@ -591,18 +613,25 @@ TaskData DatabaseManager::getTaskById(int taskId) {
             task.idTache = res->getInt("idTache");
             task.idProject = res->getInt("idProject");
             task.memProcessigner = res->getInt("memProcessigner");
+            task.idParentTache = res->isNull("idParentTache") ? 0 : res->getInt("idParentTache");
             task.nomTache = res->getString("nomTache");
             task.descTache = res->getString("descTache");
-            task.tempsTache = res->getInt("tempsTache");
-            task.assigneeName = res->getString("assigneeName");
             task.dateDebut = res->getString("dateDebut");
             task.dateFin = res->getString("dateFin");
             task.tempsTache = res->getInt("tempsTache");
             task.etat = res->getString("etat");
             task.assigneeName = res->getString("assigneeName");
 
+            std::cout << "Task found: " << task.nomTache << std::endl;
+            std::cout << "  ID: " << task.idTache << std::endl;
+            std::cout << "  etat: " << task.etat << std::endl;
+            std::cout << "  dateDebut: " << task.dateDebut << std::endl;
+            std::cout << "  dateFin: " << task.dateFin << std::endl;
+            std::cout << "  tempsTache: " << task.tempsTache << std::endl;
+            std::cout << "  memProcessigner: " << task.memProcessigner << std::endl;
         }
         else {
+            std::cerr << "Task not found with ID: " << taskId << std::endl;
             throw std::runtime_error("Task not found with ID: " + std::to_string(taskId));
         }
     }
@@ -658,10 +687,10 @@ std::vector<TaskData> DatabaseManager::getSubTasksByTask(int parentTaskId) {
             task.idParentTache = res->getInt("idParentTache");
             task.nomTache = res->getString("nomTache");
             task.descTache = res->getString("descTache");
-            task.dateDebut = res->getString("dateDebut");  // NOW INCLUDED
+            task.dateDebut = res->getString("dateDebut");
             task.dateFin = res->getString("dateFin");
             task.tempsTache = res->getInt("tempsTache");
-            task.etat = res->getString("etat");  // NOW INCLUDED
+            task.etat = res->getString("etat");
             task.assigneeName = res->getString("assigneeName");
 
             std::cout << "Found subtask: " << task.nomTache << " (ID: " << task.idTache
