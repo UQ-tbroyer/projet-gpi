@@ -265,7 +265,7 @@ ApplicationWindow {
                         spacing: 10
 
                         Rectangle {
-                            width: 200
+                            width: 220  // Increased width to accommodate button
                             height: 450
                             radius: 10
                             border.color: "black"
@@ -280,15 +280,14 @@ ApplicationWindow {
                                 // === Tasks filtered by status ===
                                 Repeater {
                                     id: taskRepeater
-                                    // Force refresh when refreshTrigger changes
                                     model: {
                                         refreshTrigger  // dependency
                                         return taskController.getTasksForProjectByStatus(window.projectId, columnName)
                                     }
-                                    
+                            
                                     delegate: Rectangle {
                                         width: parent.width - 20
-                                        height: 60
+                                        height: taskController && taskController.isEmployeeView && taskController.isEmployeeView() ? 90 : 60
                                         radius: 6
                                         border.color: "black"
                                         color: mouseArea.containsMouse ? "lightgreen" : "lightyellow"
@@ -298,10 +297,10 @@ ApplicationWindow {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
-                                            
+                                    
                                             onClicked: {
                                                 console.log("Opening task details for:", modelData.nomTache, "ID:", modelData.idTache)
-                                                
+                                        
                                                 // Create and open TaskDetailsView window
                                                 var component = Qt.createComponent("TaskDetailsView.qml")
                                                 if (component.status === Component.Ready) {
@@ -322,17 +321,54 @@ ApplicationWindow {
                                         Column {
                                             anchors.centerIn: parent
                                             spacing: 3
+                                            width: parent.width - 10
 
                                             Text { 
                                                 text: modelData.nomTache
                                                 font.bold: true
                                                 anchors.horizontalCenter: parent.horizontalCenter
+                                                width: parent.width
+                                                wrapMode: Text.Wrap
+                                                maximumLineCount: 2
+                                                elide: Text.ElideRight
                                             }
                                             Text { 
                                                 text: "Assigné: " + (modelData.assigneeName || "Non assigné")
                                                 font.pixelSize: 10
                                                 color: "gray"
                                                 anchors.horizontalCenter: parent.horizontalCenter
+                                            }
+
+                                            // === Status Change Button for Employees ===
+                                            Button {
+                                                id: employeeStatusButton
+                                                text: "Changer Statut"
+                                                visible: taskController && taskController.isEmployeeView && taskController.isEmployeeView() && 
+                                                        taskController.canChangeStatus && taskController.canChangeStatus(modelData.idTache)
+                                                height: 25
+                                                width: parent.width * 0.8
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                        
+                                                background: Rectangle {
+                                                    color: employeeStatusButton.down ? "darkblue" : "blue"
+                                                    radius: 4
+                                                }
+                                        
+                                                contentItem: Text {
+                                                    text: employeeStatusButton.text
+                                                    color: "white"
+                                                    font.pixelSize: 10
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    verticalAlignment: Text.AlignVCenter
+                                                }
+
+                                                onClicked: {
+                                                    console.log("Employee changing status for task:", modelData.idTache)
+                                                    employeeStatusDialog.taskId = modelData.idTache
+                                                    employeeStatusDialog.taskName = modelData.nomTache
+                                                    employeeStatusDialog.currentStatus = columnName
+                                                    employeeStatusDialog.open()
+                                                }
                                             }
                                         }
                                     }
@@ -341,73 +377,11 @@ ApplicationWindow {
                                 // === Add new task ===
                                 Button {
                                     text: "+ Ajouter une tâche"
-                                    onClicked:{
+                                    visible: projectController && projectController.canDeleteProject && 
+                                        projectController.canDeleteProject(projectId)
+                                    onClicked: {
                                         addTaskDialog.currentColumn = columnName;
                                         addTaskDialog.open()
-                                    }
-                                }
-                                
-                                Dialog {
-                                    id: addTaskDialog
-                                    title: "Créer une nouvelle tâche"
-                                    modal: true
-                                    standardButtons: Dialog.Ok | Dialog.Cancel
-
-                                    property string currentColumn: ""
-
-                                    onAccepted: {
-                                        var assignedId = -1
-                                        if (assignedUserField.currentIndex >= 0) {
-                                            assignedId = assignedUserField.model[assignedUserField.currentIndex]["idEmploye"]
-                                        }
-
-                                        var success = taskController.createTask(
-                                            window.projectId,
-                                            taskNameField.text,
-                                            descriptionField.text,
-                                            -1,
-                                            assignedId,
-                                            parseInt(estimatedTimeField.text),
-                                            startDateField.text,
-                                            endDateField.text,
-                                            currentColumn
-                                        )
-
-                                        if (success) {
-                                            console.log("Task created successfully")
-                                            // Trigger refresh
-                                            refreshTrigger++
-                                        } else {
-                                            console.log("Erreur création tâche")
-                                        }
-                                    }
-
-                                    contentItem: ColumnLayout {
-                                        spacing: 10
-                                        width: 300
-
-                                        Label { text: "Nom de la tâche:" }
-                                        TextField { id: taskNameField; placeholderText: "Nouvelle tâche" }
-
-                                        Label { text: "Description:" }
-                                        TextArea { id: descriptionField; placeholderText: "Description"; height: 80 }
-
-                                        Label { text: "Assigné à:" }
-                                        ComboBox {
-                                            id: assignedUserField
-                                            model: taskController.getAvailableEmployees()
-                                            textRole: "fullName"
-                                            currentIndex: -1
-                                        }
-
-                                        Label { text: "Temps estimé (minutes):" }
-                                        TextField { id: estimatedTimeField; placeholderText: "10"; inputMethodHints: Qt.ImhDigitsOnly }
-
-                                        Label { text: "Date de début (YYYY-MM-DD):" }
-                                        TextField { id: startDateField; placeholderText: "2025-11-20" }
-
-                                        Label { text: "Date de fin (YYYY-MM-DD):" }
-                                        TextField { id: endDateField; placeholderText: "2025-11-21" }
                                     }
                                 }
                             }
@@ -547,6 +521,83 @@ ApplicationWindow {
                         }
                     }
                 }
+            }
+        }
+    }
+    Dialog {
+        id: employeeStatusDialog
+        title: "Changer le statut de la tâche"
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        anchors.centerIn: parent
+        width: 350
+
+        property int taskId: -1
+        property string taskName: ""
+        property string currentStatus: ""
+
+        onAboutToShow: {
+            console.log("Opening status dialog for task:", taskId, "Current status:", currentStatus)
+        
+            var statusList = ["A faire", "En cours", "A tester", "Terminee"]
+            employeeStatusCombo.currentIndex = -1
+            for (var i = 0; i < statusList.length; i++) {
+                if (statusList[i] === currentStatus) {
+                    employeeStatusCombo.currentIndex = i
+                    break
+                }
+            }
+        }
+
+        onAccepted: {
+            if (taskId === -1) {
+                console.error("No task ID set for status change")
+                return
+            }
+
+            console.log("Employee updating task status:", taskId, "to:", employeeStatusCombo.currentText)
+        
+            var success = taskController.updateTaskStatus(
+                taskId,
+                employeeStatusCombo.currentText
+            )
+
+            if (success) {
+                console.log("Task status updated successfully")
+                // Refresh the view
+                refreshTrigger++
+            } else {
+                console.log("Failed to update task status")
+            }
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 15
+
+            Label {
+                text: "Tâche: " + employeeStatusDialog.taskName
+                font.bold: true
+                wrapMode: Text.Wrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: "Nouveau statut:"
+                Layout.fillWidth: true
+            }
+
+            ComboBox {
+                id: employeeStatusCombo
+                Layout.fillWidth: true
+                model: ["A faire", "En cours", "A tester", "Terminee"]
+                Layout.preferredHeight: 40
+            }
+
+            Label {
+                text: "Statut actuel: " + employeeStatusDialog.currentStatus
+                font.italic: true
+                color: "gray"
+                Layout.fillWidth: true
             }
         }
     }

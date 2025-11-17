@@ -79,12 +79,13 @@ ApplicationWindow {
                       "✏️ Changer Statut" : "✏️ Modifier"
                 visible: (taskController && taskController.canEditTask && taskController.canEditTask(taskId)) ||
                         (taskController && taskController.canChangeStatus && taskController.canChangeStatus(taskId))
-                onClicked: editTaskDialog.open()
+                onClicked:  taskController && taskController.isEmployeeView && taskController.isEmployeeView() ? 
+                      statusEditTaskDialog.open() : editTaskDialog.open()
             }
 
             Button {
                 text: "🗑️ Supprimer"
-                visible: taskController && taskController.canDeleteTask && 
+                visible: taskController && taskController.canDeleteTask &&
                         taskController.canDeleteTask(taskId)
                 onClicked: deleteTaskDialog.open()
             }
@@ -225,6 +226,74 @@ ApplicationWindow {
             }
         }
     }
+    Dialog {
+    id: statusEditTaskDialog
+    title: "Modifier le statut de la tâche"  // Better title
+    modal: true
+    standardButtons: Dialog.Ok | Dialog.Cancel
+    anchors.centerIn: parent
+    width: 300  // Smaller width for status-only dialog
+
+    onAboutToShow: {
+        var taskDetails = taskController.getTaskDetails(taskId)
+        console.log("Loading task status for edit")
+        
+        var statusList = ["A faire", "En cours", "A tester", "Terminee"]
+        statusEditTaskStatusCombo.currentIndex = -1
+        for (var i = 0; i < statusList.length; i++) {
+            if (statusList[i] === taskDetails.etat) {
+                statusEditTaskStatusCombo.currentIndex = i
+                break
+            }
+        }
+    }
+
+    onAccepted: {
+        console.log("Updating task status for task:", taskId)
+        
+        var success = taskController.updateTaskStatus(
+            taskId,
+            statusEditTaskStatusCombo.currentText  // FIXED: Use correct ID
+        )
+
+        if (success) {
+            console.log("Task status updated successfully")
+            
+            // Update window title if needed
+            taskWindow.title = taskName + " - " + statusEditTaskStatusCombo.currentText
+            
+            // Notify parent window to refresh
+            if (taskWindow.parentWindow && taskWindow.parentWindow.refreshTrigger !== undefined) {
+                taskWindow.parentWindow.refreshTrigger++
+            }
+            
+            // Refresh current window
+            taskWindow.refreshTrigger++
+            
+            taskWindow.close()
+        } else {
+            console.log("Failed to update task status")
+        }
+    }
+
+    contentItem: ColumnLayout {
+        spacing: 15
+        width: parent.width
+
+        Label { 
+            text: "Nouveau statut:"
+            font.bold: true
+            Layout.alignment: Qt.AlignCenter
+        }
+        
+        ComboBox {
+            id: statusEditTaskStatusCombo
+            Layout.fillWidth: true
+            model: ["A faire", "En cours", "A tester", "Terminee"]
+            Layout.preferredHeight: 40
+        }
+    }
+}
 
     // Timer to close window after successful modification
     Timer {
@@ -354,9 +423,10 @@ ApplicationWindow {
                                         return filtered
                                     }
 
+                                   // In TaskDetailsView.qml - Kanban section
                                     delegate: Rectangle {
                                         width: parent.width - 20
-                                        height: 60
+                                        height: taskController && taskController.isEmployeeView && taskController.isEmployeeView() ? 90 : 60
                                         radius: 6
                                         border.color: "black"
                                         color: mouseArea.containsMouse ? "lightgreen" : "lightyellow"
@@ -385,17 +455,54 @@ ApplicationWindow {
                                         Column {
                                             anchors.centerIn: parent
                                             spacing: 3
+                                            width: parent.width - 10
 
                                             Text { 
                                                 text: modelData.nomTache
                                                 font.bold: true
                                                 anchors.horizontalCenter: parent.horizontalCenter
+                                                width: parent.width
+                                                wrapMode: Text.Wrap
+                                                maximumLineCount: 2
+                                                elide: Text.ElideRight
                                             }
                                             Text { 
                                                 text: "Assigné: " + (modelData.assigneeName || "Non assigné")
                                                 font.pixelSize: 10
                                                 color: "gray"
                                                 anchors.horizontalCenter: parent.horizontalCenter
+                                            }
+
+                                            // === Status Change Button for Employees ===
+                                            Button {
+                                                id: subtaskEmployeeStatusButton
+                                                text: "Changer Statut"
+                                                visible: taskController && taskController.isEmployeeView && taskController.isEmployeeView() && 
+                                                        taskController.canChangeStatus && taskController.canChangeStatus(modelData.idTache)
+                                                height: 25
+                                                width: parent.width * 0.8
+                                                anchors.horizontalCenter: parent.horizontalCenter
+            
+                                                background: Rectangle {
+                                                    color: subtaskEmployeeStatusButton.down ? "darkblue" : "blue"
+                                                    radius: 4
+                                                }
+            
+                                                contentItem: Text {
+                                                    text: subtaskEmployeeStatusButton.text
+                                                    color: "white"
+                                                    font.pixelSize: 10
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    verticalAlignment: Text.AlignVCenter
+                                                }
+
+                                                onClicked: {
+                                                    console.log("Employee changing status for subtask:", modelData.idTache)
+                                                    subtaskEmployeeStatusDialog.taskId = modelData.idTache
+                                                    subtaskEmployeeStatusDialog.taskName = modelData.nomTache
+                                                    subtaskEmployeeStatusDialog.currentStatus = columnName
+                                                    subtaskEmployeeStatusDialog.open()
+                                                }
                                             }
                                         }
                                     }
@@ -404,6 +511,10 @@ ApplicationWindow {
                                 // === Add new subtask ===
                                 Button {
                                     text: "+ Ajouter une sous-tâche"
+
+                                    visible: taskController && taskController.canDeleteTask && 
+                                        taskController.canDeleteTask(taskId)
+
                                     onClicked: {
                                         addSubTaskDialog.currentColumn = columnName
                                         addSubTaskDialog.open()
@@ -625,6 +736,89 @@ ApplicationWindow {
                         }
                     }
                 }
+            }
+        }
+    }
+    // === Employee Status Change Dialog for Subtasks ===
+    Dialog {
+        id: subtaskEmployeeStatusDialog
+        title: "Changer le statut de la sous-tâche"
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        anchors.centerIn: parent
+        width: 350
+
+        property int taskId: -1
+        property string taskName: ""
+        property string currentStatus: ""
+
+        onAboutToShow: {
+            console.log("Opening status dialog for subtask:", taskId, "Current status:", currentStatus)
+        
+            var statusList = ["A faire", "En cours", "A tester", "Terminee"]
+            subtaskEmployeeStatusCombo.currentIndex = -1
+            for (var i = 0; i < statusList.length; i++) {
+                if (statusList[i] === currentStatus) {
+                    subtaskEmployeeStatusCombo.currentIndex = i
+                    break
+                }
+            }
+        }
+
+        onAccepted: {
+            if (taskId === -1) {
+                console.error("No subtask ID set for status change")
+                return
+            }
+
+            console.log("Employee updating subtask status:", taskId, "to:", subtaskEmployeeStatusCombo.currentText)
+        
+            var success = taskController.updateTaskStatus(
+                taskId,
+                subtaskEmployeeStatusCombo.currentText
+            )
+
+            if (success) {
+                console.log("Subtask status updated successfully")
+                // Refresh the subtasks view
+                refreshTrigger++
+            
+                // Also notify parent window if it exists
+                if (taskWindow.parentWindow && taskWindow.parentWindow.refreshTrigger !== undefined) {
+                    taskWindow.parentWindow.refreshTrigger++
+                }
+            } else {
+                console.log("Failed to update subtask status")
+            }
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 15
+
+            Label {
+                text: "Sous-tâche: " + subtaskEmployeeStatusDialog.taskName
+                font.bold: true
+                wrapMode: Text.Wrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: "Nouveau statut:"
+                Layout.fillWidth: true
+            }
+
+            ComboBox {
+                id: subtaskEmployeeStatusCombo
+                Layout.fillWidth: true
+                model: ["A faire", "En cours", "A tester", "Terminee"]
+                Layout.preferredHeight: 40
+            }
+
+            Label {
+                text: "Statut actuel: " + subtaskEmployeeStatusDialog.currentStatus
+                font.italic: true
+                color: "gray"
+                Layout.fillWidth: true
             }
         }
     }

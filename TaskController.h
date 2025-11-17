@@ -77,6 +77,8 @@ public slots:
         const QString& dateFin,
         const QString& etat);
 
+    bool updateTaskStatus(int taskId, const QString& etat);
+
     bool deleteTask(int taskId);
     bool assignTask(int taskId, int employeeId);
 

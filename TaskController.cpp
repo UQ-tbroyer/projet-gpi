@@ -270,6 +270,73 @@ bool TaskController::updateTask(int taskId,
     }
 }
 
+bool TaskController::updateTaskStatus(int taskId, const QString& etat)
+{
+    qDebug() << "TaskController: Updating task status, taskId:" << taskId << "new status:" << etat;
+
+    if (!m_currentUser) {
+        emit taskUpdateFailed("Aucun utilisateur connecté");
+        return false;
+    }
+
+    // Check permissions first
+    if (PermissionManager::isEmploye(m_currentUser)) {
+        if (!canChangeStatus(taskId)) {
+            emit taskUpdateFailed("Vous ne pouvez modifier que vos propres tâches");
+            return false;
+        }
+    }
+    else if (!canEditTask(taskId)) {
+        emit taskUpdateFailed("Vous n'avez pas la permission de modifier cette tâche");
+        return false;
+    }
+
+    try {
+        // Get existing task data
+        TaskData existingTask = m_dbManager->getTaskById(taskId);
+        qDebug() << "Current task status:" << QString::fromStdString(existingTask.etat);
+
+        // Update only the status
+        existingTask.etat = etat.toStdString();
+
+        qDebug() << "Attempting to update task in database...";
+        bool success = m_dbManager->updateTask(existingTask);
+
+        if (success) {
+            qDebug() << "Task status updated successfully in database";
+
+            // Emit signals for UI refresh
+            emit taskUpdated(taskId);
+
+            // Check if this is a subtask and notify parent
+            if (existingTask.idParentTache > 0) {
+                emit subTasksChanged(existingTask.idParentTache);
+                qDebug() << "Emitted subTasksChanged for parent:" << existingTask.idParentTache;
+            }
+
+            // Refresh current project tasks
+            if (m_currentProjectId > 0) {
+                QTimer::singleShot(100, [this]() {
+                    loadTasksForProject(m_currentProjectId);
+                    });
+            }
+
+            return true;
+        }
+        else {
+            qWarning() << "Database update returned false";
+            emit taskUpdateFailed("Échec de la mise à jour du statut dans la base de données");
+            return false;
+        }
+    }
+    catch (const std::exception& e) {
+        qCritical() << "Exception in updateTaskStatus:" << e.what();
+        emit taskUpdateFailed(QString("Erreur: ") + e.what());
+        return false;
+    }
+}
+
+
 // --- Suppression ---
 bool TaskController::deleteTask(int taskId)
 {
