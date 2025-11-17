@@ -88,6 +88,12 @@ static constexpr auto qt_meta_stringdata_ZN14TaskControllerE = QtMocHelpers::str
     "getTasksForProjectByStatus",
     "status",
     "getSubTasksByStatus",
+    "canCreateTask",
+    "canEditTask",
+    "canDeleteTask",
+    "canAssignTask",
+    "canChangeStatus",
+    "isEmployeeView",
     "currentProjectId",
     "loading",
     "tasks"
@@ -102,49 +108,55 @@ Q_CONSTINIT static const uint qt_meta_data_ZN14TaskControllerE[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-      31,   14, // methods
-       3,  329, // properties
+      37,   14, // methods
+       3,  381, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
       13,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,  200,    2, 0x06,    4 /* Public */,
-       3,    0,  201,    2, 0x06,    5 /* Public */,
-       4,    0,  202,    2, 0x06,    6 /* Public */,
-       5,    1,  203,    2, 0x06,    7 /* Public */,
-       7,    1,  206,    2, 0x06,    9 /* Public */,
-       9,    1,  209,    2, 0x06,   11 /* Public */,
-      10,    1,  212,    2, 0x06,   13 /* Public */,
-      11,    2,  215,    2, 0x06,   15 /* Public */,
-      13,    1,  220,    2, 0x06,   18 /* Public */,
-      15,    1,  223,    2, 0x06,   20 /* Public */,
-      16,    1,  226,    2, 0x06,   22 /* Public */,
-      17,    1,  229,    2, 0x06,   24 /* Public */,
-      18,    1,  232,    2, 0x06,   26 /* Public */,
+       1,    0,  236,    2, 0x06,    4 /* Public */,
+       3,    0,  237,    2, 0x06,    5 /* Public */,
+       4,    0,  238,    2, 0x06,    6 /* Public */,
+       5,    1,  239,    2, 0x06,    7 /* Public */,
+       7,    1,  242,    2, 0x06,    9 /* Public */,
+       9,    1,  245,    2, 0x06,   11 /* Public */,
+      10,    1,  248,    2, 0x06,   13 /* Public */,
+      11,    2,  251,    2, 0x06,   15 /* Public */,
+      13,    1,  256,    2, 0x06,   18 /* Public */,
+      15,    1,  259,    2, 0x06,   20 /* Public */,
+      16,    1,  262,    2, 0x06,   22 /* Public */,
+      17,    1,  265,    2, 0x06,   24 /* Public */,
+      18,    1,  268,    2, 0x06,   26 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-      19,    1,  235,    2, 0x0a,   28 /* Public */,
-      21,    0,  238,    2, 0x0a,   30 /* Public */,
-      22,    9,  239,    2, 0x0a,   31 /* Public */,
-      31,    8,  258,    2, 0x0a,   41 /* Public */,
-      32,    1,  275,    2, 0x0a,   50 /* Public */,
-      33,    2,  278,    2, 0x0a,   52 /* Public */,
-      34,    1,  283,    2, 0x0a,   55 /* Public */,
-      36,    1,  286,    2, 0x0a,   57 /* Public */,
-      38,    8,  289,    2, 0x0a,   59 /* Public */,
-      40,    1,  306,    2, 0x0a,   68 /* Public */,
-      41,    1,  309,    2, 0x0a,   70 /* Public */,
-      42,    0,  312,    2, 0x0a,   72 /* Public */,
-      43,    0,  313,    2, 0x0a,   73 /* Public */,
-      44,    1,  314,    2, 0x0a,   74 /* Public */,
-      45,    0,  317,    2, 0x0a,   76 /* Public */,
+      19,    1,  271,    2, 0x0a,   28 /* Public */,
+      21,    0,  274,    2, 0x0a,   30 /* Public */,
+      22,    9,  275,    2, 0x0a,   31 /* Public */,
+      31,    8,  294,    2, 0x0a,   41 /* Public */,
+      32,    1,  311,    2, 0x0a,   50 /* Public */,
+      33,    2,  314,    2, 0x0a,   52 /* Public */,
+      34,    1,  319,    2, 0x0a,   55 /* Public */,
+      36,    1,  322,    2, 0x0a,   57 /* Public */,
+      38,    8,  325,    2, 0x0a,   59 /* Public */,
+      40,    1,  342,    2, 0x0a,   68 /* Public */,
+      41,    1,  345,    2, 0x0a,   70 /* Public */,
+      42,    0,  348,    2, 0x0a,   72 /* Public */,
+      43,    0,  349,    2, 0x0a,   73 /* Public */,
+      44,    1,  350,    2, 0x0a,   74 /* Public */,
+      45,    0,  353,    2, 0x0a,   76 /* Public */,
 
  // methods: name, argc, parameters, tag, flags, initial metatype offsets
-      46,    0,  318,    2, 0x102,   77 /* Public | MethodIsConst  */,
-      48,    2,  319,    2, 0x02,   78 /* Public */,
-      50,    2,  324,    2, 0x02,   81 /* Public */,
+      46,    0,  354,    2, 0x102,   77 /* Public | MethodIsConst  */,
+      48,    2,  355,    2, 0x02,   78 /* Public */,
+      50,    2,  360,    2, 0x02,   81 /* Public */,
+      51,    1,  365,    2, 0x102,   84 /* Public | MethodIsConst  */,
+      52,    1,  368,    2, 0x102,   86 /* Public | MethodIsConst  */,
+      53,    1,  371,    2, 0x102,   88 /* Public | MethodIsConst  */,
+      54,    1,  374,    2, 0x102,   90 /* Public | MethodIsConst  */,
+      55,    1,  377,    2, 0x102,   92 /* Public | MethodIsConst  */,
+      56,    0,  380,    2, 0x102,   94 /* Public | MethodIsConst  */,
 
  // signals: parameters
     QMetaType::Void,
@@ -182,11 +194,17 @@ Q_CONSTINIT static const uint qt_meta_data_ZN14TaskControllerE[] = {
     0x80000000 | 47,
     0x80000000 | 37, QMetaType::Int, QMetaType::QString,   20,   49,
     0x80000000 | 37, QMetaType::Int, QMetaType::QString,    6,   49,
+    QMetaType::Bool, QMetaType::Int,   20,
+    QMetaType::Bool, QMetaType::Int,    8,
+    QMetaType::Bool, QMetaType::Int,    8,
+    QMetaType::Bool, QMetaType::Int,   20,
+    QMetaType::Bool, QMetaType::Int,    8,
+    QMetaType::Bool,
 
  // properties: name, type, flags, notifyId, revision
-      51, QMetaType::Int, 0x00015103, uint(0), 0,
-      52, QMetaType::Bool, 0x00015103, uint(1), 0,
-      53, 0x80000000 | 37, 0x00015009, uint(2), 0,
+      57, QMetaType::Int, 0x00015103, uint(0), 0,
+      58, QMetaType::Bool, 0x00015103, uint(1), 0,
+      59, 0x80000000 | 37, 0x00015009, uint(2), 0,
 
        0        // eod
 };
@@ -316,7 +334,24 @@ Q_CONSTINIT const QMetaObject TaskController::staticMetaObject = { {
         // method 'getSubTasksByStatus'
         QtPrivate::TypeAndForceComplete<QVariantList, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'canCreateTask'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        // method 'canEditTask'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        // method 'canDeleteTask'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        // method 'canAssignTask'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        // method 'canChangeStatus'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        // method 'isEmployeeView'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>
     >,
     nullptr
 } };
@@ -372,6 +407,18 @@ void TaskController::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
         case 30: { QVariantList _r = _t->getSubTasksByStatus((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])));
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
+        case 31: { bool _r = _t->canCreateTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 32: { bool _r = _t->canEditTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 33: { bool _r = _t->canDeleteTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 34: { bool _r = _t->canAssignTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 35: { bool _r = _t->canChangeStatus((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 36: { bool _r = _t->isEmployeeView();
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
         default: ;
         }
     }
@@ -507,14 +554,14 @@ int TaskController::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 31)
+        if (_id < 37)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 31;
+        _id -= 37;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 31)
+        if (_id < 37)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 31;
+        _id -= 37;
     }
     if (_c == QMetaObject::ReadProperty || _c == QMetaObject::WriteProperty
             || _c == QMetaObject::ResetProperty || _c == QMetaObject::BindableProperty

@@ -1,19 +1,18 @@
 ﻿import QtQuick 6.5
 import QtQuick.Controls 6.5
-import QtQuick.Controls.impl 6.5  // Add this import for better styling
+import QtQuick.Controls.impl 6.5
 import QtQuick.Layouts 6.5
 import QtQuick.Dialogs 6.5
 
 Page {
-     id: mainPage
+    id: mainPage
 
-    // PUT THIS INSTEAD OF "color"
     background: Rectangle { color: "white" }
 
-    // Controller properties with safe defaults
-    property var projectController
-    property var taskController
-    property var loginController
+    // Controller properties - ONLY declared once here
+    required property var projectController
+    required property var taskController
+    required property var loginController
 
     // --- Rectangle Accueil ---
     Rectangle {
@@ -38,21 +37,42 @@ Page {
     }
 
     // --- Welcome message ---
-    Text {
-        id: welcomeText
-        text: {
-            if (loginController && loginController.currentUserName) {
-                return "Bienvenue, " + loginController.currentUserName()
-            } else {
-                return "Bienvenue"
-            }
-        }
-        font.pointSize: 14
-        font.bold: true
-        color: "#333333"
+    Column {
+        id: welcomeSection
+        spacing: 5
         anchors.top: accueilRect.bottom
         anchors.topMargin: 10
         anchors.horizontalCenter: parent.horizontalCenter
+        
+        Text {
+            id: welcomeText
+            text: {
+                if (mainPage.loginController && mainPage.loginController.currentUserName) {
+                    return "Bienvenue, " + mainPage.loginController.currentUserName()
+                } else {
+                    return "Bienvenue"
+                }
+            }
+            font.pointSize: 14
+            font.bold: true
+            color: "#333333"
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
+        
+        Text {
+            id: roleText
+            text: {
+                if (mainPage.projectController && mainPage.projectController.getUserRole) {
+                    var role = mainPage.projectController.getUserRole()
+                    console.log("User role:", role)
+                    return "Role: " + role
+                }
+                return ""
+            }
+            font.pointSize: 11
+            color: "#666666"
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
     }
 
     // --- Bouton déconnexion ---
@@ -68,27 +88,41 @@ Page {
         onClicked: {
             console.log("Déconnexion cliquée")
             window.close()
+           
         }
-
-        // REMOVED custom background and contentItem to fix styling errors
     }
 
     // --- Menu de navigation ---
     Row {
         id: navigationMenu
         spacing: 15
-        anchors.top: welcomeText.bottom
+        anchors.top: welcomeSection.bottom
         anchors.topMargin: 20
         anchors.horizontalCenter: parent.horizontalCenter
         
         Button {
             text: "Tous les Projets"
+            visible: mainPage.projectController && mainPage.projectController.canViewAllProjects && mainPage.projectController.canViewAllProjects()
             onClicked: {
                 console.log("Chargement de tous les projets...")
-                if (projectController && projectController.loadProjects) {
-                    projectController.loadProjects()
-                } else {
-                    console.log("ERROR: loadProjects method not available")
+                if (mainPage.projectController && mainPage.projectController.loadProjects) {
+                    mainPage.projectController.loadProjects()
+                }
+            }
+        }
+        
+        Button {
+            text: "Projets Département"
+            visible: {
+                if (!mainPage.projectController || !mainPage.projectController.getUserRole) 
+                    return false
+                var role = mainPage.projectController.getUserRole()
+                return role === "Administrateur" || role === "Gestionnaire"
+            }
+            onClicked: {
+                console.log("Chargement des projets du département...")
+                if (mainPage.projectController && mainPage.projectController.loadProjectsByDepartment) {
+                    mainPage.projectController.loadProjectsByDepartment()
                 }
             }
         }
@@ -97,25 +131,16 @@ Page {
             text: "Mes Projets"
             onClicked: {
                 console.log("Chargement de mes projets...")
-                if (projectController && projectController.loadProjectsByUser) {
-                    projectController.loadProjectsByUser()
-                } else {
-                    console.log("ERROR: loadProjectsByUser method not available")
+                if (mainPage.projectController && mainPage.projectController.loadProjectsByUser) {
+                    mainPage.projectController.loadProjectsByUser()
                 }
             }
         }
-        
-        Button {
-            text: "Projets Département"
-            onClicked: {
-                console.log("Chargement des projets du département...")
-                if (projectController && projectController.loadProjectsByDepartment) {
-                    projectController.loadProjectsByDepartment()
-                } else {
-                    console.log("ERROR: loadProjectsByDepartment method not available")
-                }
-            }
-        }
+    }
+    
+    function isEmployeeRole() {
+        if (!mainPage.projectController || !mainPage.projectController.getUserRole) return false
+        return mainPage.projectController.getUserRole() === "Employe"
     }
 
     // --- ScrollView des projets ---
@@ -152,6 +177,7 @@ Page {
                 border.color: "black"
                 border.width: 1
                 color: "transparent"
+                visible: mainPage.projectController && mainPage.projectController.canCreateProject && mainPage.projectController.canCreateProject()
 
                 Column {
                     anchors.centerIn: parent
@@ -185,7 +211,7 @@ Page {
             // Projects from C++ controller
             Repeater {
                 id: projectRepeater
-                model: projectController && projectController.projects ? projectController.projects : []
+                model: mainPage.projectController && mainPage.projectController.projects ? mainPage.projectController.projects : []
                 
                 delegate: Rectangle {
                     required property var modelData
@@ -247,16 +273,15 @@ Page {
                                 console.log("=== OUVRIR BUTTON CLICKED ===")
                                 console.log("Project ID:", projectId)
                                 console.log("Project Name:", projectName)
-                                console.log("taskController exists:", taskController !== null)
+                                console.log("taskController exists:", mainPage.taskController !== null)
                                 
-                                // Create and show project detail window
                                 var component = Qt.createComponent("main3.qml")
                                 if (component.status === Component.Ready) {
                                     var projectDetailWindow = component.createObject(null, {
                                         projectId: projectId,
                                         projectName: projectName,
-                                        taskController: taskController,
-                                        projectController: projectController
+                                        taskController: mainPage.taskController,
+                                        projectController: mainPage.projectController
                                     })
                                     projectDetailWindow.show()
                                 } else {
@@ -271,8 +296,9 @@ Page {
                             text: "Supprimer"
                             Layout.alignment: Qt.AlignHCenter
                             Layout.preferredWidth: 80
+                            visible: mainPage.projectController && mainPage.projectController.canDeleteProject && 
+                                    mainPage.projectController.canDeleteProject(projectId)
                             
-                            // REMOVED custom background and contentItem
                             onClicked: {
                                 console.log("=== SUPPRIMER BUTTON CLICKED ===")
                                 console.log("Project ID:", projectId)
@@ -292,7 +318,7 @@ Page {
     // --- Indicateur de chargement ---
     BusyIndicator {
         id: loadingIndicator
-        running: projectController && projectController.loading !== undefined ? projectController.loading : false
+        running: mainPage.projectController && mainPage.projectController.loading !== undefined ? mainPage.projectController.loading : false
         visible: running
         anchors.centerIn: scrollView
         width: 50
@@ -302,38 +328,12 @@ Page {
     // --- Message si aucun projet ---
     Text {
         id: noProjectsText
-        visible: projectController && projectController.projects && projectController.projects.length === 0 && !loadingIndicator.running
+        visible: mainPage.projectController && mainPage.projectController.projects && mainPage.projectController.projects.length === 0 && !loadingIndicator.running
         text: "Aucun projet trouvé.\nCliquez sur '+' pour créer un nouveau projet."
         font.pointSize: 14
         color: "#6c757d"
         horizontalAlignment: Text.AlignHCenter
         anchors.centerIn: scrollView
-    }
-
-    // --- Debug info ---
-    Text {
-        id: debugInfo
-        visible: true // Set to true for debugging
-        text: {
-            var info = "Debug Info:\n"
-            info += "projectController: " + (projectController ? "✓" : "✗") + "\n"
-            info += "taskController: " + (taskController ? "✓" : "✗") + "\n"
-            info += "loginController: " + (loginController ? "✓" : "✗") + "\n"
-            if (projectController) {
-                info += "Has loadProjects: " + (projectController.loadProjects ? "✓" : "✗") + "\n"
-                info += "Has projects: " + (projectController.projects ? "✓" : "✗") + "\n"
-                if (projectController.projects) {
-                    info += "Projects count: " + projectController.projects.length + "\n"
-                }
-                info += "Has loading: " + (projectController.loading !== undefined ? "✓" : "✗")
-            }
-            return info
-        }
-        color: "red"
-        font.pointSize: 10
-        anchors.top: parent.top
-        anchors.right: parent.right
-        anchors.margins: 10
     }
 
     // --- Bouton gestion de temps ---
@@ -344,10 +344,9 @@ Page {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 40
+        text: "Gestion de temps"
 
         onClicked: console.log("Gestion de temps cliquée")
-
-        // REMOVED custom background and contentItem
     }
 
     // --- Dialogue de création de projet ---
@@ -388,7 +387,7 @@ Page {
                 Layout.fillWidth: true
             }
         
-            Label { text: "Coűt du service (€)"; font.bold: true }
+            Label { text: "Coût du service (€)"; font.bold: true }
             TextField {
                 id: costField
                 placeholderText: "0.00"
@@ -420,8 +419,8 @@ Page {
                     enabled: projectNameField.text !== "" && clientComboBox.currentValue > 0
                     onClicked: {
                         console.log("Creating project with:", projectNameField.text, "client:", clientComboBox.currentValue)
-                        if (projectController && projectController.createProject) {
-                            var success = projectController.createProject(
+                        if (mainPage.projectController && mainPage.projectController.createProject) {
+                            var success = mainPage.projectController.createProject(
                                 projectNameField.text,
                                 clientComboBox.currentValue,
                                 repositoryField.text,
@@ -445,8 +444,8 @@ Page {
     
         function loadClientsData() {
             console.log("Loading clients data...")
-            if (projectController && projectController.getClients) {
-                var clients = projectController.getClients()
+            if (mainPage.projectController && mainPage.projectController.getClients) {
+                var clients = mainPage.projectController.getClients()
                 console.log("Number of clients:", clients ? clients.length : 0)
         
                 projectCreationDialog.clientsList = clients || []
@@ -515,8 +514,8 @@ Page {
                     text: "Supprimer"
                     onClicked: {
                         console.log("Deleting project:", deleteProjectDialog.projectId)
-                        if (projectController && projectController.deleteProject) {
-                            projectController.deleteProject(deleteProjectDialog.projectId)
+                        if (mainPage.projectController && mainPage.projectController.deleteProject) {
+                            mainPage.projectController.deleteProject(deleteProjectDialog.projectId)
                         } else {
                             console.log("ERROR: projectController or deleteProject not available")
                         }
@@ -558,10 +557,15 @@ Page {
 
     // --- Connexions aux signaux ---
     Connections {
-        target: projectController
+        target: mainPage.projectController
+        
+        function onCurrentUserChanged() {
+            console.log("=== Current user changed - reloading data ===")
+            loadInitialData()
+        }
         
         function onProjectsChanged() {
-            console.log("Liste des projets mise à jour - count:", projectController.projects ? projectController.projects.length : 0)
+            console.log("Liste des projets mise à jour - count:", mainPage.projectController.projects ? mainPage.projectController.projects.length : 0)
         }
         
         function onProjectCreated(projectId) {
@@ -580,7 +584,7 @@ Page {
     }
     
     Connections {
-        target: taskController
+        target: mainPage.taskController
         
         function onTasksChanged() {
             console.log("Liste des tâches mise à jour")
@@ -598,39 +602,57 @@ Page {
     // --- Initialisation ---
     Component.onCompleted: {
         console.log("MainPage chargée - Vérification des contrôleurs...")
-        console.log("projectController exists:", projectController !== null)
-        console.log("taskController exists:", taskController !== null)
-        console.log("loginController exists:", loginController !== null)
+        console.log("projectController exists:", mainPage.projectController !== null)
+        console.log("taskController exists:", mainPage.taskController !== null)
+        console.log("loginController exists:", mainPage.loginController !== null)
         
-        // Check what methods are available
-        if (projectController) {
+        // Delay initial setup to allow controllers to be fully initialized
+        Qt.callLater(function() {
+            loadInitialData()
+        })
+    }
+    
+    function loadInitialData() {
+        if (mainPage.projectController) {
             console.log("Available projectController methods:")
-            console.log(" - loadProjects:", !!projectController.loadProjects)
-            console.log(" - loadProjectsByUser:", !!projectController.loadProjectsByUser)
-            console.log(" - loadProjectsByDepartment:", !!projectController.loadProjectsByDepartment)
-            console.log(" - createProject:", !!projectController.createProject)
-            console.log(" - deleteProject:", !!projectController.deleteProject)
-            console.log(" - getClients:", !!projectController.getClients)
-            console.log(" - projects property:", !!projectController.projects)
-            console.log(" - loading property:", projectController.loading !== undefined)
+            console.log(" - loadProjects:", !!mainPage.projectController.loadProjects)
+            console.log(" - getUserRole:", !!mainPage.projectController.getUserRole)
+            console.log(" - canCreateProject:", !!mainPage.projectController.canCreateProject)
             
-            // Try to load projects if method exists
-            if (projectController.loadProjects) {
-                console.log("Calling loadProjects...")
-                projectController.loadProjects()
-            } else {
-                console.log("loadProjects method not available - checking for other load methods")
-                // Try alternative method names
-                if (projectController.loadAllProjects) {
-                    console.log("Calling loadAllProjects...")
-                    projectController.loadAllProjects()
-                } else if (projectController.load) {
-                    console.log("Calling load...")
-                    projectController.load()
+            if (mainPage.projectController.getUserRole) {
+                var role = mainPage.projectController.getUserRole()
+                console.log("Current user role:", role)
+                
+                if (role !== "No User" && role !== "Unknown") {
+                    if (role === "Administrateur" && mainPage.projectController.canViewAllProjects && mainPage.projectController.canViewAllProjects()) {
+                        console.log("Loading all projects for Admin...")
+                        mainPage.projectController.loadProjects()
+                    } else if (role === "Gestionnaire") {
+                        console.log("Loading department projects for Gestionnaire...")
+                        mainPage.projectController.loadProjectsByDepartment()
+                    } else if (role === "Employe") {
+                        console.log("Loading assigned projects for Employe...")
+                        mainPage.projectController.loadProjectsByUser()
+                    }
+                } else {
+                    console.log("WARNING: No valid user role - retrying in 100ms")
+                    // User not set yet, try again in a moment
+                    retryTimer.start()
                 }
             }
         } else {
             console.log("ERROR: projectController is null")
+        }
+    }
+    
+    // Timer to retry loading if user isn't set yet
+    Timer {
+        id: retryTimer
+        interval: 100
+        repeat: false
+        onTriggered: {
+            console.log("Retrying initial data load...")
+            loadInitialData()
         }
     }
 }

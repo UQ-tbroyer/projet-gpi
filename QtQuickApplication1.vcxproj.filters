@@ -47,6 +47,9 @@
     <ClCompile Include="TaskController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PermissionManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="User.h">
@@ -79,6 +82,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="TaskController.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="PermissionManager.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

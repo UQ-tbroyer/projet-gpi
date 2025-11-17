@@ -2,17 +2,10 @@
 #define PROJECTCONTROLLER_H
 
 #include <QObject>
-#include <QString>
 #include <QVariantList>
 #include <QVariantMap>
-#include <vector>
-#include <memory>
-#include "ProjectData.h"
-
-class DatabaseManager;
-class User;
-
-
+#include "DatabaseManager.h"
+#include "User.h"
 
 class ProjectController : public QObject
 {
@@ -24,42 +17,52 @@ public:
     explicit ProjectController(DatabaseManager* dbManager, User* currentUser, QObject* parent = nullptr);
     ~ProjectController();
 
-    // Q_PROPERTY getters
     QVariantList projects() const { return m_projects; }
     bool loading() const { return m_loading; }
 
-    // Q_INVOKABLE methods - callable from QML
+    void setCurrentUser(User* user);
+
+    // Project management methods
     Q_INVOKABLE void loadProjects();
     Q_INVOKABLE void loadProjectsByUser();
     Q_INVOKABLE void loadProjectsByDepartment();
+
     Q_INVOKABLE bool createProject(const QString& projectName,
         int clientId,
         const QString& repository,
         double cost,
-        const QString& projectDate);
+        const QString& projectDate = "");
+
     Q_INVOKABLE bool updateProject(int projectId,
         const QString& projectName,
         const QString& repository,
         double cost);
+
     Q_INVOKABLE bool deleteProject(int projectId);
+
+    Q_INVOKABLE QVariantMap getProjectDetails(int projectId);
     Q_INVOKABLE QVariantList getClients();
     Q_INVOKABLE void loadClients();
-    Q_INVOKABLE QVariantMap getProjectDetails(int projectId);
 
-    // Setter for current user (when user changes)
-    void setCurrentUser(User* user);
+    // Permission check methods for QML
+    Q_INVOKABLE bool canCreateProject() const;
+    Q_INVOKABLE bool canEditProject(int projectId) const;
+    Q_INVOKABLE bool canDeleteProject(int projectId) const;
+    Q_INVOKABLE bool canViewAllProjects() const;
+    Q_INVOKABLE QString getUserRole() const;
 
 signals:
     void projectsChanged();
     void loadingChanged();
-    void clientsLoaded();
     void projectCreated(int projectId);
     void projectCreationFailed(const QString& error);
     void projectUpdated(int projectId);
     void projectUpdateFailed(const QString& error);
     void projectDeleted(int projectId);
     void projectDeletionFailed(const QString& error);
+    void clientsLoaded();
     void errorOccurred(const QString& error);
+    void currentUserChanged(); // ADD THIS LINE
 
 private:
     DatabaseManager* m_dbManager;
@@ -67,10 +70,8 @@ private:
     QVariantList m_projects;
     bool m_loading;
 
-    // Helper methods
     void setLoading(bool loading);
     QVariantMap projectDataToVariantMap(const ProjectData& project) const;
-    std::vector<ProjectData> convertToProjectDataVector(const std::vector<ProjectData>& projects);
 };
 
 #endif // PROJECTCONTROLLER_H

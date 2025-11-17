@@ -207,19 +207,18 @@ std::vector<ProjectData> DatabaseManager::getProjectsByUser(int userId) {
     std::vector<ProjectData> projects;
 
     try {
+        // Only get projects where user is DIRECTLY assigned to tasks
         const std::string sql =
             "SELECT DISTINCT p.idProject, p.idClient, p.idDepartement, p.nomProject, "
             "p.dataProject, p.tempRepository, p.coutService, c.nomClient "
             "FROM Project p "
             "LEFT JOIN Client c ON p.idClient = c.idClient "
-            "LEFT JOIN Tache t ON p.idProject = t.idProject "
-            "WHERE p.idDepartement = (SELECT idDepartement FROM Employe WHERE idEmploye = ?) "
-            "OR t.memProcessigner = ? "
+            "INNER JOIN Tache t ON p.idProject = t.idProject "
+            "WHERE t.memProcessigner = ? "
             "ORDER BY p.dataProject DESC";
 
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
         stmt->setInt(1, userId);
-        stmt->setInt(2, userId);
         std::unique_ptr<sql::ResultSet> res(stmt->executeQuery());
 
         while (res->next()) {
@@ -235,6 +234,8 @@ std::vector<ProjectData> DatabaseManager::getProjectsByUser(int userId) {
 
             projects.push_back(project);
         }
+
+        std::cout << "Found " << projects.size() << " projects for user " << userId << std::endl;
     }
     catch (const sql::SQLException& e) {
         std::cerr << "SQL Error in getProjectsByUser: " << e.what() << std::endl;
@@ -416,7 +417,7 @@ std::vector<std::pair<int, std::string>> DatabaseManager::getAllClients() {
 }
 
 // Task methods implementation
-std::vector<TaskData> DatabaseManager::getTasksByProject(int projectId) {
+std::vector<TaskData> DatabaseManager::getTasksByUser(int userId) {
     std::vector<TaskData> tasks;
 
     try {
@@ -426,11 +427,11 @@ std::vector<TaskData> DatabaseManager::getTasksByProject(int projectId) {
             "CONCAT(e.prenomEmploye, ' ', e.nomEmploye) as assigneeName "
             "FROM Tache t "
             "LEFT JOIN Employe e ON t.memProcessigner = e.idEmploye "
-            "WHERE t.idProject = ? AND (t.idParentTache IS NULL OR t.idParentTache = 0) "
+            "WHERE t.memProcessigner = ? "
             "ORDER BY t.dateDebut ASC";
 
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
-        stmt->setInt(1, projectId);
+        stmt->setInt(1, userId);
         std::unique_ptr<sql::ResultSet> res(stmt->executeQuery());
 
         while (res->next()) {
@@ -449,10 +450,12 @@ std::vector<TaskData> DatabaseManager::getTasksByProject(int projectId) {
 
             tasks.push_back(task);
         }
+
+        std::cout << "Found " << tasks.size() << " tasks for user " << userId << std::endl;
     }
     catch (const sql::SQLException& e) {
-        std::cerr << "SQL Error in getTasksByProject: " << e.what() << std::endl;
-        throw std::runtime_error("Failed to load tasks from database");
+        std::cerr << "SQL Error in getTasksByUser: " << e.what() << std::endl;
+        throw std::runtime_error("Failed to load user tasks from database");
     }
 
     return tasks;
@@ -855,4 +858,46 @@ std::vector<std::tuple<int, std::string, std::string>> DatabaseManager::getEmplo
     }
 
     return employees;
+}
+
+std::vector<TaskData> DatabaseManager::getTasksByProject(int projectId) {
+    std::vector<TaskData> tasks;
+
+    try {
+        const std::string sql =
+            "SELECT t.idTache, t.idProject, t.memProcessigner, t.idParentTache, "
+            "t.nomTache, t.descTache, t.dateDebut, t.dateFin, t.tempsTache, t.etat, "
+            "CONCAT(e.prenomEmploye, ' ', e.nomEmploye) as assigneeName "
+            "FROM Tache t "
+            "LEFT JOIN Employe e ON t.memProcessigner = e.idEmploye "
+            "WHERE t.idProject = ? AND (t.idParentTache IS NULL OR t.idParentTache = 0) "
+            "ORDER BY t.dateDebut ASC";
+
+        std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
+        stmt->setInt(1, projectId);
+        std::unique_ptr<sql::ResultSet> res(stmt->executeQuery());
+
+        while (res->next()) {
+            TaskData task;
+            task.idTache = res->getInt("idTache");
+            task.idProject = res->getInt("idProject");
+            task.memProcessigner = res->getInt("memProcessigner");
+            task.idParentTache = res->isNull("idParentTache") ? 0 : res->getInt("idParentTache");
+            task.nomTache = res->getString("nomTache");
+            task.descTache = res->getString("descTache");
+            task.dateDebut = res->getString("dateDebut");
+            task.dateFin = res->getString("dateFin");
+            task.tempsTache = res->getInt("tempsTache");
+            task.etat = res->getString("etat");
+            task.assigneeName = res->getString("assigneeName");
+
+            tasks.push_back(task);
+        }
+    }
+    catch (const sql::SQLException& e) {
+        std::cerr << "SQL Error in getTasksByProject: " << e.what() << std::endl;
+        throw std::runtime_error("Failed to load tasks from database");
+    }
+
+    return tasks;
 }

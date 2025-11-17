@@ -75,12 +75,17 @@ ApplicationWindow {
             anchors.verticalCenter: parent.verticalCenter
 
             Button {
-                text: "✏️ Modifier"
+                text: taskController && taskController.isEmployeeView && taskController.isEmployeeView() ? 
+                      "✏️ Changer Statut" : "✏️ Modifier"
+                visible: (taskController && taskController.canEditTask && taskController.canEditTask(taskId)) ||
+                        (taskController && taskController.canChangeStatus && taskController.canChangeStatus(taskId))
                 onClicked: editTaskDialog.open()
             }
 
             Button {
                 text: "🗑️ Supprimer"
+                visible: taskController && taskController.canDeleteTask && 
+                        taskController.canDeleteTask(taskId)
                 onClicked: deleteTaskDialog.open()
             }
         }

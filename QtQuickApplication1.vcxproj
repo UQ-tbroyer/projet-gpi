@@ -122,6 +122,7 @@
       <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).moc</QtMocFileName>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PermissionManager.cpp" />
     <ClCompile Include="ProjectController.cpp" />
     <ClCompile Include="Security.cpp" />
     <ClCompile Include="TaskController.cpp" />
@@ -133,6 +134,7 @@
     <ClInclude Include="DatabaseManager.h" />
     <QtMoc Include="LoginController.h" />
     <QtMoc Include="ProjectController.h" />
+    <QtMoc Include="PermissionManager.h" />
     <ClInclude Include="ProjectData.h" />
     <ClInclude Include="Role.h" />
     <ClInclude Include="Security.h" />

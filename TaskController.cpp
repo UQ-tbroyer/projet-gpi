@@ -1,9 +1,11 @@
 ﻿#include "TaskController.h"
+#include "PermissionManager.h"
 #include <QDebug>
 #include <QDateTime>
 #include <QTimer>
 #include <QThread>
 #include <QtConcurrent/QtConcurrent>
+
 
 TaskController::TaskController(DatabaseManager* dbManager, User* currentUser, QObject* parent)
     : QObject(parent)
@@ -131,6 +133,11 @@ bool TaskController::createTask(int projectId,
     const QString& dateFin,
     const QString& etat)
 {
+    if (!canCreateTask(projectId)) {
+        emit taskCreationFailed("Vous n'avez pas la permission de créer des tâches");
+        return false;
+    }
+
     if (!m_currentUser) {
         emit taskCreationFailed("Aucun utilisateur connecte");
         return false;
@@ -187,6 +194,34 @@ bool TaskController::updateTask(int taskId,
     const QString& dateFin,
     const QString& etat)
 {
+    if (PermissionManager::isEmploye(m_currentUser)) {
+        if (!canChangeStatus(taskId)) {
+            emit taskUpdateFailed("Vous ne pouvez modifier que vos propres tâches");
+            return false;
+        }
+        // Employee can only change status, load existing task and update only status
+        try {
+            TaskData existingTask = m_dbManager->getTaskById(taskId);
+            existingTask.etat = etat.toStdString();
+
+            bool success = m_dbManager->updateTask(existingTask);
+            if (success) {
+                emit taskUpdated(taskId);
+                return true;
+            }
+        }
+        catch (const std::exception& e) {
+            emit taskUpdateFailed(QString("Erreur: ") + e.what());
+            return false;
+        }
+    }
+
+    // For admins and gestionnaires, allow full edit
+    if (!canEditTask(taskId)) {
+        emit taskUpdateFailed("Vous n'avez pas la permission de modifier cette tâche");
+        return false;
+    }
+
     if (taskName.isEmpty()) {
         emit taskUpdateFailed("Le nom de la tâche est requis");
         return false;
@@ -238,6 +273,11 @@ bool TaskController::updateTask(int taskId,
 // --- Suppression ---
 bool TaskController::deleteTask(int taskId)
 {
+    if (!canDeleteTask(taskId)) {
+        emit taskDeletionFailed("Vous n'avez pas la permission de supprimer cette tâche");
+        return false;
+    }
+
     try {
         bool success = m_dbManager->deleteTask(taskId);
         if (success) {
@@ -537,3 +577,75 @@ bool TaskController::createSubTask(int parentTaskId,
         return false;
     }
 }
+
+bool TaskController::canCreateTask(int projectId) const {
+    if (!m_currentUser) return false;
+
+    try {
+        ProjectData project = m_dbManager->getProjectById(projectId);
+        return PermissionManager::canCreateTask(m_currentUser, project.idDepartement);
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error checking create permission:" << e.what();
+        return false;
+    }
+}
+
+bool TaskController::canEditTask(int taskId) const {
+    if (!m_currentUser) return false;
+
+    try {
+        TaskData task = m_dbManager->getTaskById(taskId);
+        ProjectData project = m_dbManager->getProjectById(task.idProject);
+        return PermissionManager::canEditTask(m_currentUser, task.memProcessigner, project.idDepartement);
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error checking edit permission:" << e.what();
+        return false;
+    }
+}
+
+bool TaskController::canDeleteTask(int taskId) const {
+    if (!m_currentUser) return false;
+
+    try {
+        TaskData task = m_dbManager->getTaskById(taskId);
+        ProjectData project = m_dbManager->getProjectById(task.idProject);
+        return PermissionManager::canDeleteTask(m_currentUser, project.idDepartement);
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error checking delete permission:" << e.what();
+        return false;
+    }
+}
+
+bool TaskController::canAssignTask(int projectId) const {
+    if (!m_currentUser) return false;
+
+    try {
+        ProjectData project = m_dbManager->getProjectById(projectId);
+        return PermissionManager::canAssignTask(m_currentUser, project.idDepartement);
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error checking assign permission:" << e.what();
+        return false;
+    }
+}
+
+bool TaskController::canChangeStatus(int taskId) const {
+    if (!m_currentUser) return false;
+
+    try {
+        TaskData task = m_dbManager->getTaskById(taskId);
+        return PermissionManager::canChangeTaskStatus(m_currentUser, task.memProcessigner);
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error checking status change permission:" << e.what();
+        return false;
+    }
+}
+
+bool TaskController::isEmployeeView() const {
+    return PermissionManager::isEmploye(m_currentUser);
+}
+

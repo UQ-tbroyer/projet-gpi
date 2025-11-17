@@ -41,7 +41,6 @@ static constexpr auto qt_meta_stringdata_ZN17ProjectControllerE = QtMocHelpers::
     "projectsChanged",
     "",
     "loadingChanged",
-    "clientsLoaded",
     "projectCreated",
     "projectId",
     "projectCreationFailed",
@@ -50,7 +49,9 @@ static constexpr auto qt_meta_stringdata_ZN17ProjectControllerE = QtMocHelpers::
     "projectUpdateFailed",
     "projectDeleted",
     "projectDeletionFailed",
+    "clientsLoaded",
     "errorOccurred",
+    "currentUserChanged",
     "loadProjects",
     "loadProjectsByUser",
     "loadProjectsByDepartment",
@@ -62,11 +63,16 @@ static constexpr auto qt_meta_stringdata_ZN17ProjectControllerE = QtMocHelpers::
     "projectDate",
     "updateProject",
     "deleteProject",
+    "getProjectDetails",
+    "QVariantMap",
     "getClients",
     "QVariantList",
     "loadClients",
-    "getProjectDetails",
-    "QVariantMap",
+    "canCreateProject",
+    "canEditProject",
+    "canDeleteProject",
+    "canViewAllProjects",
+    "getUserRole",
     "projects",
     "loading"
 );
@@ -80,62 +86,76 @@ Q_CONSTINIT static const uint qt_meta_data_ZN17ProjectControllerE[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-      19,   14, // methods
-       2,  183, // properties
+      26,   14, // methods
+       2,  244, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-      10,       // signalCount
+      11,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,  128,    2, 0x06,    3 /* Public */,
-       3,    0,  129,    2, 0x06,    4 /* Public */,
-       4,    0,  130,    2, 0x06,    5 /* Public */,
-       5,    1,  131,    2, 0x06,    6 /* Public */,
-       7,    1,  134,    2, 0x06,    8 /* Public */,
-       9,    1,  137,    2, 0x06,   10 /* Public */,
-      10,    1,  140,    2, 0x06,   12 /* Public */,
-      11,    1,  143,    2, 0x06,   14 /* Public */,
-      12,    1,  146,    2, 0x06,   16 /* Public */,
-      13,    1,  149,    2, 0x06,   18 /* Public */,
+       1,    0,  170,    2, 0x06,    3 /* Public */,
+       3,    0,  171,    2, 0x06,    4 /* Public */,
+       4,    1,  172,    2, 0x06,    5 /* Public */,
+       6,    1,  175,    2, 0x06,    7 /* Public */,
+       8,    1,  178,    2, 0x06,    9 /* Public */,
+       9,    1,  181,    2, 0x06,   11 /* Public */,
+      10,    1,  184,    2, 0x06,   13 /* Public */,
+      11,    1,  187,    2, 0x06,   15 /* Public */,
+      12,    0,  190,    2, 0x06,   17 /* Public */,
+      13,    1,  191,    2, 0x06,   18 /* Public */,
+      14,    0,  194,    2, 0x06,   20 /* Public */,
 
  // methods: name, argc, parameters, tag, flags, initial metatype offsets
-      14,    0,  152,    2, 0x02,   20 /* Public */,
-      15,    0,  153,    2, 0x02,   21 /* Public */,
-      16,    0,  154,    2, 0x02,   22 /* Public */,
-      17,    5,  155,    2, 0x02,   23 /* Public */,
-      23,    4,  166,    2, 0x02,   29 /* Public */,
-      24,    1,  175,    2, 0x02,   34 /* Public */,
-      25,    0,  178,    2, 0x02,   36 /* Public */,
-      27,    0,  179,    2, 0x02,   37 /* Public */,
-      28,    1,  180,    2, 0x02,   38 /* Public */,
+      15,    0,  195,    2, 0x02,   21 /* Public */,
+      16,    0,  196,    2, 0x02,   22 /* Public */,
+      17,    0,  197,    2, 0x02,   23 /* Public */,
+      18,    5,  198,    2, 0x02,   24 /* Public */,
+      18,    4,  209,    2, 0x22,   30 /* Public | MethodCloned */,
+      24,    4,  218,    2, 0x02,   35 /* Public */,
+      25,    1,  227,    2, 0x02,   40 /* Public */,
+      26,    1,  230,    2, 0x02,   42 /* Public */,
+      28,    0,  233,    2, 0x02,   44 /* Public */,
+      30,    0,  234,    2, 0x02,   45 /* Public */,
+      31,    0,  235,    2, 0x102,   46 /* Public | MethodIsConst  */,
+      32,    1,  236,    2, 0x102,   47 /* Public | MethodIsConst  */,
+      33,    1,  239,    2, 0x102,   49 /* Public | MethodIsConst  */,
+      34,    0,  242,    2, 0x102,   51 /* Public | MethodIsConst  */,
+      35,    0,  243,    2, 0x102,   52 /* Public | MethodIsConst  */,
 
  // signals: parameters
     QMetaType::Void,
     QMetaType::Void,
+    QMetaType::Void, QMetaType::Int,    5,
+    QMetaType::Void, QMetaType::QString,    7,
+    QMetaType::Void, QMetaType::Int,    5,
+    QMetaType::Void, QMetaType::QString,    7,
+    QMetaType::Void, QMetaType::Int,    5,
+    QMetaType::Void, QMetaType::QString,    7,
     QMetaType::Void,
-    QMetaType::Void, QMetaType::Int,    6,
-    QMetaType::Void, QMetaType::QString,    8,
-    QMetaType::Void, QMetaType::Int,    6,
-    QMetaType::Void, QMetaType::QString,    8,
-    QMetaType::Void, QMetaType::Int,    6,
-    QMetaType::Void, QMetaType::QString,    8,
-    QMetaType::Void, QMetaType::QString,    8,
+    QMetaType::Void, QMetaType::QString,    7,
+    QMetaType::Void,
 
  // methods: parameters
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
-    QMetaType::Bool, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::Double, QMetaType::QString,   18,   19,   20,   21,   22,
-    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Double,    6,   18,   20,   21,
-    QMetaType::Bool, QMetaType::Int,    6,
-    0x80000000 | 26,
+    QMetaType::Bool, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::Double, QMetaType::QString,   19,   20,   21,   22,   23,
+    QMetaType::Bool, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::Double,   19,   20,   21,   22,
+    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Double,    5,   19,   21,   22,
+    QMetaType::Bool, QMetaType::Int,    5,
+    0x80000000 | 27, QMetaType::Int,    5,
+    0x80000000 | 29,
     QMetaType::Void,
-    0x80000000 | 29, QMetaType::Int,    6,
+    QMetaType::Bool,
+    QMetaType::Bool, QMetaType::Int,    5,
+    QMetaType::Bool, QMetaType::Int,    5,
+    QMetaType::Bool,
+    QMetaType::QString,
 
  // properties: name, type, flags, notifyId, revision
-      30, 0x80000000 | 26, 0x00015009, uint(0), 0,
-      31, QMetaType::Bool, 0x00015001, uint(1), 0,
+      36, 0x80000000 | 29, 0x00015009, uint(0), 0,
+      37, QMetaType::Bool, 0x00015001, uint(1), 0,
 
        0        // eod
 };
@@ -157,8 +177,6 @@ Q_CONSTINIT const QMetaObject ProjectController::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'loadingChanged'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        // method 'clientsLoaded'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'projectCreated'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
@@ -177,9 +195,13 @@ Q_CONSTINIT const QMetaObject ProjectController::staticMetaObject = { {
         // method 'projectDeletionFailed'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'clientsLoaded'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'errorOccurred'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'currentUserChanged'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'loadProjects'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'loadProjectsByUser'
@@ -193,6 +215,12 @@ Q_CONSTINIT const QMetaObject ProjectController::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<double, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'createProject'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        QtPrivate::TypeAndForceComplete<double, std::false_type>,
         // method 'updateProject'
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
@@ -202,13 +230,25 @@ Q_CONSTINIT const QMetaObject ProjectController::staticMetaObject = { {
         // method 'deleteProject'
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        // method 'getProjectDetails'
+        QtPrivate::TypeAndForceComplete<QVariantMap, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
         // method 'getClients'
         QtPrivate::TypeAndForceComplete<QVariantList, std::false_type>,
         // method 'loadClients'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        // method 'getProjectDetails'
-        QtPrivate::TypeAndForceComplete<QVariantMap, std::false_type>,
-        QtPrivate::TypeAndForceComplete<int, std::false_type>
+        // method 'canCreateProject'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        // method 'canEditProject'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        // method 'canDeleteProject'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        // method 'canViewAllProjects'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        // method 'getUserRole'
+        QtPrivate::TypeAndForceComplete<QString, std::false_type>
     >,
     nullptr
 } };
@@ -220,28 +260,41 @@ void ProjectController::qt_static_metacall(QObject *_o, QMetaObject::Call _c, in
         switch (_id) {
         case 0: _t->projectsChanged(); break;
         case 1: _t->loadingChanged(); break;
-        case 2: _t->clientsLoaded(); break;
-        case 3: _t->projectCreated((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
-        case 4: _t->projectCreationFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 5: _t->projectUpdated((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
-        case 6: _t->projectUpdateFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 7: _t->projectDeleted((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
-        case 8: _t->projectDeletionFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 2: _t->projectCreated((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 3: _t->projectCreationFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 4: _t->projectUpdated((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 5: _t->projectUpdateFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 6: _t->projectDeleted((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 7: _t->projectDeletionFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 8: _t->clientsLoaded(); break;
         case 9: _t->errorOccurred((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 10: _t->loadProjects(); break;
-        case 11: _t->loadProjectsByUser(); break;
-        case 12: _t->loadProjectsByDepartment(); break;
-        case 13: { bool _r = _t->createProject((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[5])));
+        case 10: _t->currentUserChanged(); break;
+        case 11: _t->loadProjects(); break;
+        case 12: _t->loadProjectsByUser(); break;
+        case 13: _t->loadProjectsByDepartment(); break;
+        case 14: { bool _r = _t->createProject((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[5])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 14: { bool _r = _t->updateProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])));
+        case 15: { bool _r = _t->createProject((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 15: { bool _r = _t->deleteProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+        case 16: { bool _r = _t->updateProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 16: { QVariantList _r = _t->getClients();
-            if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
-        case 17: _t->loadClients(); break;
+        case 17: { bool _r = _t->deleteProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
         case 18: { QVariantMap _r = _t->getProjectDetails((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
             if (_a[0]) *reinterpret_cast< QVariantMap*>(_a[0]) = std::move(_r); }  break;
+        case 19: { QVariantList _r = _t->getClients();
+            if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
+        case 20: _t->loadClients(); break;
+        case 21: { bool _r = _t->canCreateProject();
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 22: { bool _r = _t->canEditProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 23: { bool _r = _t->canDeleteProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 24: { bool _r = _t->canViewAllProjects();
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 25: { QString _r = _t->getUserRole();
+            if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = std::move(_r); }  break;
         default: ;
         }
     }
@@ -262,50 +315,50 @@ void ProjectController::qt_static_metacall(QObject *_o, QMetaObject::Call _c, in
             }
         }
         {
-            using _q_method_type = void (ProjectController::*)();
-            if (_q_method_type _q_method = &ProjectController::clientsLoaded; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
-                *result = 2;
-                return;
-            }
-        }
-        {
             using _q_method_type = void (ProjectController::*)(int );
             if (_q_method_type _q_method = &ProjectController::projectCreated; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
-                *result = 3;
+                *result = 2;
                 return;
             }
         }
         {
             using _q_method_type = void (ProjectController::*)(const QString & );
             if (_q_method_type _q_method = &ProjectController::projectCreationFailed; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
-                *result = 4;
+                *result = 3;
                 return;
             }
         }
         {
             using _q_method_type = void (ProjectController::*)(int );
             if (_q_method_type _q_method = &ProjectController::projectUpdated; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
-                *result = 5;
+                *result = 4;
                 return;
             }
         }
         {
             using _q_method_type = void (ProjectController::*)(const QString & );
             if (_q_method_type _q_method = &ProjectController::projectUpdateFailed; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
-                *result = 6;
+                *result = 5;
                 return;
             }
         }
         {
             using _q_method_type = void (ProjectController::*)(int );
             if (_q_method_type _q_method = &ProjectController::projectDeleted; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
-                *result = 7;
+                *result = 6;
                 return;
             }
         }
         {
             using _q_method_type = void (ProjectController::*)(const QString & );
             if (_q_method_type _q_method = &ProjectController::projectDeletionFailed; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+                *result = 7;
+                return;
+            }
+        }
+        {
+            using _q_method_type = void (ProjectController::*)();
+            if (_q_method_type _q_method = &ProjectController::clientsLoaded; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
                 *result = 8;
                 return;
             }
@@ -314,6 +367,13 @@ void ProjectController::qt_static_metacall(QObject *_o, QMetaObject::Call _c, in
             using _q_method_type = void (ProjectController::*)(const QString & );
             if (_q_method_type _q_method = &ProjectController::errorOccurred; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
                 *result = 9;
+                return;
+            }
+        }
+        {
+            using _q_method_type = void (ProjectController::*)();
+            if (_q_method_type _q_method = &ProjectController::currentUserChanged; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+                *result = 10;
                 return;
             }
         }
@@ -347,14 +407,14 @@ int ProjectController::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 19)
+        if (_id < 26)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 19;
+        _id -= 26;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 19)
+        if (_id < 26)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 19;
+        _id -= 26;
     }
     if (_c == QMetaObject::ReadProperty || _c == QMetaObject::WriteProperty
             || _c == QMetaObject::ResetProperty || _c == QMetaObject::BindableProperty
@@ -378,51 +438,51 @@ void ProjectController::loadingChanged()
 }
 
 // SIGNAL 2
-void ProjectController::clientsLoaded()
+void ProjectController::projectCreated(int _t1)
 {
-    QMetaObject::activate(this, &staticMetaObject, 2, nullptr);
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 2, _a);
 }
 
 // SIGNAL 3
-void ProjectController::projectCreated(int _t1)
+void ProjectController::projectCreationFailed(const QString & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 3, _a);
 }
 
 // SIGNAL 4
-void ProjectController::projectCreationFailed(const QString & _t1)
+void ProjectController::projectUpdated(int _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 4, _a);
 }
 
 // SIGNAL 5
-void ProjectController::projectUpdated(int _t1)
+void ProjectController::projectUpdateFailed(const QString & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 5, _a);
 }
 
 // SIGNAL 6
-void ProjectController::projectUpdateFailed(const QString & _t1)
+void ProjectController::projectDeleted(int _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 6, _a);
 }
 
 // SIGNAL 7
-void ProjectController::projectDeleted(int _t1)
+void ProjectController::projectDeletionFailed(const QString & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 7, _a);
 }
 
 // SIGNAL 8
-void ProjectController::projectDeletionFailed(const QString & _t1)
+void ProjectController::clientsLoaded()
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
-    QMetaObject::activate(this, &staticMetaObject, 8, _a);
+    QMetaObject::activate(this, &staticMetaObject, 8, nullptr);
 }
 
 // SIGNAL 9
@@ -430,5 +490,11 @@ void ProjectController::errorOccurred(const QString & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 9, _a);
+}
+
+// SIGNAL 10
+void ProjectController::currentUserChanged()
+{
+    QMetaObject::activate(this, &staticMetaObject, 10, nullptr);
 }
 QT_WARNING_POP

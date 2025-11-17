@@ -54,6 +54,7 @@ public:
 
     // Task methods (supports hierarchical structure)
     std::vector<TaskData> getTasksByProject(int projectId);  // Returns only root tasks
+    std::vector<TaskData> getTasksByUser(int userId);
     int createTask(const TaskData& task);  // Can create root or child task
     bool updateTask(const TaskData& task);
     bool deleteTask(int taskId);

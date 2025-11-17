@@ -16,6 +16,14 @@ ApplicationWindow {
         initialItem: loginPage
     }
     
+    // Preload main2.qml component
+    Component {
+        id: main2Component
+        Loader {
+            source: "main2.qml"
+        }
+    }
+    
     Component {
         id: loginPage
         
@@ -110,22 +118,54 @@ ApplicationWindow {
                 target: loginController
     
                 function onLoginSuccess() {
-                console.log("Login successful, navigating to main2...")
-                console.log("projectController available:", projectController !== null)
-                console.log("taskController available:", taskController !== null)
-                console.log("loginController available:", loginController !== null)
-    
-                busyIndicator.running = false
+                    console.log("Login successful, navigating to main2...")
+                    console.log("projectController available:", projectController !== null)
+                    console.log("taskController available:", taskController !== null)
+                    console.log("loginController available:", loginController !== null)
+        
+                    busyIndicator.running = false
 
-                // Use StackView.push with properties
-               
-                stackView.push(Qt.resolvedUrl("main2.qml"), {
-                   projectController: projectController,
-                    taskController: taskController, 
-                    loginController: loginController
-                })
-                
-            }
+                    // IMPORTANT: Wait a tiny bit for the user to be fully set in controllers
+                    Qt.callLater(function() {
+                        // Create the main2 page with properties set at creation time
+                        var component = Qt.createComponent("main2.qml")
+                        
+                        if (component.status === Component.Ready) {
+                            var main2Page = component.createObject(stackView, {
+                                projectController: projectController,
+                                taskController: taskController,
+                                loginController: loginController
+                            })
+                            
+                            if (main2Page) {
+                                stackView.push(main2Page)
+                                console.log("Successfully pushed main2.qml")
+                            } else {
+                                console.error("Failed to create main2 page object")
+                                errorLabel.text = "Erreur de navigation"
+                            }
+                        } else if (component.status === Component.Error) {
+                            console.error("Error loading main2.qml:", component.errorString())
+                            errorLabel.text = "Erreur de chargement"
+                        } else {
+                            console.log("Component not ready, waiting...")
+                            component.statusChanged.connect(function() {
+                                if (component.status === Component.Ready) {
+                                    var main2Page = component.createObject(stackView, {
+                                        projectController: projectController,
+                                        taskController: taskController,
+                                        loginController: loginController
+                                    })
+                                    
+                                    if (main2Page) {
+                                        stackView.push(main2Page)
+                                        console.log("Successfully pushed main2.qml after waiting")
+                                    }
+                                }
+                            })
+                        }
+                    })
+                }
     
                 function onLoginFailed(errorMessage) {
                     busyIndicator.running = false

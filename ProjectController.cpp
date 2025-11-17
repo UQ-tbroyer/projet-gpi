@@ -1,5 +1,6 @@
 #include "ProjectController.h"
 #include "DatabaseManager.h"
+#include "PermissionManager.h"
 #include "User.h"
 #include <QDebug>
 #include <QDateTime>
@@ -23,6 +24,21 @@ ProjectController::~ProjectController()
 void ProjectController::setCurrentUser(User* user)
 {
     m_currentUser = user;
+
+    if (m_currentUser) {
+        qDebug() << "=== ProjectController: User set ===";
+        qDebug() << "User ID:" << m_currentUser->getId();
+        qDebug() << "User Email:" << QString::fromStdString(m_currentUser->getEmail());
+        qDebug() << "User Dept:" << m_currentUser->getDepartementId();
+        qDebug() << "User Role (int):" << static_cast<int>(m_currentUser->getRole());
+        qDebug() << "User Role (string):" << QString::fromStdString(roleToString(m_currentUser->getRole()));
+
+        // Emit signal to notify QML that user has changed
+        emit currentUserChanged();
+    }
+    else {
+        qDebug() << "ProjectController: User set to NULL";
+    }
 }
 
 void ProjectController::setLoading(bool loading)
@@ -49,11 +65,29 @@ QVariantMap ProjectController::projectDataToVariantMap(const ProjectData& projec
 
 void ProjectController::loadProjects()
 {
-    qDebug() << "ProjectController: Loading all projects";
+    if (!m_currentUser) {
+        qWarning() << "No current user set";
+        return;
+    }
+
+    qDebug() << "Loading projects for user role:" << PermissionManager::getUserRoleString(m_currentUser);
     setLoading(true);
 
     try {
-        std::vector<ProjectData> projectsData = m_dbManager->getAllProjects();
+        std::vector<ProjectData> projectsData;
+
+        if (PermissionManager::canViewAllProjects(m_currentUser)) {
+            // Admin: load all projects
+            projectsData = m_dbManager->getAllProjects();
+        }
+        else if (PermissionManager::canViewDepartmentProjects(m_currentUser)) {
+            // Gestionnaire: load department projects
+            projectsData = m_dbManager->getProjectsByDepartment(m_currentUser->getDepartementId());
+        }
+        else {
+            // Employe: load only assigned projects
+            projectsData = m_dbManager->getProjectsByUser(m_currentUser->getId());
+        }
 
         m_projects.clear();
         for (const ProjectData& project : projectsData) {
@@ -61,12 +95,11 @@ void ProjectController::loadProjects()
         }
 
         emit projectsChanged();
-        qDebug() << "ProjectController: Loaded" << m_projects.size() << "projects";
+        qDebug() << "Loaded" << m_projects.size() << "projects";
     }
     catch (const std::exception& e) {
-        qCritical() << "ProjectController: Error loading projects:" << e.what();
-        QString errorMsg = QString("Erreur lors du chargement des projets: %1").arg(e.what());
-        emit errorOccurred(errorMsg);
+        qCritical() << "Error loading projects:" << e.what();
+        emit errorOccurred(QString("Erreur: %1").arg(e.what()));
     }
 
     setLoading(false);
@@ -146,6 +179,11 @@ bool ProjectController::createProject(const QString& projectName,
         return false;
     }
 
+    if (!PermissionManager::canCreateProject(m_currentUser)) {
+        emit projectCreationFailed("Vous n'avez pas la permission de créer des projets");
+        return false;
+    }
+
     if (projectName.isEmpty()) {
         emit projectCreationFailed("Le nom du projet est requis");
         return false;
@@ -197,6 +235,11 @@ bool ProjectController::updateProject(int projectId,
     const QString& repository,
     double cost)
 {
+    if (!canEditProject(projectId)) {
+        emit projectUpdateFailed("Vous n'avez pas la permission de modifier ce projet");
+        return false;
+    }
+
     if (projectName.isEmpty()) {
         emit projectUpdateFailed("Le nom du projet est requis");
         return false;
@@ -236,6 +279,11 @@ bool ProjectController::updateProject(int projectId,
 
 bool ProjectController::deleteProject(int projectId)
 {
+    if (!canDeleteProject(projectId)) {
+        emit projectDeletionFailed("Vous n'avez pas la permission de supprimer ce projet");
+        return false;
+    }
+
     qDebug() << "ProjectController: Deleting project:" << projectId;
 
     try {
@@ -335,3 +383,41 @@ QVariantMap ProjectController::getProjectDetails(int projectId)
         return QVariantMap();
     }
 }
+bool ProjectController::canCreateProject() const {
+    return PermissionManager::canCreateProject(m_currentUser);
+}
+
+bool ProjectController::canEditProject(int projectId) const {
+    if (!m_currentUser) return false;
+
+    try {
+        ProjectData project = m_dbManager->getProjectById(projectId);
+        return PermissionManager::canEditProject(m_currentUser, project.idDepartement);
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error checking edit permission:" << e.what();
+        return false;
+    }
+}
+
+bool ProjectController::canDeleteProject(int projectId) const {
+    if (!m_currentUser) return false;
+
+    try {
+        ProjectData project = m_dbManager->getProjectById(projectId);
+        return PermissionManager::canDeleteProject(m_currentUser, project.idDepartement);
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error checking delete permission:" << e.what();
+        return false;
+    }
+}
+
+bool ProjectController::canViewAllProjects() const {
+    return PermissionManager::canViewAllProjects(m_currentUser);
+}
+
+QString ProjectController::getUserRole() const {
+    return PermissionManager::getUserRoleString(m_currentUser);
+}
+

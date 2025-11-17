@@ -41,6 +41,13 @@ public:
     Q_INVOKABLE QVariantList getTasksForProjectByStatus(int projectId, const QString& status);
     Q_INVOKABLE QVariantList getSubTasksByStatus(int parentTaskId, const QString& status);
 
+    Q_INVOKABLE bool canCreateTask(int projectId) const;
+    Q_INVOKABLE bool canEditTask(int taskId) const;
+    Q_INVOKABLE bool canDeleteTask(int taskId) const;
+    Q_INVOKABLE bool canAssignTask(int projectId) const;
+    Q_INVOKABLE bool canChangeStatus(int taskId) const;
+    Q_INVOKABLE bool isEmployeeView() const;
+
     void loadTasksForProjectThrottled(int projectId);
     
   

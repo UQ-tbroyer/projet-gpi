@@ -69,6 +69,7 @@ ApplicationWindow {
         }
 
         // --- Project Actions Menu ---
+       // --- Project Actions Menu ---
         Row {
             spacing: 10
             anchors.right: parent.right
@@ -76,11 +77,15 @@ ApplicationWindow {
 
             Button {
                 text: "✏️ Modifier"
+                visible: projectController && projectController.canEditProject && 
+                        projectController.canEditProject(projectId)
                 onClicked: editProjectDialog.open()
             }
 
             Button {
                 text: "🗑️ Supprimer"
+                visible: projectController && projectController.canDeleteProject && 
+                        projectController.canDeleteProject(projectId)
                 onClicked: deleteProjectDialog.open()
             }
         }
