@@ -62,6 +62,7 @@ void LoginController::handleLogin(const QString& email, const QString& password)
         }
         else {
             qDebug() << "LoginController: Authentication failed for" << email;
+            qDebug() << "LoginController: Authentication failed for" << password;
             emit loginFailed("Email ou mot de passe incorrect");
         }
     }

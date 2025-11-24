@@ -3,7 +3,6 @@ import QtQuick.Controls 6.5
 import QtQuick.Layouts 6.5
 import QtQuick.Window 6.5
 
-
 ApplicationWindow {
     id: window
     width: 1000
@@ -16,31 +15,31 @@ ApplicationWindow {
     property string projectName
     property var taskController
     property var projectController
-    property int refreshTrigger: 0  // Used to force refresh of tasks
-    property bool isRefreshing: false  // Prevent recursive refreshes
+    property int refreshTrigger: 0
 
-    // Charger les tâches quand la fenêtre est prête
-    // In main3.qml, replace your Component.onCompleted with:
-
-      Component.onCompleted: {
+    // Handle signal connections properly
+    Connections {
+        target: taskController
+        
+        function onTaskCreated(taskId) {
+            console.log("Task created - refreshing")
+            window.refreshTrigger++
+        }
+        
+        function onTaskUpdated(taskId) {
+            console.log("Task updated - refreshing")
+            window.refreshTrigger++
+        }
+        
+        function onTaskDeleted(taskId) {
+            console.log("Task deleted - refreshing")
+            window.refreshTrigger++
+        }
+    }
+    
+    Component.onCompleted: {
         console.log("MAIN3: loading tasks for project", projectId)
         taskController.loadTasksForProject(projectId)
-    
-        // Simple connections without complex logic
-        taskController.taskCreated.connect(function(taskId) {
-            console.log("Task created - refreshing")
-            refreshTrigger++
-        })
-    
-        taskController.taskUpdated.connect(function(taskId) {
-            console.log("Task updated - refreshing")
-            refreshTrigger++
-        })
-    
-        taskController.taskDeleted.connect(function(taskId) {
-            console.log("Task deleted - refreshing")
-            refreshTrigger++
-        })
     }
 
     // --- Top Bar ---
@@ -68,8 +67,6 @@ ApplicationWindow {
             anchors.centerIn: parent
         }
 
-        // --- Project Actions Menu ---
-       // --- Project Actions Menu ---
         Row {
             spacing: 10
             anchors.right: parent.right
@@ -87,123 +84,6 @@ ApplicationWindow {
                 visible: projectController && projectController.canDeleteProject && 
                         projectController.canDeleteProject(projectId)
                 onClicked: deleteProjectDialog.open()
-            }
-        }
-    }
-
-    // --- Edit Project Dialog ---
-    Dialog {
-        id: editProjectDialog
-        title: "Modifier le projet"
-        modal: true
-        standardButtons: Dialog.Ok | Dialog.Cancel
-        anchors.centerIn: parent
-        width: 400
-
-        onAboutToShow: {
-            // Load current project details
-            var projectDetails = projectController.getProjectDetails(projectId)
-            console.log("Loading project details:", JSON.stringify(projectDetails))
-            
-            editProjectNameField.text = projectDetails.nomProject || ""
-            editRepositoryField.text = projectDetails.tempRepository || ""
-            editCostField.text = projectDetails.coutService ? projectDetails.coutService.toString() : "0.0"
-            
-            // Load clients first
-            var clients = projectController.getClients()
-            editClientCombo.model = clients
-            
-            // Then set the current client
-            editClientCombo.currentIndex = -1
-            for (var i = 0; i < clients.length; i++) {
-                if (clients[i].idClient === projectDetails.idClient) {
-                    editClientCombo.currentIndex = i
-                    console.log("Set client index to:", i, "for client:", clients[i].nomClient)
-                    break
-                }
-            }
-        }
-
-        onAccepted: {
-            var clientId = editClientCombo.currentIndex >= 0 
-                ? editClientCombo.model[editClientCombo.currentIndex].idClient 
-                : -1
-
-            var success = projectController.updateProject(
-                projectId,
-                editProjectNameField.text,
-                editRepositoryField.text,
-                parseFloat(editCostField.text) || 0.0
-            )
-
-            if (success) {
-                console.log("Project updated successfully")
-                window.projectName = editProjectNameField.text
-                window.title = editProjectNameField.text
-                // No need to refresh trigger - project info doesn't affect task list
-            } else {
-                console.log("Failed to update project")
-            }
-        }
-
-        contentItem: ColumnLayout {
-            spacing: 10
-
-            Label { text: "Nom du projet:" }
-            TextField {
-                id: editProjectNameField
-                Layout.fillWidth: true
-                placeholderText: "Nom du projet"
-            }
-
-            Label { text: "Client:" }
-            ComboBox {
-                id: editClientCombo
-                Layout.fillWidth: true
-                textRole: "nomClient"
-            }
-
-            Label { text: "Repository:" }
-            TextField {
-                id: editRepositoryField
-                Layout.fillWidth: true
-                placeholderText: "Repository path"
-            }
-
-            Label { text: "Coût du service:" }
-            TextField {
-                id: editCostField
-                Layout.fillWidth: true
-                placeholderText: "0.00"
-                inputMethodHints: Qt.ImhFormattedNumbersOnly
-            }
-        }
-    }
-
-    // --- Delete Project Confirmation Dialog ---
-    Dialog {
-        id: deleteProjectDialog
-        title: "⚠️ Confirmer la suppression"
-        modal: true
-        standardButtons: Dialog.Yes | Dialog.No
-        anchors.centerIn: parent
-
-        Label {
-            text: "Êtes-vous sûr de vouloir supprimer ce projet ?\n\n" +
-                  "Projet: " + projectName + "\n\n" +
-                  "⚠️ Cette action est irréversible et supprimera toutes les tâches associées!"
-            wrapMode: Text.WordWrap
-            width: 350
-        }
-
-        onAccepted: {
-            console.log("Deleting project:", projectId)
-            var success = projectController.deleteProject(projectId)
-            if (success) {
-                console.log("Project deleted successfully")
-                window.close()
-            } else {
-                console.log("Failed to delete project")
             }
         }
     }
@@ -247,7 +127,6 @@ ApplicationWindow {
         // =====================
         // ===== KANBAN VIEW ===
         // =====================
-
         Flickable {
             clip: true
             contentWidth: kanbanRow.width
@@ -256,16 +135,15 @@ ApplicationWindow {
                 id: kanbanRow
                 spacing: 20
 
-                // Colonnes du Kanban
                 Repeater {
-                    model: ["A faire", "En cours", "A tester", "Terminee"]
+                    model: ["A faire", "En cours", "A Tester", "Termine"]
 
                     Column {
                         property string columnName: modelData
                         spacing: 10
 
                         Rectangle {
-                            width: 220  // Increased width to accommodate button
+                            width: 200
                             height: 450
                             radius: 10
                             border.color: "black"
@@ -275,16 +153,19 @@ ApplicationWindow {
                                 anchors.margins: 12
                                 spacing: 10
 
-                                Text { text: columnName; font.bold: true; anchors.horizontalCenter: parent.horizontalCenter }
+                                Text { 
+                                    text: columnName
+                                    font.bold: true
+                                    anchors.horizontalCenter: parent.horizontalCenter 
+                                }
 
                                 // === Tasks filtered by status ===
                                 Repeater {
-                                    id: taskRepeater
                                     model: {
-                                        refreshTrigger  // dependency
+                                        refreshTrigger
                                         return taskController.getTasksForProjectByStatus(window.projectId, columnName)
                                     }
-                            
+                                    
                                     delegate: Rectangle {
                                         width: parent.width - 20
                                         height: taskController && taskController.isEmployeeView && taskController.isEmployeeView() ? 90 : 60
@@ -297,23 +178,44 @@ ApplicationWindow {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
-                                    
+                                            
                                             onClicked: {
-                                                console.log("Opening task details for:", modelData.nomTache, "ID:", modelData.idTache)
-                                        
-                                                // Create and open TaskDetailsView window
+                                                console.log("Opening task:", modelData.nomTache)
+    
+                                                // Store the properties in local variables to avoid timing issues
+                                                var taskId = modelData.idTache
+                                                var taskName = modelData.nomTache
+                                                var projectId = window.projectId
+                                                var taskCtrl = window.taskController
+                                                var projectCtrl = window.projectController
+    
+                                                console.log("Creating window with projectId:", projectId)
+    
                                                 var component = Qt.createComponent("TaskDetailsView.qml")
+    
                                                 if (component.status === Component.Ready) {
-                                                    var taskWindow = component.createObject(null, {
-                                                        taskId: modelData.idTache,
-                                                        taskName: modelData.nomTache,
-                                                        projectId: window.projectId,
-                                                        taskController: window.taskController,
-                                                        projectController: window.projectController
-                                                    })
-                                                    taskWindow.show()
-                                                } else if (component.status === Component.Error) {
-                                                    console.error("Error loading component:", component.errorString())
+                                                    createTaskWindow()
+                                                } else {
+                                                    component.statusChanged.connect(createTaskWindow)
+                                                }
+    
+                                                function createTaskWindow() {
+                                                    if (component.status === Component.Ready) {
+                                                        var taskWindow = component.createObject(null, {
+                                                            taskId: taskId,
+                                                            taskName: taskName,
+                                                            projectId: projectId,
+                                                            taskController: taskCtrl,
+                                                            projectController: projectCtrl
+                                                        })
+                                                        if (taskWindow) {
+                                                            taskWindow.show()
+                                                        } else {
+                                                            console.error("Failed to create task window")
+                                                        }
+                                                    } else {
+                                                        console.error("Component failed to load:", component.errorString())
+                                                    }
                                                 }
                                             }
                                         }
@@ -339,23 +241,23 @@ ApplicationWindow {
                                                 anchors.horizontalCenter: parent.horizontalCenter
                                             }
 
-                                            // === Status Change Button for Employees ===
+                                            // === Employee Status Change Button ===
                                             Button {
-                                                id: employeeStatusButton
+                                                id: taskEmployeeStatusButton
                                                 text: "Changer Statut"
                                                 visible: taskController && taskController.isEmployeeView && taskController.isEmployeeView() && 
                                                         taskController.canChangeStatus && taskController.canChangeStatus(modelData.idTache)
                                                 height: 25
                                                 width: parent.width * 0.8
                                                 anchors.horizontalCenter: parent.horizontalCenter
-                                        
+            
                                                 background: Rectangle {
-                                                    color: employeeStatusButton.down ? "darkblue" : "blue"
+                                                    color: taskEmployeeStatusButton.down ? "darkblue" : "blue"
                                                     radius: 4
                                                 }
-                                        
+            
                                                 contentItem: Text {
-                                                    text: employeeStatusButton.text
+                                                    text: taskEmployeeStatusButton.text
                                                     color: "white"
                                                     font.pixelSize: 10
                                                     horizontalAlignment: Text.AlignHCenter
@@ -364,23 +266,24 @@ ApplicationWindow {
 
                                                 onClicked: {
                                                     console.log("Employee changing status for task:", modelData.idTache)
-                                                    employeeStatusDialog.taskId = modelData.idTache
-                                                    employeeStatusDialog.taskName = modelData.nomTache
-                                                    employeeStatusDialog.currentStatus = columnName
-                                                    employeeStatusDialog.open()
+                                                    taskEmployeeStatusDialog.taskId = modelData.idTache
+                                                    taskEmployeeStatusDialog.taskName = modelData.nomTache
+                                                    taskEmployeeStatusDialog.currentStatus = columnName
+                                                    taskEmployeeStatusDialog.open()
                                                 }
                                             }
                                         }
                                     }
                                 }
 
-                                // === Add new task ===
+                                // === Button to add task - NO DIALOG HERE ===
                                 Button {
                                     text: "+ Ajouter une tâche"
-                                    visible: projectController && projectController.canDeleteProject && 
-                                        projectController.canDeleteProject(projectId)
+                                    visible: taskController && taskController.canCreateTask && 
+                                            taskController.canCreateTask(window.projectId)
                                     onClicked: {
-                                        addTaskDialog.currentColumn = columnName;
+                                        // Set which column and open THE SHARED dialog
+                                        addTaskDialog.currentColumn = columnName
                                         addTaskDialog.open()
                                     }
                                 }
@@ -391,10 +294,7 @@ ApplicationWindow {
             }
         }
 
-        // ===================
-        // ===== GANTT =======
-        // ===================
-
+        // ===== GANTT VIEW =====
         Flickable {
             clip: true
             contentWidth: ganttContent.width
@@ -420,13 +320,11 @@ ApplicationWindow {
                     Row {
                         spacing: 20
 
-                        // Task names
                         Column {
                             spacing: 10
                             Repeater {
-                                // Force refresh when refreshTrigger changes
                                 model: {
-                                    refreshTrigger  // dependency
+                                    refreshTrigger
                                     var tasks = taskController.getTasksForProject(window.projectId)
                                     return tasks || []
                                 }
@@ -444,7 +342,6 @@ ApplicationWindow {
                                         
                                         onClicked: {
                                             if (!modelData) return
-                                            console.log("Opening task from Gantt:", modelData.nomTache)
                                             var component = Qt.createComponent("TaskDetailsView.qml")
                                             if (component.status === Component.Ready) {
                                                 var taskWindow = component.createObject(null, {
@@ -467,7 +364,6 @@ ApplicationWindow {
                             }
                         }
 
-                        // Gantt bars
                         Rectangle {
                             id: ganttChart
                             width: 700
@@ -477,7 +373,7 @@ ApplicationWindow {
 
                             Repeater {
                                 model: {
-                                    refreshTrigger  // dependency
+                                    refreshTrigger
                                     var tasks = taskController.getTasksForProject(window.projectId)
                                     return tasks || []
                                 }
@@ -523,9 +419,130 @@ ApplicationWindow {
                 }
             }
         }
-    }
+    } // End StackLayout
+
+    // ==========================================
+    // SHARED DIALOGS - ONE INSTANCE EACH
+    // ==========================================
+
+    // Add Task Dialog - SHARED by all 4 Kanban columns
     Dialog {
-        id: employeeStatusDialog
+        id: addTaskDialog
+        title: "Créer une nouvelle tâche"
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        anchors.centerIn: parent
+        width: 400
+
+        property string currentColumn: ""
+
+        onAboutToShow: {
+            console.log("Opening task dialog for column:", currentColumn)
+            taskNameField.text = ""
+            descriptionField.text = ""
+            assignedUserField.currentIndex = -1
+            estimatedTimeField.text = "0"
+            startDateField.text = new Date().toISOString().split('T')[0]
+            endDateField.text = ""
+        }
+
+        onAccepted: {
+            console.log("Creating task in column:", currentColumn)
+            
+            var assignedId = -1
+            if (assignedUserField.currentIndex >= 0) {
+                var employees = taskController.getAvailableEmployees()
+                if (employees && employees.length > assignedUserField.currentIndex) {
+                    assignedId = employees[assignedUserField.currentIndex].idEmploye
+                }
+            }
+
+            if (!taskNameField.text) {
+                console.error("Task name required")
+                return
+            }
+
+            var success = taskController.createTask(
+                window.projectId,
+                taskNameField.text,
+                descriptionField.text,
+                0, // no parent
+                assignedId,
+                parseInt(estimatedTimeField.text || "0"),
+                startDateField.text,
+                endDateField.text,
+                currentColumn
+            )
+
+            if (success) {
+                console.log("Task created successfully")
+                refreshTrigger++
+            } else {
+                console.log("Failed to create task")
+            }
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 10
+
+            Label { text: "Nom de la tâche:" }
+            TextField { 
+                id: taskNameField
+                placeholderText: "Nouvelle tâche"
+                Layout.fillWidth: true
+            }
+
+            Label { text: "Description:" }
+            TextArea { 
+                id: descriptionField
+                placeholderText: "Description"
+                Layout.fillWidth: true
+                Layout.preferredHeight: 80
+            }
+
+            Label { text: "Assigné à:" }
+            ComboBox {
+                id: assignedUserField
+                Layout.fillWidth: true
+                model: taskController ? taskController.getAvailableEmployees() : []
+                textRole: "fullName"
+                currentIndex: -1
+                displayText: currentIndex === -1 ? "Non assigné" : currentText
+            }
+
+            Label { text: "Temps estimé (heures):" }
+            TextField { 
+                id: estimatedTimeField
+                placeholderText: "0"
+                Layout.fillWidth: true
+                inputMethodHints: Qt.ImhDigitsOnly
+            }
+
+            Label { text: "Date de début (YYYY-MM-DD):" }
+            TextField { 
+                id: startDateField
+                placeholderText: "2025-11-23"
+                Layout.fillWidth: true
+            }
+
+            Label { text: "Date de fin (YYYY-MM-DD):" }
+            TextField { 
+                id: endDateField
+                placeholderText: "2025-11-30"
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: "Statut: " + addTaskDialog.currentColumn
+                font.italic: true
+                color: "gray"
+            }
+        }
+    }
+
+    // === Employee Status Change Dialog for Tasks ===
+    Dialog {
+        id: taskEmployeeStatusDialog
         title: "Changer le statut de la tâche"
         modal: true
         standardButtons: Dialog.Ok | Dialog.Cancel
@@ -539,11 +556,11 @@ ApplicationWindow {
         onAboutToShow: {
             console.log("Opening status dialog for task:", taskId, "Current status:", currentStatus)
         
-            var statusList = ["A faire", "En cours", "A tester", "Terminee"]
-            employeeStatusCombo.currentIndex = -1
+            var statusList = ["A faire", "En cours", "A Tester", "Termine"]
+            taskEmployeeStatusCombo.currentIndex = -1
             for (var i = 0; i < statusList.length; i++) {
                 if (statusList[i] === currentStatus) {
-                    employeeStatusCombo.currentIndex = i
+                    taskEmployeeStatusCombo.currentIndex = i
                     break
                 }
             }
@@ -555,16 +572,16 @@ ApplicationWindow {
                 return
             }
 
-            console.log("Employee updating task status:", taskId, "to:", employeeStatusCombo.currentText)
+            console.log("Employee updating task status:", taskId, "to:", taskEmployeeStatusCombo.currentText)
         
             var success = taskController.updateTaskStatus(
                 taskId,
-                employeeStatusCombo.currentText
+                taskEmployeeStatusCombo.currentText
             )
 
             if (success) {
                 console.log("Task status updated successfully")
-                // Refresh the view
+                // Refresh the project view
                 refreshTrigger++
             } else {
                 console.log("Failed to update task status")
@@ -575,7 +592,7 @@ ApplicationWindow {
             spacing: 15
 
             Label {
-                text: "Tâche: " + employeeStatusDialog.taskName
+                text: "Tâche: " + taskEmployeeStatusDialog.taskName
                 font.bold: true
                 wrapMode: Text.Wrap
                 Layout.fillWidth: true
@@ -587,18 +604,114 @@ ApplicationWindow {
             }
 
             ComboBox {
-                id: employeeStatusCombo
+                id: taskEmployeeStatusCombo
                 Layout.fillWidth: true
-                model: ["A faire", "En cours", "A tester", "Terminee"]
+                model: ["A faire", "En cours", "A Tester", "Termine"]
                 Layout.preferredHeight: 40
             }
 
             Label {
-                text: "Statut actuel: " + employeeStatusDialog.currentStatus
+                text: "Statut actuel: " + taskEmployeeStatusDialog.currentStatus
                 font.italic: true
                 color: "gray"
                 Layout.fillWidth: true
             }
         }
     }
-}
+
+    // Edit Project Dialog
+    Dialog {
+        id: editProjectDialog
+        title: "Modifier le projet"
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        anchors.centerIn: parent
+        width: 400
+
+        onAboutToShow: {
+            var projectDetails = projectController.getProjectDetails(projectId)
+            editProjectNameField.text = projectDetails.nomProject || ""
+            editRepositoryField.text = projectDetails.tempRepository || ""
+            editCostField.text = projectDetails.coutService ? projectDetails.coutService.toString() : "0.0"
+            
+            var clients = projectController.getClients()
+            editClientCombo.model = clients
+            
+            editClientCombo.currentIndex = -1
+            for (var i = 0; i < clients.length; i++) {
+                if (clients[i].idClient === projectDetails.idClient) {
+                    editClientCombo.currentIndex = i
+                    break
+                }
+            }
+        }
+
+        onAccepted: {
+            var success = projectController.updateProject(
+                projectId,
+                editProjectNameField.text,
+                editRepositoryField.text,
+                parseFloat(editCostField.text) || 0.0
+            )
+
+            if (success) {
+                window.projectName = editProjectNameField.text
+                window.title = editProjectNameField.text
+            }
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 10
+
+            Label { text: "Nom du projet:" }
+            TextField {
+                id: editProjectNameField
+                Layout.fillWidth: true
+            }
+
+            Label { text: "Client:" }
+            ComboBox {
+                id: editClientCombo
+                Layout.fillWidth: true
+                textRole: "nomClient"
+            }
+
+            Label { text: "Repository:" }
+            TextField {
+                id: editRepositoryField
+                Layout.fillWidth: true
+            }
+
+            Label { text: "Coût du service:" }
+            TextField {
+                id: editCostField
+                Layout.fillWidth: true
+            }
+        }
+    }
+
+    // Delete Project Dialog
+    Dialog {
+        id: deleteProjectDialog
+        title: "⚠️ Confirmer la suppression"
+        modal: true
+        standardButtons: Dialog.Yes | Dialog.No
+        anchors.centerIn: parent
+
+        Label {
+            text: "Êtes-vous sûr de vouloir supprimer ce projet ?\n\n" +
+                  "Projet: " + projectName + "\n\n" +
+                  "⚠️ Cette action est irréversible!"
+            wrapMode: Text.WordWrap
+            width: 350
+        }
+
+        onAccepted: {
+            var success = projectController.deleteProject(projectId)
+            if (success) {
+                window.close()
+            }
+        }
+    }
+
+} // End ApplicationWindow

@@ -6,6 +6,8 @@
 #include <regex>
 #include <stdexcept>
 #include <string>
+#include <iostream>
+
 
 namespace Security {
 
@@ -48,7 +50,11 @@ namespace Security {
     }
 
     bool verifyPassword(const std::string& password, const std::string& hash) {
+        std::cout << "here" << std::endl;
+        std::cout << password << std::endl;
+        std::cout << hash << std::endl;
         std::string hashedInput = hashPassword(password);
+        std::cout << hashedInput << std::endl;
         return hashedInput == hash;
     }
 

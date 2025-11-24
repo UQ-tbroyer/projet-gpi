@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QThread>
 #include <QtConcurrent/QtConcurrent>
+#include <iostream>
 
 
 TaskController::TaskController(DatabaseManager* dbManager, User* currentUser, QObject* parent)
@@ -69,7 +70,7 @@ QVariantMap TaskController::taskDataToVariantMap(const TaskData& task) const
     QVariantMap map;
     map["idTache"] = task.idTache;
     map["idProject"] = task.idProject;
-    map["memProcessigner"] = task.memProcessigner;
+    map["memProcessigner"] = task.idEmploye;
     map["idParentTache"] = task.idParentTache;
 
     // sous-tâche
@@ -81,14 +82,13 @@ QVariantMap TaskController::taskDataToVariantMap(const TaskData& task) const
     map["dateDebut"] = QString::fromStdString(task.dateDebut);
     map["dateFin"] = QString::fromStdString(task.dateFin);
     map["etat"] = QString::fromStdString(task.etat);
-    map["assigneeName"] = QString::fromStdString(task.assigneeName);
+    map["assigneeName"] = QString::fromStdString(task.assigneeName);  // ADD THIS LINE
 
     // temps
-    map["tempsTache"] = task.tempsTache;
+    map["tempsTache"] = task.heuresEstimees;
 
     return map;
 }
-
 
 void TaskController::loadTasksForProject(int projectId)
 {
@@ -96,6 +96,7 @@ void TaskController::loadTasksForProject(int projectId)
 
     try {
         std::vector<TaskData> tasksData = m_dbManager->getTasksByProject(projectId);
+        qDebug() << "TaskController: to variant";
         m_tasks.clear();
         for (const auto& task : tasksData) {
             m_tasks.append(taskDataToVariantMap(task));
@@ -157,17 +158,16 @@ bool TaskController::createTask(int projectId,
         newTask.idProject = projectId;
         newTask.nomTache = taskName.toStdString();
         newTask.descTache = description.toStdString();
-        newTask.memProcessigner = assignedToId;
-        newTask.idParentTache = idParentTache; // tâche normale
+        newTask.idEmploye = assignedToId;
+        newTask.idParentTache = idParentTache;
 
         QString today = QDate::currentDate().toString("yyyy-MM-dd");
         newTask.dateDebut = dateDebut.isEmpty() ? today.toStdString() : dateDebut.toStdString();
         newTask.dateFin = dateFin.toStdString();
 
-        newTask.tempsTache = estimatedTime;
+        newTask.heuresEstimees = estimatedTime;
         newTask.etat = etat.toStdString();
-
-        // assigneeName laissé par défaut : ""
+        newTask.assigneeName = "";  // ADD THIS LINE - will be populated by database query
 
         int taskId = m_dbManager->createTask(newTask);
         if (taskId > 0) {
@@ -232,11 +232,12 @@ bool TaskController::updateTask(int taskId,
         updatedTask.idTache = taskId;
         updatedTask.nomTache = taskName.toStdString();
         updatedTask.descTache = description.toStdString();
-        updatedTask.memProcessigner = assignedToId;
-        updatedTask.tempsTache = estimatedTime.isEmpty() ? 0 : estimatedTime.toInt();
+        updatedTask.idEmploye = assignedToId;
+        updatedTask.heuresEstimees = estimatedTime.isEmpty() ? 0 : estimatedTime.toInt();
         updatedTask.dateDebut = dateDebut.toStdString();
         updatedTask.dateFin = dateFin.toStdString();
         updatedTask.etat = etat.toStdString();
+        updatedTask.assigneeName = "";
 
         bool success = m_dbManager->updateTask(updatedTask);
 
@@ -403,10 +404,11 @@ QVariantMap TaskController::getTaskDetails(int taskId)
         qDebug() << "  nomTache:" << QString::fromStdString(task.nomTache);
         qDebug() << "  descTache:" << QString::fromStdString(task.descTache);
         qDebug() << "  etat:" << QString::fromStdString(task.etat);
-        qDebug() << "  memProcessigner:" << task.memProcessigner;
-        qDebug() << "  tempsTache:" << task.tempsTache;
+        qDebug() << "  memProcessigner:" << task.idEmploye;
+        qDebug() << "  tempsTache:" << task.heuresEstimees;
         qDebug() << "  dateDebut:" << QString::fromStdString(task.dateDebut);
         qDebug() << "  dateFin:" << QString::fromStdString(task.dateFin);
+        qDebug() << "  assigneeName:" << QString::fromStdString(task.assigneeName);
 
         QVariantMap taskMap = taskDataToVariantMap(task);
 
@@ -618,14 +620,15 @@ bool TaskController::createSubTask(int parentTaskId,
         TaskData newSubTask;
         newSubTask.nomTache = subTaskName.toStdString();
         newSubTask.descTache = description.toStdString();
-        newSubTask.memProcessigner = assignedToId;
+        newSubTask.idEmploye = assignedToId;
 
         QString today = QDate::currentDate().toString("yyyy-MM-dd");
         newSubTask.dateDebut = dateDebut.isEmpty() ? today.toStdString() : dateDebut.toStdString();
         newSubTask.dateFin = dateFin.isEmpty() ? today.toStdString() : dateFin.toStdString();
 
-        newSubTask.tempsTache = estimatedTime;
+        newSubTask.heuresEstimees = estimatedTime;
         newSubTask.etat = etat.isEmpty() ? "A faire" : etat.toStdString();
+        newSubTask.assigneeName = "";  // ADD THIS LINE
 
         int subTaskId = m_dbManager->createSubTask(parentTaskId, newSubTask);
         if (subTaskId > 0) {
@@ -646,31 +649,61 @@ bool TaskController::createSubTask(int parentTaskId,
 }
 
 bool TaskController::canCreateTask(int projectId) const {
-    if (!m_currentUser) return false;
+    std::cout << "=== DEBUG canCreateTask ===" << std::endl;
+    std::cout << "projectId: " << projectId << std::endl;
+
+    if (!m_currentUser) {
+        std::cout << "ERROR: No current user!" << std::endl;
+        return false;
+    }
+
+    std::cout << "Current user ID: " << m_currentUser->getId() << std::endl;
+    std::cout << "Current user role: " << static_cast<int>(m_currentUser->getRole()) << std::endl;
+    std::cout << "Current user department: " << m_currentUser->getDepartementId() << std::endl;
 
     try {
         ProjectData project = m_dbManager->getProjectById(projectId);
-        return PermissionManager::canCreateTask(m_currentUser, project.idDepartement);
+        std::cout << "Project found - idProject: " << project.idProject << std::endl;
+        std::cout << "Project department: " << project.idDepartement << std::endl;
+
+        bool canCreate = PermissionManager::canCreateTask(m_currentUser, project.idDepartement);
+        std::cout << "Permission result: " << (canCreate ? "TRUE" : "FALSE") << std::endl;
+
+        return canCreate;
     }
     catch (const std::exception& e) {
-        qWarning() << "Error checking create permission:" << e.what();
+        std::cerr << "ERROR in canCreateTask: " << e.what() << std::endl;
         return false;
     }
 }
-
 bool TaskController::canEditTask(int taskId) const {
-    if (!m_currentUser) return false;
+    if (!m_currentUser) {
+        qDebug() << "canEditTask: No current user";
+        return false;
+    }
 
     try {
         TaskData task = m_dbManager->getTaskById(taskId);
         ProjectData project = m_dbManager->getProjectById(task.idProject);
-        return PermissionManager::canEditTask(m_currentUser, task.memProcessigner, project.idDepartement);
+
+        qDebug() << "=== DEBUG canEditTask ===";
+        qDebug() << "Current user ID:" << m_currentUser->getId();
+        qDebug() << "Current user role:" << static_cast<int>(m_currentUser->getRole());
+        qDebug() << "Task assigned to:" << task.idEmploye;
+        qDebug() << "Project department:" << project.idDepartement;
+        qDebug() << "User department:" << m_currentUser->getDepartementId();
+
+        bool canEdit = PermissionManager::canEditTask(m_currentUser, task.idEmploye, project.idDepartement);
+        qDebug() << "Permission result:" << canEdit;
+
+        return canEdit;
     }
     catch (const std::exception& e) {
         qWarning() << "Error checking edit permission:" << e.what();
         return false;
     }
 }
+
 
 bool TaskController::canDeleteTask(int taskId) const {
     if (!m_currentUser) return false;
@@ -700,11 +733,22 @@ bool TaskController::canAssignTask(int projectId) const {
 }
 
 bool TaskController::canChangeStatus(int taskId) const {
-    if (!m_currentUser) return false;
+    if (!m_currentUser) {
+        qDebug() << "canChangeStatus: No current user";
+        return false;
+    }
 
     try {
         TaskData task = m_dbManager->getTaskById(taskId);
-        return PermissionManager::canChangeTaskStatus(m_currentUser, task.memProcessigner);
+
+        qDebug() << "=== DEBUG canChangeStatus ===";
+        qDebug() << "Current user ID:" << m_currentUser->getId();
+        qDebug() << "Task assigned to:" << task.idEmploye;
+
+        bool canChange = PermissionManager::canChangeTaskStatus(m_currentUser, task.idEmploye);
+        qDebug() << "Permission result:" << canChange;
+
+        return canChange;
     }
     catch (const std::exception& e) {
         qWarning() << "Error checking status change permission:" << e.what();

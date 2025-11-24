@@ -58,6 +58,7 @@ bool PermissionManager::canEditProject(const User* user, int projectDepartmentId
         return user->getDepartementId() == projectDepartmentId;
     }
 
+
     // Employe cannot edit projects
     return false;
 }

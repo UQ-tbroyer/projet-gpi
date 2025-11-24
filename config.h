@@ -5,7 +5,7 @@
 const std::string DB_SERVER = "localhost";
 const std::string DB_USER = "root";
 const std::string DB_PASSWORD = "dauphin";
-const std::string DB_NAME = "crococode";
+const std::string DB_NAME = "crococode3";
 
 #endif
 
