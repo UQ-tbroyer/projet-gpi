@@ -760,3 +760,5 @@ bool TaskController::isEmployeeView() const {
     return PermissionManager::isEmploye(m_currentUser);
 }
 
+
+

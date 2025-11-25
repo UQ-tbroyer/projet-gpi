@@ -49,6 +49,8 @@ public:
     Q_INVOKABLE bool isEmployeeView() const;
 
     void loadTasksForProjectThrottled(int projectId);
+
+
     
   
 public slots:

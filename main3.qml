@@ -17,6 +17,12 @@ ApplicationWindow {
     property var projectController
     property int refreshTrigger: 0
 
+    // Gantt calculation properties
+    property date ganttStartDate
+    property date ganttEndDate
+    property int ganttTotalDays: 0
+    property var ganttMonths: []
+
     // Handle signal connections properly
     Connections {
         target: taskController
@@ -40,6 +46,116 @@ ApplicationWindow {
     Component.onCompleted: {
         console.log("MAIN3: loading tasks for project", projectId)
         taskController.loadTasksForProject(projectId)
+    }
+
+    // JavaScript functions for Gantt calculations
+    function calculateGanttTimeline(tasks) {
+        if (!tasks || tasks.length === 0) {
+            ganttStartDate = new Date()
+            ganttEndDate = new Date()
+            ganttTotalDays = 30
+            ganttMonths = []
+            return
+        }
+
+        var dates = []
+        for (var i = 0; i < tasks.length; i++) {
+            if (tasks[i].dateDebut) dates.push(new Date(tasks[i].dateDebut))
+            if (tasks[i].dateFin) dates.push(new Date(tasks[i].dateFin))
+        }
+
+        if (dates.length === 0) {
+            ganttStartDate = new Date()
+            ganttEndDate = new Date()
+            ganttTotalDays = 30
+            ganttMonths = []
+            return
+        }
+
+        var minDate = new Date(Math.min.apply(null, dates))
+        var maxDate = new Date(Math.max.apply(null, dates))
+        
+        // Add padding
+        minDate.setDate(minDate.getDate() - 7)
+        maxDate.setDate(maxDate.getDate() + 7)
+        
+        ganttStartDate = minDate
+        ganttEndDate = maxDate
+        ganttTotalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24))
+        
+        // Generate months
+        var monthsList = []
+        var current = new Date(minDate)
+        while (current <= maxDate) {
+            monthsList.push({
+                name: Qt.formatDate(current, "MMM yyyy"),
+                month: current.getMonth(),
+                year: current.getFullYear()
+            })
+            current.setMonth(current.getMonth() + 1)
+        }
+        ganttMonths = monthsList
+    }
+
+    function calculateTaskPosition(task) {
+        if (!task.dateDebut || !task.dateFin || ganttTotalDays === 0) {
+            return { left: 0, width: 50 }
+        }
+
+        var taskStart = new Date(task.dateDebut)
+        var taskEnd = new Date(task.dateFin)
+        
+        var daysFromStart = Math.floor((taskStart - ganttStartDate) / (1000 * 60 * 60 * 24))
+        var taskDuration = Math.ceil((taskEnd - taskStart) / (1000 * 60 * 60 * 24)) + 1
+        
+        var left = (daysFromStart / ganttTotalDays) * 100
+        var width = (taskDuration / ganttTotalDays) * 100
+        
+        return { left: Math.max(0, left), width: Math.max(2, width) }
+    }
+
+    function getStatusColor(status) {
+        switch(status) {
+            case "Termine": return "#10b981"
+            case "En cours": return "#3b82f6"
+            case "A Tester": return "#f59e0b"
+            case "A faire": return "#9ca3af"
+            default: return "#9ca3af"
+        }
+    }
+
+    function buildTaskHierarchy(tasks) {
+        var parentTasks = []
+        var taskMap = {}
+        
+        // Create task map
+        for (var i = 0; i < tasks.length; i++) {
+            taskMap[tasks[i].idTache] = Object.assign({}, tasks[i])
+            taskMap[tasks[i].idTache].children = []
+        }
+        
+        // Build hierarchy
+        for (var id in taskMap) {
+            var task = taskMap[id]
+            if (task.idParentTache === 0) {
+                parentTasks.push(task)
+            } else if (taskMap[task.idParentTache]) {
+                taskMap[task.idParentTache].children.push(task)
+            }
+        }
+        
+        // Sort by start date
+        parentTasks.sort(function(a, b) {
+            return new Date(a.dateDebut) - new Date(b.dateDebut)
+        })
+        
+        for (var j = 0; j < parentTasks.length; j++) {
+            parentTasks[j].children.sort(function(a, b) {
+                return new Date(a.dateDebut) - new Date(b.dateDebut)
+            })
+        }
+        
+        return parentTasks
     }
 
     // --- Top Bar ---
@@ -182,14 +298,11 @@ ApplicationWindow {
                                             onClicked: {
                                                 console.log("Opening task:", modelData.nomTache)
     
-                                                // Store the properties in local variables to avoid timing issues
                                                 var taskId = modelData.idTache
                                                 var taskName = modelData.nomTache
                                                 var projectId = window.projectId
                                                 var taskCtrl = window.taskController
                                                 var projectCtrl = window.projectController
-    
-                                                console.log("Creating window with projectId:", projectId)
     
                                                 var component = Qt.createComponent("TaskDetailsView.qml")
     
@@ -210,11 +323,7 @@ ApplicationWindow {
                                                         })
                                                         if (taskWindow) {
                                                             taskWindow.show()
-                                                        } else {
-                                                            console.error("Failed to create task window")
                                                         }
-                                                    } else {
-                                                        console.error("Component failed to load:", component.errorString())
                                                     }
                                                 }
                                             }
@@ -241,7 +350,6 @@ ApplicationWindow {
                                                 anchors.horizontalCenter: parent.horizontalCenter
                                             }
 
-                                            // === Employee Status Change Button ===
                                             Button {
                                                 id: taskEmployeeStatusButton
                                                 text: "Changer Statut"
@@ -265,7 +373,6 @@ ApplicationWindow {
                                                 }
 
                                                 onClicked: {
-                                                    console.log("Employee changing status for task:", modelData.idTache)
                                                     taskEmployeeStatusDialog.taskId = modelData.idTache
                                                     taskEmployeeStatusDialog.taskName = modelData.nomTache
                                                     taskEmployeeStatusDialog.currentStatus = columnName
@@ -276,13 +383,11 @@ ApplicationWindow {
                                     }
                                 }
 
-                                // === Button to add task - NO DIALOG HERE ===
                                 Button {
                                     text: "+ Ajouter une tâche"
                                     visible: taskController && taskController.canCreateTask && 
                                             taskController.canCreateTask(window.projectId)
                                     onClicked: {
-                                        // Set which column and open THE SHARED dialog
                                         addTaskDialog.currentColumn = columnName
                                         addTaskDialog.open()
                                     }
@@ -294,123 +399,403 @@ ApplicationWindow {
             }
         }
 
-        // ===== GANTT VIEW =====
-        Flickable {
-            clip: true
-            contentWidth: ganttContent.width
+        // ===== REAL GANTT VIEW =====
+        Item {
+            id: ganttView
+            
+            property var allTasks: {
+                refreshTrigger
+                return taskController.getTasksForProject(window.projectId) || []
+            }
+            
+            property var taskHierarchy: {
+                var tasks = ganttView.allTasks
+                calculateGanttTimeline(tasks)
+                return buildTaskHierarchy(tasks)
+            }
 
-            Item {
-                id: ganttContent
-                width: 1000
-                height: 600
+            Flickable {
+                anchors.fill: parent
+                contentWidth: ganttContent.width
+                contentHeight: ganttContent.height
+                clip: true
 
                 Column {
-                    anchors.fill: parent
-                    spacing: 20
+                    id: ganttContent
+                    width: Math.max(parent.width, 1200)
+                    spacing: 0
 
-                    Row {
-                        spacing: 40
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        Repeater {
-                            model: ["Sept","Oct","Nov","Dec","Jan","Feb","Mar"]
-                            Text { text: modelData }
-                        }
-                    }
+                    // Header
+                    Rectangle {
+                        width: parent.width
+                        height: 80
+                        color: "#f3f4f6"
+                        border.color: "#d1d5db"
+                        border.width: 1
 
-                    Row {
-                        spacing: 20
+                        Row {
+                            anchors.fill: parent
 
-                        Column {
-                            spacing: 10
-                            Repeater {
-                                model: {
-                                    refreshTrigger
-                                    var tasks = taskController.getTasksForProject(window.projectId)
-                                    return tasks || []
+                            // Task names column header
+                            Rectangle {
+                                width: 250
+                                height: parent.height
+                                color: "#e5e7eb"
+                                border.color: "#d1d5db"
+                                border.width: 1
+
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 5
+
+                                    Text {
+                                        text: "Tâches"
+                                        font.bold: true
+                                        font.pixelSize: 14
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                    }
                                 }
-                                
-                                Rectangle {
-                                    width: 150
-                                    height: 30
-                                    color: ganttMouseArea.containsMouse ? "lightblue" : "transparent"
-                                    
-                                    MouseArea {
-                                        id: ganttMouseArea
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        
-                                        onClicked: {
-                                            if (!modelData) return
-                                            var component = Qt.createComponent("TaskDetailsView.qml")
-                                            if (component.status === Component.Ready) {
-                                                var taskWindow = component.createObject(null, {
-                                                    taskId: modelData.idTache,
-                                                    taskName: modelData.nomTache,
-                                                    projectId: window.projectId,
-                                                    taskController: window.taskController,
-                                                    projectController: window.projectController
-                                                })
-                                                taskWindow.show()
+                            }
+
+                            // Timeline header
+                            Item {
+                                width: parent.width - 250
+                                height: parent.height
+
+                                // Month headers
+                                Row {
+                                    anchors.fill: parent
+                                    Repeater {
+                                        model: ganttMonths
+                                        Rectangle {
+                                            width: (parent.width / ganttMonths.length)
+                                            height: parent.height
+                                            color: index % 2 === 0 ? "#f9fafb" : "#f3f4f6"
+                                            border.color: "#d1d5db"
+                                            border.width: 1
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: modelData.name
+                                                font.bold: true
+                                                font.pixelSize: 12
                                             }
                                         }
-                                    }
-                                    
-                                    Text { 
-                                        text: modelData ? modelData.nomTache : ""
-                                        anchors.centerIn: parent
                                     }
                                 }
                             }
                         }
+                    }
 
-                        Rectangle {
-                            id: ganttChart
-                            width: 700
-                            height: 300
-                            border.color: "black"
-                            color: "transparent"
+                    // Task rows with Gantt bars
+                    Repeater {
+                        model: ganttView.taskHierarchy
 
-                            Repeater {
-                                model: {
-                                    refreshTrigger
-                                    var tasks = taskController.getTasksForProject(window.projectId)
-                                    return tasks || []
-                                }
+                        Column {
+                            width: ganttContent.width
+                            spacing: 0
 
-                                Rectangle {
-                                    x: 50
-                                    y: index * 40
-                                    width: 100
-                                    height: 30
-                                    color: ganttBarMouseArea.containsMouse ? "skyblue" : "lightblue"
-                                    border.color: "black"
-                                    
-                                    MouseArea {
-                                        id: ganttBarMouseArea
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        
-                                        onClicked: {
-                                            if (!modelData) return
-                                            var component = Qt.createComponent("TaskDetailsView.qml")
-                                            if (component.status === Component.Ready) {
-                                                var taskWindow = component.createObject(null, {
-                                                    taskId: modelData.idTache,
-                                                    taskName: modelData.nomTache,
-                                                    projectId: window.projectId,
-                                                    taskController: window.taskController,
-                                                    projectController: window.projectController
-                                                })
-                                                taskWindow.show()
+                            // Parent task row
+                            Rectangle {
+                                width: parent.width
+                                height: 40
+                                color: index % 2 === 0 ? "white" : "#f9fafb"
+                                border.color: "#e5e7eb"
+                                border.width: 1
+
+                                Row {
+                                    anchors.fill: parent
+
+                                    // Task name
+                                    Rectangle {
+                                        width: 250
+                                        height: parent.height
+                                        color: "transparent"
+                                        border.color: "#e5e7eb"
+                                        border.width: 1
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            
+                                            onClicked: {
+                                                var component = Qt.createComponent("TaskDetailsView.qml")
+                                                if (component.status === Component.Ready) {
+                                                    var taskWindow = component.createObject(null, {
+                                                        taskId: modelData.idTache,
+                                                        taskName: modelData.nomTache,
+                                                        projectId: window.projectId,
+                                                        taskController: window.taskController,
+                                                        projectController: window.projectController
+                                                    })
+                                                    taskWindow.show()
+                                                }
+                                            }
+
+                                            Rectangle {
+                                                anchors.fill: parent
+                                                color: parent.containsMouse ? "#e0f2fe" : "transparent"
+                                                
+                                                Row {
+                                                    anchors.left: parent.left
+                                                    anchors.leftMargin: 10
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    spacing: 5
+
+                                                    Text {
+                                                        text: modelData.children.length > 0 ? "▼" : "•"
+                                                        font.pixelSize: 10
+                                                        color: "#6b7280"
+                                                    }
+
+                                                    Column {
+                                                        spacing: 2
+
+                                                        Text {
+                                                            text: modelData.nomTache
+                                                            font.bold: true
+                                                            font.pixelSize: 12
+                                                            elide: Text.ElideRight
+                                                            width: 200
+                                                        }
+
+                                                        Text {
+                                                            text: modelData.assigneeName || "Non assigné"
+                                                            font.pixelSize: 9
+                                                            color: "#6b7280"
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
-                                    
-                                    Text { 
-                                        anchors.centerIn: parent
-                                        text: modelData ? modelData.nomTache : ""
+
+                                    // Gantt bar
+                                    Item {
+                                        width: parent.width - 250
+                                        height: parent.height
+
+                                        // Vertical grid lines
+                                        Repeater {
+                                            model: ganttMonths.length
+                                            Rectangle {
+                                                x: (index / ganttMonths.length) * parent.width
+                                                width: 1
+                                                height: parent.height
+                                                color: "#e5e7eb"
+                                            }
+                                        }
+
+                                        // Task bar
+                                        Rectangle {
+                                            property var pos: calculateTaskPosition(modelData)
+                                            x: (pos.left / 100) * parent.width
+                                            width: (pos.width / 100) * parent.width
+                                            height: 24
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            color: getStatusColor(modelData.etat)
+                                            radius: 4
+                                            border.color: Qt.darker(color, 1.2)
+                                            border.width: 1
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: modelData.nomTache
+                                                color: "white"
+                                                font.pixelSize: 10
+                                                font.bold: true
+                                                elide: Text.ElideRight
+                                                width: parent.width - 8
+                                                horizontalAlignment: Text.AlignHCenter
+                                            }
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                
+                                                ToolTip {
+                                                    visible: parent.containsMouse
+                                                    text: modelData.nomTache + "\n" + 
+                                                          modelData.dateDebut + " → " + modelData.dateFin + "\n" +
+                                                          "Statut: " + modelData.etat
+                                                    delay: 500
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Child tasks
+                            Repeater {
+                                model: modelData.children
+
+                                Rectangle {
+                                    width: ganttContent.width
+                                    height: 35
+                                    color: "white"
+                                    border.color: "#e5e7eb"
+                                    border.width: 1
+
+                                    Row {
+                                        anchors.fill: parent
+
+                                        // Task name (indented)
+                                        Rectangle {
+                                            width: 250
+                                            height: parent.height
+                                            color: "transparent"
+                                            border.color: "#e5e7eb"
+                                            border.width: 1
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                
+                                                onClicked: {
+                                                    var component = Qt.createComponent("TaskDetailsView.qml")
+                                                    if (component.status === Component.Ready) {
+                                                        var taskWindow = component.createObject(null, {
+                                                            taskId: modelData.idTache,
+                                                            taskName: modelData.nomTache,
+                                                            projectId: window.projectId,
+                                                            taskController: window.taskController,
+                                                            projectController: window.projectController
+                                                        })
+                                                        taskWindow.show()
+                                                    }
+                                                }
+
+                                                Rectangle {
+                                                    anchors.fill: parent
+                                                    color: parent.containsMouse ? "#fef3c7" : "transparent"
+                                                    
+                                                    Row {
+                                                        anchors.left: parent.left
+                                                        anchors.leftMargin: 30
+                                                        anchors.verticalCenter: parent.verticalCenter
+                                                        spacing: 5
+
+                                                        Text {
+                                                            text: "└"
+                                                            font.pixelSize: 10
+                                                            color: "#9ca3af"
+                                                        }
+
+                                                        Column {
+                                                            spacing: 2
+
+                                                            Text {
+                                                                text: modelData.nomTache
+                                                                font.pixelSize: 11
+                                                                elide: Text.ElideRight
+                                                                width: 180
+                                                            }
+
+                                                            Text {
+                                                                text: modelData.assigneeName || "Non assigné"
+                                                                font.pixelSize: 8
+                                                                color: "#6b7280"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        // Gantt bar
+                                        Item {
+                                            width: parent.width - 250
+                                            height: parent.height
+
+                                            // Vertical grid lines
+                                            Repeater {
+                                                model: ganttMonths.length
+                                                Rectangle {
+                                                    x: (index / ganttMonths.length) * parent.width
+                                                    width: 1
+                                                    height: parent.height
+                                                    color: "#f3f4f6"
+                                                }
+                                            }
+
+                                            // Task bar
+                                            Rectangle {
+                                                property var pos: calculateTaskPosition(modelData)
+                                                x: (pos.left / 100) * parent.width
+                                                width: (pos.width / 100) * parent.width
+                                                height: 20
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                color: getStatusColor(modelData.etat)
+                                                radius: 3
+                                                border.color: Qt.darker(color, 1.2)
+                                                border.width: 1
+
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    text: modelData.nomTache
+                                                    color: "white"
+                                                    font.pixelSize: 9
+                                                    elide: Text.ElideRight
+                                                    width: parent.width - 6
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                }
+
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    
+                                                    ToolTip {
+                                                        visible: parent.containsMouse
+                                                        text: modelData.nomTache + "\n" + 
+                                                              modelData.dateDebut + " → " + modelData.dateFin + "\n" +
+                                                              "Statut: " + modelData.etat
+                                                        delay: 500
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Legend
+                    Rectangle {
+                        width: parent.width
+                        height: 50
+                        color: "#f9fafb"
+                        border.color: "#e5e7eb"
+                        border.width: 1
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 20
+
+                            Repeater {
+                                model: [
+                                    { status: "A faire", color: "#9ca3af" },
+                                    { status: "En cours", color: "#3b82f6" },
+                                    { status: "A Tester", color: "#f59e0b" },
+                                    { status: "Terminé", color: "#10b981" }
+                                ]
+
+                                Row {
+                                    spacing: 5
+                                    Rectangle {
+                                        width: 20
+                                        height: 12
+                                        color: modelData.color
+                                        radius: 2
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                    Text {
+                                        text: modelData.status
+                                        font.pixelSize: 11
+                                        anchors.verticalCenter: parent.verticalCenter
                                     }
                                 }
                             }
@@ -425,7 +810,7 @@ ApplicationWindow {
     // SHARED DIALOGS - ONE INSTANCE EACH
     // ==========================================
 
-    // Add Task Dialog - SHARED by all 4 Kanban columns
+    // Add Task Dialog
     Dialog {
         id: addTaskDialog
         title: "Créer une nouvelle tâche"
@@ -437,7 +822,6 @@ ApplicationWindow {
         property string currentColumn: ""
 
         onAboutToShow: {
-            console.log("Opening task dialog for column:", currentColumn)
             taskNameField.text = ""
             descriptionField.text = ""
             assignedUserField.currentIndex = -1
@@ -447,8 +831,6 @@ ApplicationWindow {
         }
 
         onAccepted: {
-            console.log("Creating task in column:", currentColumn)
-            
             var assignedId = -1
             if (assignedUserField.currentIndex >= 0) {
                 var employees = taskController.getAvailableEmployees()
@@ -458,7 +840,6 @@ ApplicationWindow {
             }
 
             if (!taskNameField.text) {
-                console.error("Task name required")
                 return
             }
 
@@ -466,7 +847,7 @@ ApplicationWindow {
                 window.projectId,
                 taskNameField.text,
                 descriptionField.text,
-                0, // no parent
+                0,
                 assignedId,
                 parseInt(estimatedTimeField.text || "0"),
                 startDateField.text,
@@ -475,10 +856,7 @@ ApplicationWindow {
             )
 
             if (success) {
-                console.log("Task created successfully")
                 refreshTrigger++
-            } else {
-                console.log("Failed to create task")
             }
         }
 
@@ -540,7 +918,7 @@ ApplicationWindow {
         }
     }
 
-    // === Employee Status Change Dialog for Tasks ===
+    // Employee Status Change Dialog
     Dialog {
         id: taskEmployeeStatusDialog
         title: "Changer le statut de la tâche"
@@ -554,8 +932,6 @@ ApplicationWindow {
         property string currentStatus: ""
 
         onAboutToShow: {
-            console.log("Opening status dialog for task:", taskId, "Current status:", currentStatus)
-        
             var statusList = ["A faire", "En cours", "A Tester", "Termine"]
             taskEmployeeStatusCombo.currentIndex = -1
             for (var i = 0; i < statusList.length; i++) {
@@ -567,24 +943,15 @@ ApplicationWindow {
         }
 
         onAccepted: {
-            if (taskId === -1) {
-                console.error("No task ID set for status change")
-                return
-            }
+            if (taskId === -1) return
 
-            console.log("Employee updating task status:", taskId, "to:", taskEmployeeStatusCombo.currentText)
-        
             var success = taskController.updateTaskStatus(
                 taskId,
                 taskEmployeeStatusCombo.currentText
             )
 
             if (success) {
-                console.log("Task status updated successfully")
-                // Refresh the project view
                 refreshTrigger++
-            } else {
-                console.log("Failed to update task status")
             }
         }
 

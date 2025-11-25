@@ -16,36 +16,116 @@ ApplicationWindow {
     property int projectId
     property var taskController
     property var projectController
-    property int refreshTrigger: 0  // LOCAL refresh trigger
-    property var parentWindow: null  // Reference to parent window
+    property int refreshTrigger: 0
+    property var parentWindow: null
+
+    // Gantt calculation properties
+    property date ganttStartDate
+    property date ganttEndDate
+    property int ganttTotalDays: 0
+    property var ganttMonths: []
 
     Component.onCompleted: {
         console.log("TaskDetailsView: loading subtasks for task", taskId)
     
-        // Connect to subtask changes for THIS task
         taskController.subTasksChanged.connect(function(parentId) {
-            console.log("subTasksChanged received for parentId:", parentId, "current taskId:", taskId)
             if (parentId === taskId) {
                 console.log("Refreshing subtasks for current task")
                 refreshTrigger++
             }
         })
     
-        // Connect to task updates
         taskController.taskUpdated.connect(function(updatedTaskId) {
-            console.log("taskUpdated signal received for:", updatedTaskId)
             if (updatedTaskId === taskId) {
                 console.log("Current task was updated, refreshing")
                 refreshTrigger++
-            } else {
-                console.log("Different task updated, ignoring")
             }
         })
     
-        // Also connect to any errors
         taskController.taskUpdateFailed.connect(function(errorMsg) {
             console.log("Task update failed:", errorMsg)
         })
+    }
+
+    // JavaScript functions for Gantt calculations
+    function calculateGanttTimeline(tasks) {
+        if (!tasks || tasks.length === 0) {
+            ganttStartDate = new Date()
+            ganttEndDate = new Date()
+            ganttTotalDays = 30
+            ganttMonths = []
+            return
+        }
+
+        var dates = []
+        for (var i = 0; i < tasks.length; i++) {
+            if (tasks[i].dateDebut) dates.push(new Date(tasks[i].dateDebut))
+            if (tasks[i].dateFin) dates.push(new Date(tasks[i].dateFin))
+        }
+
+        if (dates.length === 0) {
+            ganttStartDate = new Date()
+            ganttEndDate = new Date()
+            ganttTotalDays = 30
+            ganttMonths = []
+            return
+        }
+
+        var minDate = new Date(Math.min.apply(null, dates))
+        var maxDate = new Date(Math.max.apply(null, dates))
+        
+        minDate.setDate(minDate.getDate() - 7)
+        maxDate.setDate(maxDate.getDate() + 7)
+        
+        ganttStartDate = minDate
+        ganttEndDate = maxDate
+        ganttTotalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24))
+        
+        var monthsList = []
+        var current = new Date(minDate)
+        while (current <= maxDate) {
+            monthsList.push({
+                name: Qt.formatDate(current, "MMM yyyy"),
+                month: current.getMonth(),
+                year: current.getFullYear()
+            })
+            current.setMonth(current.getMonth() + 1)
+        }
+        ganttMonths = monthsList
+    }
+
+    function calculateTaskPosition(task) {
+        if (!task.dateDebut || !task.dateFin || ganttTotalDays === 0) {
+            return { left: 0, width: 50 }
+        }
+
+        var taskStart = new Date(task.dateDebut)
+        var taskEnd = new Date(task.dateFin)
+        
+        var daysFromStart = Math.floor((taskStart - ganttStartDate) / (1000 * 60 * 60 * 24))
+        var taskDuration = Math.ceil((taskEnd - taskStart) / (1000 * 60 * 60 * 24)) + 1
+        
+        var left = (daysFromStart / ganttTotalDays) * 100
+        var width = (taskDuration / ganttTotalDays) * 100
+        
+        return { left: Math.max(0, left), width: Math.max(2, width) }
+    }
+
+    function getStatusColor(status) {
+        switch(status) {
+            case "Termine": return "#10b981"
+            case "En cours": return "#3b82f6"
+            case "A Tester": return "#f59e0b"
+            case "A faire": return "#9ca3af"
+            default: return "#9ca3af"
+        }
+    }
+
+    function buildTaskHierarchy(tasks) {
+        var sortedTasks = tasks.slice().sort(function(a, b) {
+            return new Date(a.dateDebut) - new Date(b.dateDebut)
+        })
+        return sortedTasks
     }
 
     // --- Top Bar ---
@@ -64,7 +144,6 @@ ApplicationWindow {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             onClicked: {
-                console.log("Closing task window")
                 taskWindow.close()
             }
         }
@@ -87,7 +166,6 @@ ApplicationWindow {
             }
         }
 
-        // --- Task Actions Menu ---
         Row {
             spacing: 10
             anchors.right: parent.right
@@ -97,7 +175,6 @@ ApplicationWindow {
                 text: taskController && taskController.isEmployeeView && taskController.isEmployeeView() ? 
                         "✏️ Changer Statut" : "✏️ Modifier"
         
-                // SIMPLIFIED VISIBILITY LOGIC - Allow employees to always change status
                 visible: (taskController && taskController.canEditTask && taskController.canEditTask(taskId)) ||
                         (taskController && taskController.canChangeStatus && taskController.canChangeStatus(taskId))
         
@@ -185,7 +262,6 @@ ApplicationWindow {
                                     anchors.horizontalCenter: parent.horizontalCenter 
                                 }
 
-                                // === Subtasks filtered by status ===
                                 Repeater {
                                     model: {
                                         refreshTrigger
@@ -212,7 +288,6 @@ ApplicationWindow {
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
                                             onClicked: {
-                                                console.log("Opening subtask:", modelData.nomTache)
                                                 var component = Qt.createComponent("TaskDetailsView.qml")
                                                 if (component.status === Component.Ready) {
                                                     var window = component.createObject(null, {
@@ -249,7 +324,6 @@ ApplicationWindow {
                                                 anchors.horizontalCenter: parent.horizontalCenter
                                             }
 
-                                            // === Status Change Button for Employees ===
                                             Button {
                                                 id: subtaskEmployeeStatusButton
                                                 text: "Changer Statut"
@@ -273,7 +347,6 @@ ApplicationWindow {
                                                 }
 
                                                 onClicked: {
-                                                    console.log("Employee changing status for subtask:", modelData.idTache)
                                                     subtaskEmployeeStatusDialog.taskId = modelData.idTache
                                                     subtaskEmployeeStatusDialog.taskName = modelData.nomTache
                                                     subtaskEmployeeStatusDialog.currentStatus = columnName
@@ -284,7 +357,6 @@ ApplicationWindow {
                                     }
                                 }
 
-                                // === Add subtask button ===
                                 Button {
                                     text: "+ Ajouter une sous-tâche"
                                     visible: taskController && taskController.canCreateTask && 
@@ -301,98 +373,117 @@ ApplicationWindow {
             }
         }
 
-        // ===== GANTT VIEW =====
-        Flickable {
-            clip: true
-            contentWidth: ganttContent.width
+        // ===== REAL GANTT VIEW =====
+        Item {
+            id: ganttView
+            
+            property var allSubTasks: {
+                refreshTrigger
+                return taskController.getSubTasks(taskWindow.taskId) || []
+            }
+            
+            property var sortedSubTasks: {
+                var tasks = ganttView.allSubTasks
+                calculateGanttTimeline(tasks)
+                return buildTaskHierarchy(tasks)
+            }
 
-            Item {
-                id: ganttContent
-                width: 1000
-                height: 600
+            Flickable {
+                anchors.fill: parent
+                contentWidth: ganttContent.width
+                contentHeight: ganttContent.height
+                clip: true
 
                 Column {
-                    anchors.fill: parent
-                    spacing: 20
+                    id: ganttContent
+                    width: Math.max(parent.width, 1200)
+                    spacing: 0
 
-                    Row {
-                        spacing: 40
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        Repeater {
-                            model: ["Sept","Oct","Nov","Dec","Jan","Feb","Mar"]
-                            Text { text: modelData }
-                        }
-                    }
+                    // Header
+                    Rectangle {
+                        width: parent.width
+                        height: 80
+                        color: "#f3f4f6"
+                        border.color: "#d1d5db"
+                        border.width: 1
 
-                    Row {
-                        spacing: 20
+                        Row {
+                            anchors.fill: parent
 
-                        Column {
-                            spacing: 10
-                            Repeater {
-                                model: {
-                                    refreshTrigger
-                                    return taskController.getSubTasks(taskWindow.taskId)
+                            // Task names column header
+                            Rectangle {
+                                width: 250
+                                height: parent.height
+                                color: "#e5e7eb"
+                                border.color: "#d1d5db"
+                                border.width: 1
+
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 5
+
+                                    Text {
+                                        text: "Sous-tâches"
+                                        font.bold: true
+                                        font.pixelSize: 14
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                    }
                                 }
-                                
-                                Rectangle {
-                                    width: 150
-                                    height: 30
-                                    color: ganttNameMouseArea.containsMouse ? "lightblue" : "transparent"
-                                    
-                                    MouseArea {
-                                        id: ganttNameMouseArea
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        
-                                        onClicked: {
-                                            var component = Qt.createComponent("TaskDetailsView.qml")
-                                            if (component.status === Component.Ready) {
-                                                var window = component.createObject(null, {
-                                                    taskId: modelData.idTache,
-                                                    taskName: modelData.nomTache,
-                                                    projectId: taskWindow.projectId,
-                                                    taskController: taskWindow.taskController,
-                                                    projectController: taskWindow.projectController,
-                                                    parentWindow: taskWindow
-                                                })
-                                                window.show()
+                            }
+
+                            // Timeline header
+                            Item {
+                                width: parent.width - 250
+                                height: parent.height
+
+                                // Month headers
+                                Row {
+                                    anchors.fill: parent
+                                    Repeater {
+                                        model: ganttMonths
+                                        Rectangle {
+                                            width: ganttMonths.length > 0 ? (parent.width / ganttMonths.length) : 100
+                                            height: parent.height
+                                            color: index % 2 === 0 ? "#f9fafb" : "#f3f4f6"
+                                            border.color: "#d1d5db"
+                                            border.width: 1
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: modelData.name
+                                                font.bold: true
+                                                font.pixelSize: 12
                                             }
                                         }
-                                    }
-                                    
-                                    Text { 
-                                        text: modelData.nomTache
-                                        anchors.centerIn: parent
                                     }
                                 }
                             }
                         }
+                    }
+
+                    // Task rows with Gantt bars
+                    Repeater {
+                        model: ganttView.sortedSubTasks
 
                         Rectangle {
-                            id: ganttChart
-                            width: 700
-                            height: 300
-                            border.color: "black"
-                            color: "transparent"
+                            width: ganttContent.width
+                            height: 40
+                            color: index % 2 === 0 ? "white" : "#f9fafb"
+                            border.color: "#e5e7eb"
+                            border.width: 1
 
-                            Repeater {
-                                model: {
-                                    refreshTrigger
-                                    return taskController.getSubTasks(taskWindow.taskId)
-                                }
+                            Row {
+                                anchors.fill: parent
 
+                                // Task name
                                 Rectangle {
-                                    x: 50
-                                    y: index * 40
-                                    width: 100
-                                    height: 30
-                                    color: ganttBarMouseArea.containsMouse ? "skyblue" : "lightblue"
-                                    border.color: "black"
-                                    
+                                    width: 250
+                                    height: parent.height
+                                    color: "transparent"
+                                    border.color: "#e5e7eb"
+                                    border.width: 1
+
                                     MouseArea {
-                                        id: ganttBarMouseArea
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
@@ -411,11 +502,135 @@ ApplicationWindow {
                                                 window.show()
                                             }
                                         }
+
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            color: parent.containsMouse ? "#e0f2fe" : "transparent"
+                                            
+                                            Row {
+                                                anchors.left: parent.left
+                                                anchors.leftMargin: 10
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                spacing: 5
+
+                                                Text {
+                                                    text: "•"
+                                                    font.pixelSize: 10
+                                                    color: "#6b7280"
+                                                }
+
+                                                Column {
+                                                    spacing: 2
+
+                                                    Text {
+                                                        text: modelData.nomTache
+                                                        font.bold: true
+                                                        font.pixelSize: 12
+                                                        elide: Text.ElideRight
+                                                        width: 200
+                                                    }
+
+                                                    Text {
+                                                        text: modelData.assigneeName || "Non assigné"
+                                                        font.pixelSize: 9
+                                                        color: "#6b7280"
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
-                                    
-                                    Text { 
-                                        anchors.centerIn: parent
-                                        text: modelData.nomTache 
+                                }
+
+                                // Gantt bar
+                                Item {
+                                    width: parent.width - 250
+                                    height: parent.height
+
+                                    // Vertical grid lines
+                                    Repeater {
+                                        model: ganttMonths.length
+                                        Rectangle {
+                                            x: ganttMonths.length > 0 ? (index / ganttMonths.length) * parent.width : 0
+                                            width: 1
+                                            height: parent.height
+                                            color: "#e5e7eb"
+                                        }
+                                    }
+
+                                    // Task bar
+                                    Rectangle {
+                                        property var pos: calculateTaskPosition(modelData)
+                                        x: (pos.left / 100) * parent.width
+                                        width: (pos.width / 100) * parent.width
+                                        height: 24
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        color: getStatusColor(modelData.etat)
+                                        radius: 4
+                                        border.color: Qt.darker(color, 1.2)
+                                        border.width: 1
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: modelData.nomTache
+                                            color: "white"
+                                            font.pixelSize: 10
+                                            font.bold: true
+                                            elide: Text.ElideRight
+                                            width: parent.width - 8
+                                            horizontalAlignment: Text.AlignHCenter
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            
+                                            ToolTip {
+                                                visible: parent.containsMouse
+                                                text: modelData.nomTache + "\n" + 
+                                                      modelData.dateDebut + " → " + modelData.dateFin + "\n" +
+                                                      "Statut: " + modelData.etat
+                                                delay: 500
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Legend
+                    Rectangle {
+                        width: parent.width
+                        height: 50
+                        color: "#f9fafb"
+                        border.color: "#e5e7eb"
+                        border.width: 1
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 20
+
+                            Repeater {
+                                model: [
+                                    { status: "A faire", color: "#9ca3af" },
+                                    { status: "En cours", color: "#3b82f6" },
+                                    { status: "A Tester", color: "#f59e0b" },
+                                    { status: "Terminé", color: "#10b981" }
+                                ]
+
+                                Row {
+                                    spacing: 5
+                                    Rectangle {
+                                        width: 20
+                                        height: 12
+                                        color: modelData.color
+                                        radius: 2
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                    Text {
+                                        text: modelData.status
+                                        font.pixelSize: 11
+                                        anchors.verticalCenter: parent.verticalCenter
                                     }
                                 }
                             }
@@ -451,33 +666,18 @@ ApplicationWindow {
         }
 
         onAccepted: {
-            console.log("=== Creating subtask ===")
-            console.log("Parent task ID:", taskWindow.taskId)
-            console.log("Column (status):", currentColumn)
-            console.log("Name:", subTaskNameField.text)
-            console.log("Description:", subTaskDescField.text)
-            console.log("Start date:", subTaskStartDateField.text)
-            console.log("End date:", subTaskEndDateField.text)
-            console.log("Time:", subTaskTimeField.text)
-            
             if (!subTaskNameField.text) {
-                console.error("ERROR: Task name is empty!")
                 return
             }
             
             var assignedId = -1
             if (subTaskAssignedUserField.currentIndex >= 0) {
                 var employees = taskController.getAvailableEmployees()
-                console.log("Employees list length:", employees ? employees.length : 0)
                 if (employees && employees.length > subTaskAssignedUserField.currentIndex) {
                     assignedId = employees[subTaskAssignedUserField.currentIndex].idEmploye
-                    console.log("Assigned to employee ID:", assignedId)
                 }
-            } else {
-                console.log("No employee assigned")
             }
 
-            console.log("Calling createSubTask...")
             var success = taskController.createSubTask(
                 taskWindow.taskId,
                 subTaskNameField.text,
@@ -489,16 +689,9 @@ ApplicationWindow {
                 currentColumn
             )
 
-            console.log("createSubTask returned:", success)
             if (success) {
-                console.log("SubTask created successfully")
                 refreshTrigger++
-                
-                // CLOSE THE WINDOW AFTER SUCCESSFUL CREATION
-                console.log("Closing task window after subtask creation")
                 taskWindow.close()
-            } else {
-                console.error("FAILED to create subtask")
             }
         }
 
@@ -564,7 +757,6 @@ ApplicationWindow {
 
         onAboutToShow: {
             var taskDetails = taskController.getTaskDetails(taskId)
-            console.log("Loading task details for edit:", JSON.stringify(taskDetails))
             
             editTaskNameField.text = taskDetails.nomTache || ""
             editTaskDescField.text = taskDetails.descTache || ""
@@ -598,8 +790,6 @@ ApplicationWindow {
             if (editTaskAssignedCombo.currentIndex >= 0) {
                 assignedId = editTaskAssignedCombo.model[editTaskAssignedCombo.currentIndex].idEmploye
             }
-
-            console.log("Updating task", taskId)
             
             var success = taskController.updateTask(
                 taskId,
@@ -613,19 +803,14 @@ ApplicationWindow {
             )
 
             if (success) {
-                console.log("Task updated successfully")
                 taskWindow.taskName = editTaskNameField.text
                 taskWindow.title = editTaskNameField.text
                 
-                // Notify parent window if it exists
                 if (taskWindow.parentWindow && typeof taskWindow.parentWindow.refreshTrigger !== 'undefined') {
                     taskWindow.parentWindow.refreshTrigger++
                 }
                 
                 refreshTrigger++
-                
-                // CLOSE THE WINDOW AFTER SUCCESSFUL UPDATE
-                console.log("Closing task window after update")
                 taskWindow.close()
             }
         }
@@ -704,24 +889,17 @@ ApplicationWindow {
         }
 
         onAccepted: {
-            console.log("Updating task status:", taskId)
-            
             var success = taskController.updateTaskStatus(
                 taskId,
                 statusEditTaskStatusCombo.currentText
             )
 
             if (success) {
-                console.log("Status updated")
-                
                 if (taskWindow.parentWindow && typeof taskWindow.parentWindow.refreshTrigger !== 'undefined') {
                     taskWindow.parentWindow.refreshTrigger++
                 }
                 
                 refreshTrigger++
-                
-                // CLOSE THE WINDOW AFTER SUCCESSFUL STATUS UPDATE
-                console.log("Closing task window after status update")
                 taskWindow.close()
             }
         }
@@ -759,19 +937,17 @@ ApplicationWindow {
         }
 
         onAccepted: {
-            console.log("Deleting task:", taskId)
             var success = taskController.deleteTask(taskId)
             if (success) {
                 if (taskWindow.parentWindow && typeof taskWindow.parentWindow.refreshTrigger !== 'undefined') {
                     taskWindow.parentWindow.refreshTrigger++
                 }
-                // CLOSE THE WINDOW AFTER SUCCESSFUL DELETION
                 taskWindow.close()
             }
         }
     }
 
-    // === Employee Status Change Dialog for Subtasks ===
+    // Employee Status Change Dialog for Subtasks
     Dialog {
         id: subtaskEmployeeStatusDialog
         title: "Changer le statut de la sous-tâche"
@@ -785,8 +961,6 @@ ApplicationWindow {
         property string currentStatus: ""
 
         onAboutToShow: {
-            console.log("Opening status dialog for subtask:", taskId, "Current status:", currentStatus)
-        
             var statusList = ["A faire", "En cours", "A Tester", "Termine"]
             subtaskEmployeeStatusCombo.currentIndex = -1
             for (var i = 0; i < statusList.length; i++) {
@@ -799,11 +973,8 @@ ApplicationWindow {
 
         onAccepted: {
             if (taskId === -1) {
-                console.error("No subtask ID set for status change")
                 return
             }
-
-            console.log("Employee updating subtask status:", taskId, "to:", subtaskEmployeeStatusCombo.currentText)
         
             var success = taskController.updateTaskStatus(
                 taskId,
@@ -811,20 +982,13 @@ ApplicationWindow {
             )
 
             if (success) {
-                console.log("Subtask status updated successfully")
-                // Refresh the subtasks view
                 refreshTrigger++
             
-                // Also notify parent window if it exists
                 if (taskWindow.parentWindow && taskWindow.parentWindow.refreshTrigger !== undefined) {
                     taskWindow.parentWindow.refreshTrigger++
                 }
                 
-                // CLOSE THE WINDOW AFTER SUCCESSFUL STATUS CHANGE
-                console.log("Closing task window after subtask status update")
                 taskWindow.close()
-            } else {
-                console.log("Failed to update subtask status")
             }
         }
 
