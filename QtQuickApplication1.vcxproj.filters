@@ -101,7 +101,7 @@
     <None Include="TaskDetailsView.qml">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="GanttChart.qml">
+    <None Include="main4.qml">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>

@@ -85,10 +85,20 @@ Page {
         anchors.rightMargin: 20
         anchors.verticalCenter: accueilRect.verticalCenter
 
-        onClicked: {
+         onClicked: {
             console.log("Déconnexion cliquée")
-            window.close()
-           
+            
+            // Utilisez mainPage.parent pour accéder au StackView
+            if (mainPage.parent && mainPage.parent.pop) {
+                mainPage.parent.pop(null) // Retour à la page de login
+            } else {
+                console.log("Erreur: Parent n'est pas un StackView")
+            }
+            
+            // Nettoyage optionnel
+            if (loginController && loginController.logout) {
+                loginController.logout()
+            }
         }
     }
 
@@ -346,7 +356,17 @@ Page {
         anchors.bottomMargin: 40
         text: "Gestion de temps"
 
-        onClicked: console.log("Gestion de temps cliquée")
+        onClicked: {
+            console.log("Gestion de temps cliquée")
+        
+            if (mainPage.parent && mainPage.parent.push) {
+                mainPage.parent.push("main4.qml", {
+                    projectController: mainPage.projectController,
+                    taskController: mainPage.taskController,
+                    loginController: mainPage.loginController
+                })
+            }
+        }
     }
 
     // --- Dialogue de création de projet ---
