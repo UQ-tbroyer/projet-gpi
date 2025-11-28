@@ -104,5 +104,8 @@
     <None Include="main4.qml">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="createProjectTemplateDialog.qml">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

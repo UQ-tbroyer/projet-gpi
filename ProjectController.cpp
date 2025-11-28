@@ -643,13 +643,12 @@ std::vector<TaskData> ProjectController::getAllProjectTasksRecursive(int project
 }
 
 // Create project from template or existing project
+/*
 bool ProjectController::createProjectFromTemplate(const QString& projectName,
     int clientId,
     const QString& repository,
     double cost,
-    const QString& projectDate,
-    int sourceProjectId,
-    bool copyTasks)
+    const QString& projectDate)
 {
     if (!m_currentUser) {
         qWarning() << "ProjectController: No current user set";
@@ -668,11 +667,9 @@ bool ProjectController::createProjectFromTemplate(const QString& projectName,
     }
 
     qDebug() << "ProjectController: Creating project from template:" << projectName;
-    qDebug() << "Source project ID:" << sourceProjectId;
-    qDebug() << "Copy tasks:" << copyTasks;
 
     try {
-        // Create the new project
+        // Create the project first
         ProjectData newProject;
         newProject.nomProject = projectName.toStdString();
         newProject.idClient = clientId;
@@ -680,6 +677,7 @@ bool ProjectController::createProjectFromTemplate(const QString& projectName,
         newProject.tempRepository = repository.toStdString();
         newProject.coutService = cost;
 
+        // Use provided date or current date
         if (projectDate.isEmpty()) {
             newProject.dataProject = QDateTime::currentDateTime().toString("yyyy-MM-dd").toStdString();
         }
@@ -687,49 +685,13 @@ bool ProjectController::createProjectFromTemplate(const QString& projectName,
             newProject.dataProject = projectDate.toStdString();
         }
 
-        // If sourceProjectId is provided, copy additional info from source project
-        if (sourceProjectId > 0) {
-            try {
-                ProjectData sourceProject = m_dbManager->getProjectById(sourceProjectId);
-
-                // Copy repository if not provided
-                if (repository.isEmpty()) {
-                    newProject.tempRepository = sourceProject.tempRepository;
-                }
-
-                // Copy cost if not provided (or is 0)
-                if (cost <= 0.0) {
-                    newProject.coutService = sourceProject.coutService;
-                }
-            }
-            catch (const std::exception& e) {
-                qWarning() << "Could not load source project details:" << e.what();
-                // Continue anyway - not critical
-            }
-        }
-
         int projectId = m_dbManager->createProject(newProject);
 
         if (projectId > 0) {
             qDebug() << "ProjectController: Project created successfully with ID:" << projectId;
 
-            // Copy tasks if requested and source project exists
-            if (copyTasks && sourceProjectId > 0) {
-                qDebug() << "=== Starting task copy process ===";
-                bool tasksCopied = copyProjectTasks(sourceProjectId, projectId);
-
-                if (tasksCopied) {
-                    qDebug() << "✓ Tasks copied successfully";
-                }
-                else {
-                    qWarning() << "✗ Failed to copy some or all tasks, but project was created";
-                    emit errorOccurred("Projet créé mais certaines tâches n'ont pas pu être copiées");
-                    // Don't return false here - the project was created successfully
-                }
-            }
-            else {
-                qDebug() << "Skipping task copy - copyTasks:" << copyTasks << "sourceProjectId:" << sourceProjectId;
-            }
+            // Create the 4 predetermined tasks
+            createTemplateTasks(projectId);
 
             emit projectCreated(projectId);
             loadProjectsByDepartment();
@@ -745,5 +707,223 @@ bool ProjectController::createProjectFromTemplate(const QString& projectName,
         QString errorMsg = QString("Erreur: %1").arg(e.what());
         emit projectCreationFailed(errorMsg);
         return false;
+    }
+}
+*/
+void ProjectController::createTemplateTasks(int projectId)
+{
+    try {
+        QString today = QDate::currentDate().toString("yyyy-MM-dd");
+        QString twoWeeksLater = QDate::currentDate().addDays(14).toString("yyyy-MM-dd");
+
+        // Task 1: Planification
+        TaskData task1;
+        task1.idProject = projectId;
+        task1.nomTache = "Planification et analyse des besoins";
+        task1.descTache = "Définir les objectifs, analyser les besoins et établir le plan de projet";
+        task1.idEmploye = 0; // Unassigned initially
+        task1.idParentTache = 0;
+        task1.dateDebut = today.toStdString();
+        task1.dateFin = QDate::currentDate().addDays(2).toString("yyyy-MM-dd").toStdString();
+        task1.heuresEstimees = 8; // 8 hours
+        task1.heuresUtilisees = 0;
+        task1.etat = "A faire";
+
+        int task1Id = m_dbManager->createTask(task1);
+        qDebug() << "Created template task 1 with ID:" << task1Id;
+
+        // Task 2: Conception
+        TaskData task2;
+        task2.idProject = projectId;
+        task2.nomTache = "Conception et architecture";
+        task2.descTache = "Concevoir l'architecture technique et les spécifications détaillées";
+        task2.idEmploye = 0;
+        task2.idParentTache = 0;
+        task2.dateDebut = QDate::currentDate().addDays(3).toString("yyyy-MM-dd").toStdString();
+        task2.dateFin = QDate::currentDate().addDays(5).toString("yyyy-MM-dd").toStdString();
+        task2.heuresEstimees = 16;
+        task2.heuresUtilisees = 0;
+        task2.etat = "A faire";
+
+        int task2Id = m_dbManager->createTask(task2);
+        qDebug() << "Created template task 2 with ID:" << task2Id;
+
+        // Task 3: Développement
+        TaskData task3;
+        task3.idProject = projectId;
+        task3.nomTache = "Développement et implémentation";
+        task3.descTache = "Développer les fonctionnalités principales et implémenter la solution";
+        task3.idEmploye = 0;
+        task3.idParentTache = 0;
+        task3.dateDebut = QDate::currentDate().addDays(6).toString("yyyy-MM-dd").toStdString();
+        task3.dateFin = QDate::currentDate().addDays(10).toString("yyyy-MM-dd").toStdString();
+        task3.heuresEstimees = 40;
+        task3.heuresUtilisees = 0;
+        task3.etat = "A faire";
+
+        int task3Id = m_dbManager->createTask(task3);
+        qDebug() << "Created template task 3 with ID:" << task3Id;
+
+        // Task 4: Tests et livraison
+        TaskData task4;
+        task4.idProject = projectId;
+        task4.nomTache = "Tests et livraison finale";
+        task4.descTache = "Effectuer les tests de validation et préparer la livraison";
+        task4.idEmploye = 0;
+        task4.idParentTache = 0;
+        task4.dateDebut = QDate::currentDate().addDays(11).toString("yyyy-MM-dd").toStdString();
+        task4.dateFin = twoWeeksLater.toStdString();
+        task4.heuresEstimees = 16;
+        task4.heuresUtilisees = 0;
+        task4.etat = "A faire";
+
+        int task4Id = m_dbManager->createTask(task4);
+        qDebug() << "Created template task 4 with ID:" << task4Id;
+
+        qDebug() << "All template tasks created successfully for project:" << projectId;
+
+    }
+    catch (const std::exception& e) {
+        qCritical() << "Error creating template tasks:" << e.what();
+        // Don't throw here - the project was created successfully
+    }
+}
+
+// In ProjectController.cpp - Add this method
+bool ProjectController::createProjectFromPredeterminedTemplate(const QString& projectName,
+    int clientId,
+    const QString& repository,
+    double cost)
+{
+    if (!m_currentUser) {
+        qWarning() << "ProjectController: No current user set";
+        emit projectCreationFailed("Aucun utilisateur connecte");
+        return false;
+    }
+
+    if (!PermissionManager::canCreateProject(m_currentUser)) {
+        emit projectCreationFailed("Vous n'avez pas la permission de créer des projets");
+        return false;
+    }
+
+    if (projectName.isEmpty()) {
+        emit projectCreationFailed("Le nom du projet est requis");
+        return false;
+    }
+
+    qDebug() << "ProjectController: Creating project from predetermined template:" << projectName;
+
+    try {
+        // Create the project first
+        ProjectData newProject;
+        newProject.nomProject = projectName.toStdString();
+        newProject.idClient = clientId;
+        newProject.idDepartement = m_currentUser->getDepartementId();
+        newProject.tempRepository = repository.toStdString();
+        newProject.coutService = cost;
+        newProject.dataProject = QDateTime::currentDateTime().toString("yyyy-MM-dd").toStdString();
+
+        int projectId = m_dbManager->createProject(newProject);
+
+        if (projectId > 0) {
+            qDebug() << "ProjectController: Project created successfully with ID:" << projectId;
+
+            // Create the 4 predetermined tasks
+            createPredeterminedTemplateTasks(projectId);
+
+            emit projectCreated(projectId);
+            loadProjectsByDepartment();
+            return true;
+        }
+        else {
+            emit projectCreationFailed("Echec de la creation du projet");
+            return false;
+        }
+    }
+    catch (const std::exception& e) {
+        qCritical() << "ProjectController: Error creating project from predetermined template:" << e.what();
+        QString errorMsg = QString("Erreur: %1").arg(e.what());
+        emit projectCreationFailed(errorMsg);
+        return false;
+    }
+}
+
+// Add this private method to create the predetermined template tasks
+void ProjectController::createPredeterminedTemplateTasks(int projectId)
+{
+    try {
+        QString today = QDate::currentDate().toString("yyyy-MM-dd");
+        QString twoWeeksLater = QDate::currentDate().addDays(14).toString("yyyy-MM-dd");
+
+        // Task 1: Planification
+        TaskData task1;
+        task1.idProject = projectId;
+        task1.nomTache = "Planification et analyse des besoins";
+        task1.descTache = "Définir les objectifs, analyser les besoins et établir le plan de projet";
+        task1.idEmploye = 0; // Unassigned initially
+        task1.idParentTache = 0;
+        task1.dateDebut = today.toStdString();
+        task1.dateFin = QDate::currentDate().addDays(2).toString("yyyy-MM-dd").toStdString();
+        task1.heuresEstimees = 8; // 8 hours
+        task1.heuresUtilisees = 0;
+        task1.etat = "A faire";
+
+        int task1Id = m_dbManager->createTask(task1);
+        qDebug() << "Created template task 1 with ID:" << task1Id;
+
+        // Task 2: Conception
+        TaskData task2;
+        task2.idProject = projectId;
+        task2.nomTache = "Conception et architecture";
+        task2.descTache = "Concevoir l'architecture technique et les spécifications détaillées";
+        task2.idEmploye = 0;
+        task2.idParentTache = 0;
+        task2.dateDebut = QDate::currentDate().addDays(3).toString("yyyy-MM-dd").toStdString();
+        task2.dateFin = QDate::currentDate().addDays(5).toString("yyyy-MM-dd").toStdString();
+        task2.heuresEstimees = 16;
+        task2.heuresUtilisees = 0;
+        task2.etat = "A faire";
+
+        int task2Id = m_dbManager->createTask(task2);
+        qDebug() << "Created template task 2 with ID:" << task2Id;
+
+        // Task 3: Développement
+        TaskData task3;
+        task3.idProject = projectId;
+        task3.nomTache = "Développement et implémentation";
+        task3.descTache = "Développer les fonctionnalités principales et implémenter la solution";
+        task3.idEmploye = 0;
+        task3.idParentTache = 0;
+        task3.dateDebut = QDate::currentDate().addDays(6).toString("yyyy-MM-dd").toStdString();
+        task3.dateFin = QDate::currentDate().addDays(10).toString("yyyy-MM-dd").toStdString();
+        task3.heuresEstimees = 40;
+        task3.heuresUtilisees = 0;
+        task3.etat = "A faire";
+
+        int task3Id = m_dbManager->createTask(task3);
+        qDebug() << "Created template task 3 with ID:" << task3Id;
+
+        // Task 4: Tests et livraison
+        TaskData task4;
+        task4.idProject = projectId;
+        task4.nomTache = "Tests et livraison finale";
+        task4.descTache = "Effectuer les tests de validation et préparer la livraison";
+        task4.idEmploye = 0;
+        task4.idParentTache = 0;
+        task4.dateDebut = QDate::currentDate().addDays(11).toString("yyyy-MM-dd").toStdString();
+        task4.dateFin = twoWeeksLater.toStdString();
+        task4.heuresEstimees = 16;
+        task4.heuresUtilisees = 0;
+        task4.etat = "A faire";
+
+        int task4Id = m_dbManager->createTask(task4);
+        qDebug() << "Created template task 4 with ID:" << task4Id;
+
+        qDebug() << "All predetermined template tasks created successfully for project:" << projectId;
+
+    }
+    catch (const std::exception& e) {
+        qCritical() << "Error creating predetermined template tasks:" << e.what();
+        // Don't throw here - the project was created successfully
     }
 }

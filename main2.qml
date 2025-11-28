@@ -432,12 +432,13 @@ Page {
             repositoryField.text = ""
             costField.text = "0.00"
             projectDateField.text = new Date().toISOString().split('T')[0]
-        
+
             fromScratchRadio.checked = true
             fromTemplateRadio.checked = false
+            fromPredeterminedTemplateRadio.checked = false
             templateComboBox.currentIndex = -1
             copyTasksCheckbox.checked = false
-        
+
             if (clientComboBox.count > 0) {
                 clientComboBox.currentIndex = 0
             }
@@ -447,10 +448,11 @@ Page {
             anchors.fill: parent
             spacing: 10
 
-            // Template selection section
+            
+            // Template selection section - SIMPLIFIED VERSION (no green part)
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 120
+                Layout.preferredHeight: 130
                 color: "#f0f0f0"
                 radius: 5
                 border.color: "#cccccc"
@@ -466,11 +468,11 @@ Page {
                         font.bold: true 
                         font.pointSize: 11
                     }
-                
-                    Row {
-                        spacing: 10
+    
+                    ColumnLayout {
+                        spacing: 5 
                         Layout.fillWidth: true
-                    
+
                         RadioButton {
                             id: fromScratchRadio
                             text: "Projet vide"
@@ -482,49 +484,63 @@ Page {
                                 }
                             }
                         }
-                    
+        
                         RadioButton {
                             id: fromTemplateRadio
-                            text: "Copier un projet"
+                            text: "Copier un projet existant"
                             onCheckedChanged: {
                                 if (checked && templateComboBox.count > 0) {
                                     templateComboBox.currentIndex = 0
                                 }
                             }
                         }
-                    }
-                
-                    ComboBox {
-                        id: templateComboBox
-                        Layout.fillWidth: true
-                        enabled: fromTemplateRadio.checked
-                        model: projectCreationDialog.templatesList
-                        textRole: "displayName"
-                        valueRole: "idProject"
-                        displayText: currentIndex === -1 ? "Sélectionnez un projet..." : currentText
-                    
-                        onActivated: {
-                            if (currentIndex >= 0) {
-                                projectCreationDialog.loadTemplateData(currentValue)
+
+                        RadioButton {
+                            id: fromPredeterminedTemplateRadio
+                            text: "Template prédéfini (4 tâches sur 2 semaines)"
+                            onCheckedChanged: {
+                                if (checked) {
+                                    templateComboBox.currentIndex = -1
+                                    copyTasksCheckbox.checked = false
+                                }
                             }
                         }
+
+                        ComboBox {
+                            id: templateComboBox
+                            Layout.fillWidth: true
+                            enabled: fromTemplateRadio.checked
+                            model: projectCreationDialog.templatesList
+                            textRole: "displayName"
+                            valueRole: "idProject"
+                            displayText: currentIndex === -1 ? "Sélectionnez un projet..." : currentText
+        
+                            onActivated: {
+                                if (currentIndex >= 0) {
+                                    projectCreationDialog.loadTemplateData(currentValue)
+                                }
+                            }
+                        }
+    
+                        CheckBox {
+                            id: copyTasksCheckbox
+                            text: "Copier les tâches"
+                            enabled: fromTemplateRadio.checked && templateComboBox.currentIndex >= 0
+                            checked: fromTemplateRadio.checked
+                        }
                     }
-                
-                    CheckBox {
-                        id: copyTasksCheckbox
-                        text: "Copier les tâches"
-                        enabled: fromTemplateRadio.checked && templateComboBox.currentIndex >= 0
-                        checked: fromTemplateRadio.checked
-                    }
+    
+                    
                 }
             }
 
             // Separator
+            /*
             Rectangle {
                 Layout.fillWidth: true
                 height: 1
                 color: "#cccccc"
-            }
+            }*/
 
             // Project details section
             Label { text: "Nom du projet"; font.bold: true }
@@ -582,18 +598,37 @@ Page {
 
                 Button {
                     id: createProjectButton
-                    text: fromTemplateRadio.checked ? "Créer à partir du modèle" : "Créer"
+                    text: {
+                        if (fromPredeterminedTemplateRadio.checked) {
+                            return "Créer avec template"
+                        } else if (fromTemplateRadio.checked) {
+                            return "Créer à partir du modèle"
+                        } else {
+                            return "Créer"
+                        }
+                    }
                     enabled: projectNameField.text !== "" && clientComboBox.currentValue > 0
                     onClicked: {
                         console.log("Creating project:", projectNameField.text)
+                        console.log("From scratch:", fromScratchRadio.checked)
                         console.log("From template:", fromTemplateRadio.checked)
+                        console.log("From predetermined template:", fromPredeterminedTemplateRadio.checked)
                         console.log("Template ID:", templateComboBox.currentValue)
                         console.log("Copy tasks:", copyTasksCheckbox.checked)
-                    
+    
                         var success = false
-                    
-                        if (fromTemplateRadio.checked && templateComboBox.currentValue > 0) {
-                            // Create from template
+    
+                        if (fromPredeterminedTemplateRadio.checked) {
+                            // Create from predetermined template
+                            console.log("=== CALLING createProjectFromPredeterminedTemplate ===")
+                            success = mainPage.projectController.createProjectFromPredeterminedTemplate(
+                                projectNameField.text,
+                                clientComboBox.currentValue,
+                                repositoryField.text,
+                                parseFloat(costField.text || "0")
+                            )
+                        } else if (fromTemplateRadio.checked && templateComboBox.currentValue > 0) {
+                            // Create from existing project template
                             console.log("=== CALLING createProjectFromTemplate ===")
                             success = mainPage.projectController.createProjectFromTemplate(
                                 projectNameField.text,

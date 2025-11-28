@@ -32,7 +32,7 @@ public:
         const QString& repository,
         double cost,
         const QString& projectDate = "");
-
+    /*
     Q_INVOKABLE bool createProjectFromTemplate(const QString& projectName,
         int clientId,
         const QString& repository,
@@ -40,6 +40,7 @@ public:
         const QString& projectDate,
         int sourceProjectId,
         bool copyTasks = true);
+    */
 
     Q_INVOKABLE bool updateProject(int projectId,
         const QString& projectName,
@@ -73,7 +74,13 @@ signals:
     void projectDeletionFailed(const QString& error);
     void clientsLoaded();
     void errorOccurred(const QString& error);
-    void currentUserChanged(); // ADD THIS LINE
+    void currentUserChanged(); 
+
+public slots:
+    bool createProjectFromPredeterminedTemplate(const QString& projectName,
+        int clientId,
+        const QString& repository,
+        double cost);
 
 private:
     DatabaseManager* m_dbManager;
@@ -84,6 +91,8 @@ private:
     bool copyProjectTasks(int sourceProjectId, int targetProjectId);
     bool copyTaskWithChildren(int sourceTaskId, int targetProjectId, int newParentId, std::map<int, int>& taskIdMap);
     std::vector<TaskData> getAllProjectTasksRecursive(int projectId);
+    void createTemplateTasks(int projectId);
+    void createPredeterminedTemplateTasks(int projectId);
 
     void setLoading(bool loading);
     QVariantMap projectDataToVariantMap(const ProjectData& project) const;

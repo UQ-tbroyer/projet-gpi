@@ -52,18 +52,16 @@ static constexpr auto qt_meta_stringdata_ZN17ProjectControllerE = QtMocHelpers::
     "clientsLoaded",
     "errorOccurred",
     "currentUserChanged",
-    "loadProjects",
-    "loadProjectsByUser",
-    "loadProjectsByDepartment",
-    "createProject",
+    "createProjectFromPredeterminedTemplate",
     "projectName",
     "clientId",
     "repository",
     "cost",
+    "loadProjects",
+    "loadProjectsByUser",
+    "loadProjectsByDepartment",
+    "createProject",
     "projectDate",
-    "createProjectFromTemplate",
-    "sourceProjectId",
-    "copyTasks",
     "updateProject",
     "deleteProject",
     "getProjectDetails",
@@ -91,46 +89,47 @@ Q_CONSTINIT static const uint qt_meta_data_ZN17ProjectControllerE[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-      30,   14, // methods
-       2,  298, // properties
+      29,   14, // methods
+       2,  273, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
       11,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,  194,    2, 0x06,    3 /* Public */,
-       3,    0,  195,    2, 0x06,    4 /* Public */,
-       4,    1,  196,    2, 0x06,    5 /* Public */,
-       6,    1,  199,    2, 0x06,    7 /* Public */,
-       8,    1,  202,    2, 0x06,    9 /* Public */,
-       9,    1,  205,    2, 0x06,   11 /* Public */,
-      10,    1,  208,    2, 0x06,   13 /* Public */,
-      11,    1,  211,    2, 0x06,   15 /* Public */,
-      12,    0,  214,    2, 0x06,   17 /* Public */,
-      13,    1,  215,    2, 0x06,   18 /* Public */,
-      14,    0,  218,    2, 0x06,   20 /* Public */,
+       1,    0,  188,    2, 0x06,    3 /* Public */,
+       3,    0,  189,    2, 0x06,    4 /* Public */,
+       4,    1,  190,    2, 0x06,    5 /* Public */,
+       6,    1,  193,    2, 0x06,    7 /* Public */,
+       8,    1,  196,    2, 0x06,    9 /* Public */,
+       9,    1,  199,    2, 0x06,   11 /* Public */,
+      10,    1,  202,    2, 0x06,   13 /* Public */,
+      11,    1,  205,    2, 0x06,   15 /* Public */,
+      12,    0,  208,    2, 0x06,   17 /* Public */,
+      13,    1,  209,    2, 0x06,   18 /* Public */,
+      14,    0,  212,    2, 0x06,   20 /* Public */,
+
+ // slots: name, argc, parameters, tag, flags, initial metatype offsets
+      15,    4,  213,    2, 0x0a,   21 /* Public */,
 
  // methods: name, argc, parameters, tag, flags, initial metatype offsets
-      15,    0,  219,    2, 0x02,   21 /* Public */,
-      16,    0,  220,    2, 0x02,   22 /* Public */,
-      17,    0,  221,    2, 0x02,   23 /* Public */,
-      18,    5,  222,    2, 0x02,   24 /* Public */,
-      18,    4,  233,    2, 0x22,   30 /* Public | MethodCloned */,
-      24,    7,  242,    2, 0x02,   35 /* Public */,
-      24,    6,  257,    2, 0x22,   43 /* Public | MethodCloned */,
-      27,    4,  270,    2, 0x02,   50 /* Public */,
-      28,    1,  279,    2, 0x02,   55 /* Public */,
-      29,    1,  282,    2, 0x02,   57 /* Public */,
-      31,    0,  285,    2, 0x02,   59 /* Public */,
-      33,    0,  286,    2, 0x02,   60 /* Public */,
-      34,    0,  287,    2, 0x02,   61 /* Public */,
-      35,    0,  288,    2, 0x02,   62 /* Public */,
-      36,    0,  289,    2, 0x102,   63 /* Public | MethodIsConst  */,
-      37,    1,  290,    2, 0x102,   64 /* Public | MethodIsConst  */,
-      38,    1,  293,    2, 0x102,   66 /* Public | MethodIsConst  */,
-      39,    0,  296,    2, 0x102,   68 /* Public | MethodIsConst  */,
-      40,    0,  297,    2, 0x102,   69 /* Public | MethodIsConst  */,
+      20,    0,  222,    2, 0x02,   26 /* Public */,
+      21,    0,  223,    2, 0x02,   27 /* Public */,
+      22,    0,  224,    2, 0x02,   28 /* Public */,
+      23,    5,  225,    2, 0x02,   29 /* Public */,
+      23,    4,  236,    2, 0x22,   35 /* Public | MethodCloned */,
+      25,    4,  245,    2, 0x02,   40 /* Public */,
+      26,    1,  254,    2, 0x02,   45 /* Public */,
+      27,    1,  257,    2, 0x02,   47 /* Public */,
+      29,    0,  260,    2, 0x02,   49 /* Public */,
+      31,    0,  261,    2, 0x02,   50 /* Public */,
+      32,    0,  262,    2, 0x02,   51 /* Public */,
+      33,    0,  263,    2, 0x02,   52 /* Public */,
+      34,    0,  264,    2, 0x102,   53 /* Public | MethodIsConst  */,
+      35,    1,  265,    2, 0x102,   54 /* Public | MethodIsConst  */,
+      36,    1,  268,    2, 0x102,   56 /* Public | MethodIsConst  */,
+      37,    0,  271,    2, 0x102,   58 /* Public | MethodIsConst  */,
+      38,    0,  272,    2, 0x102,   59 /* Public | MethodIsConst  */,
 
  // signals: parameters
     QMetaType::Void,
@@ -145,21 +144,22 @@ Q_CONSTINIT static const uint qt_meta_data_ZN17ProjectControllerE[] = {
     QMetaType::Void, QMetaType::QString,    7,
     QMetaType::Void,
 
+ // slots: parameters
+    QMetaType::Bool, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::Double,   16,   17,   18,   19,
+
  // methods: parameters
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
-    QMetaType::Bool, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::Double, QMetaType::QString,   19,   20,   21,   22,   23,
-    QMetaType::Bool, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::Double,   19,   20,   21,   22,
-    QMetaType::Bool, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::Double, QMetaType::QString, QMetaType::Int, QMetaType::Bool,   19,   20,   21,   22,   23,   25,   26,
-    QMetaType::Bool, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::Double, QMetaType::QString, QMetaType::Int,   19,   20,   21,   22,   23,   25,
-    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Double,    5,   19,   21,   22,
+    QMetaType::Bool, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::Double, QMetaType::QString,   16,   17,   18,   19,   24,
+    QMetaType::Bool, QMetaType::QString, QMetaType::Int, QMetaType::QString, QMetaType::Double,   16,   17,   18,   19,
+    QMetaType::Bool, QMetaType::Int, QMetaType::QString, QMetaType::QString, QMetaType::Double,    5,   16,   18,   19,
     QMetaType::Bool, QMetaType::Int,    5,
-    0x80000000 | 30, QMetaType::Int,    5,
-    0x80000000 | 32,
+    0x80000000 | 28, QMetaType::Int,    5,
+    0x80000000 | 30,
     QMetaType::Void,
-    0x80000000 | 32,
-    0x80000000 | 32,
+    0x80000000 | 30,
+    0x80000000 | 30,
     QMetaType::Bool,
     QMetaType::Bool, QMetaType::Int,    5,
     QMetaType::Bool, QMetaType::Int,    5,
@@ -167,8 +167,8 @@ Q_CONSTINIT static const uint qt_meta_data_ZN17ProjectControllerE[] = {
     QMetaType::QString,
 
  // properties: name, type, flags, notifyId, revision
-      41, 0x80000000 | 32, 0x00015009, uint(0), 0,
-      42, QMetaType::Bool, 0x00015001, uint(1), 0,
+      39, 0x80000000 | 30, 0x00015009, uint(0), 0,
+      40, QMetaType::Bool, 0x00015001, uint(1), 0,
 
        0        // eod
 };
@@ -215,6 +215,12 @@ Q_CONSTINIT const QMetaObject ProjectController::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'currentUserChanged'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'createProjectFromPredeterminedTemplate'
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        QtPrivate::TypeAndForceComplete<double, std::false_type>,
         // method 'loadProjects'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'loadProjectsByUser'
@@ -234,23 +240,6 @@ Q_CONSTINIT const QMetaObject ProjectController::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<double, std::false_type>,
-        // method 'createProjectFromTemplate'
-        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<int, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<double, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<int, std::false_type>,
-        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
-        // method 'createProjectFromTemplate'
-        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<int, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<double, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<int, std::false_type>,
         // method 'updateProject'
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
@@ -303,39 +292,37 @@ void ProjectController::qt_static_metacall(QObject *_o, QMetaObject::Call _c, in
         case 8: _t->clientsLoaded(); break;
         case 9: _t->errorOccurred((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         case 10: _t->currentUserChanged(); break;
-        case 11: _t->loadProjects(); break;
-        case 12: _t->loadProjectsByUser(); break;
-        case 13: _t->loadProjectsByDepartment(); break;
-        case 14: { bool _r = _t->createProject((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[5])));
+        case 11: { bool _r = _t->createProjectFromPredeterminedTemplate((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 15: { bool _r = _t->createProject((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])));
+        case 12: _t->loadProjects(); break;
+        case 13: _t->loadProjectsByUser(); break;
+        case 14: _t->loadProjectsByDepartment(); break;
+        case 15: { bool _r = _t->createProject((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[5])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 16: { bool _r = _t->createProjectFromTemplate((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[7])));
+        case 16: { bool _r = _t->createProject((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 17: { bool _r = _t->createProjectFromTemplate((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[6])));
+        case 17: { bool _r = _t->updateProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 18: { bool _r = _t->updateProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<double>>(_a[4])));
+        case 18: { bool _r = _t->deleteProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 19: { bool _r = _t->deleteProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
-            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 20: { QVariantMap _r = _t->getProjectDetails((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+        case 19: { QVariantMap _r = _t->getProjectDetails((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
             if (_a[0]) *reinterpret_cast< QVariantMap*>(_a[0]) = std::move(_r); }  break;
-        case 21: { QVariantList _r = _t->getClients();
+        case 20: { QVariantList _r = _t->getClients();
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
-        case 22: _t->loadClients(); break;
-        case 23: { QVariantList _r = _t->getTemplateProjects();
+        case 21: _t->loadClients(); break;
+        case 22: { QVariantList _r = _t->getTemplateProjects();
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
-        case 24: { QVariantList _r = _t->getAllProjectsForTemplate();
+        case 23: { QVariantList _r = _t->getAllProjectsForTemplate();
             if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
-        case 25: { bool _r = _t->canCreateProject();
+        case 24: { bool _r = _t->canCreateProject();
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 26: { bool _r = _t->canEditProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+        case 25: { bool _r = _t->canEditProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 27: { bool _r = _t->canDeleteProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+        case 26: { bool _r = _t->canDeleteProject((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 28: { bool _r = _t->canViewAllProjects();
+        case 27: { bool _r = _t->canViewAllProjects();
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 29: { QString _r = _t->getUserRole();
+        case 28: { QString _r = _t->getUserRole();
             if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = std::move(_r); }  break;
         default: ;
         }
@@ -449,14 +436,14 @@ int ProjectController::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 30)
+        if (_id < 29)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 30;
+        _id -= 29;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 30)
+        if (_id < 29)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 30;
+        _id -= 29;
     }
     if (_c == QMetaObject::ReadProperty || _c == QMetaObject::WriteProperty
             || _c == QMetaObject::ResetProperty || _c == QMetaObject::BindableProperty
