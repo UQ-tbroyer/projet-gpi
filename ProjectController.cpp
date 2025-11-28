@@ -520,111 +520,126 @@ bool ProjectController::copyProjectTasks(int sourceProjectId, int targetProjectI
     }
 
     try {
-        // Get all tasks from source project
-        std::vector<TaskData> sourceTasks = m_dbManager->getTasksByProject(sourceProjectId);
-        qDebug() << "Found" << sourceTasks.size() << "tasks to copy";
+        // Get ALL tasks from source project (including subtasks)
+        std::vector<TaskData> allSourceTasks = getAllProjectTasksRecursive(sourceProjectId);
+        qDebug() << "Found" << allSourceTasks.size() << "total tasks (including subtasks) to copy";
 
-        if (sourceTasks.empty()) {
+        if (allSourceTasks.empty()) {
             qDebug() << "No tasks found in source project - this is OK";
             return true;
         }
 
-        // Debug: Log all source tasks
-        for (const auto& task : sourceTasks) {
-            qDebug() << "Source Task:" << QString::fromStdString(task.nomTache)
-                << "ID:" << task.idTache
-                << "Parent:" << task.idParentTache
-                << "Assigned to:" << task.idEmploye
-                << "Status:" << QString::fromStdString(task.etat);
+        // Separate top-level tasks from subtasks for processing
+        std::vector<TaskData> topLevelTasks;
+        std::map<int, std::vector<TaskData>> subtasksByParent;
+
+        for (const auto& task : allSourceTasks) {
+            if (task.idParentTache == 0) {
+                topLevelTasks.push_back(task);
+            }
+            else {
+                subtasksByParent[task.idParentTache].push_back(task);
+            }
         }
+
+        qDebug() << "Top-level tasks:" << topLevelTasks.size();
+        qDebug() << "Subtasks grouped by" << subtasksByParent.size() << "different parents";
 
         std::map<int, int> taskIdMap;
         int copiedCount = 0;
 
-        // Keep copying until all tasks are processed or we stop making progress
-        bool progressMade;
-        int maxIterations = 20; // Increased for deep hierarchies
-        int iteration = 0;
+        // Function to recursively copy a task and all its children
+        std::function<bool(const TaskData&, int)> copyTaskRecursive;
+        copyTaskRecursive = [&](const TaskData& sourceTask, int newParentId) -> bool {
+            // Copy the task
+            TaskData newTask = sourceTask;
+            newTask.idProject = targetProjectId;
+            newTask.idTache = 0;
+            newTask.idParentTache = newParentId;
+            newTask.etat = "A faire";
 
-        do {
-            progressMade = false;
-            iteration++;
-            qDebug() << "--- Copy iteration" << iteration << "---";
+            qDebug() << "Copying task:" << QString::fromStdString(newTask.nomTache)
+                << "Parent (old->new):" << sourceTask.idParentTache << "->" << newParentId;
 
-            for (const auto& sourceTask : sourceTasks) {
-                // Skip if already copied
-                if (taskIdMap.count(sourceTask.idTache)) {
-                    continue;
-                }
+            int newTaskId;
+            if (newParentId > 0) {
+                newTaskId = m_dbManager->createSubTask(newParentId, newTask);
+            }
+            else {
+                newTaskId = m_dbManager->createTask(newTask);
+            }
 
-                int newParentId = 0;
+            if (newTaskId <= 0) {
+                qWarning() << "✗ Failed to copy task:" << QString::fromStdString(newTask.nomTache);
+                return false;
+            }
 
-                // Determine parent ID
-                if (sourceTask.idParentTache > 0) {
-                    auto parentIt = taskIdMap.find(sourceTask.idParentTache);
-                    if (parentIt == taskIdMap.end()) {
-                        // Parent not copied yet, skip for now
-                        continue;
+            taskIdMap[sourceTask.idTache] = newTaskId;
+            copiedCount++;
+            qDebug() << "✓ Successfully copied task. New ID:" << newTaskId;
+
+            // Recursively copy all children of this task
+            auto childIt = subtasksByParent.find(sourceTask.idTache);
+            if (childIt != subtasksByParent.end()) {
+                for (const auto& childTask : childIt->second) {
+                    if (!copyTaskRecursive(childTask, newTaskId)) {
+                        qWarning() << "Failed to copy child task:" << QString::fromStdString(childTask.nomTache);
                     }
-                    newParentId = parentIt->second;
-                }
-
-                // Copy the task
-                TaskData newTask = sourceTask;
-                newTask.idProject = targetProjectId;
-                newTask.idTache = 0; // Reset for new task
-                newTask.idParentTache = newParentId;
-                newTask.etat = "A faire"; // Reset status
-
-                qDebug() << "Copying task:" << QString::fromStdString(newTask.nomTache)
-                    << "Parent (old->new):" << sourceTask.idParentTache << "->" << newParentId
-                    << "Assigned to:" << newTask.idEmploye;
-
-                int newTaskId;
-                if (newParentId > 0) {
-                    newTaskId = m_dbManager->createSubTask(newParentId, newTask);
-                }
-                else {
-                    newTaskId = m_dbManager->createTask(newTask);
-                }
-
-                if (newTaskId > 0) {
-                    taskIdMap[sourceTask.idTache] = newTaskId;
-                    copiedCount++;
-                    progressMade = true;
-                    qDebug() << "✓ Successfully copied task. New ID:" << newTaskId;
-                }
-                else {
-                    qWarning() << "✗ Failed to copy task:" << QString::fromStdString(newTask.nomTache);
-                    // Continue with other tasks
                 }
             }
 
-            qDebug() << "Iteration" << iteration << "complete. Total copied:" << copiedCount;
+            return true;
+        };
 
-        } while (progressMade && iteration < maxIterations && copiedCount < sourceTasks.size());
+        // Copy all top-level tasks (which will recursively copy their children)
+        for (const auto& topLevelTask : topLevelTasks) {
+            copyTaskRecursive(topLevelTask, 0);
+        }
 
         // Final report
         qDebug() << "=== COPYING COMPLETE ===";
-        qDebug() << "Source tasks:" << sourceTasks.size();
-        qDebug() << "Copied tasks:" << copiedCount;
-        qDebug() << "Tasks not copied:" << (sourceTasks.size() - copiedCount);
+        qDebug() << "Total source tasks:" << allSourceTasks.size();
+        qDebug() << "Successfully copied:" << copiedCount;
+        qDebug() << "Tasks not copied:" << (allSourceTasks.size() - copiedCount);
 
-        // Log any tasks that couldn't be copied
-        for (const auto& task : sourceTasks) {
-            if (!taskIdMap.count(task.idTache)) {
-                qWarning() << "Failed to copy:" << QString::fromStdString(task.nomTache)
-                    << "ID:" << task.idTache << "Parent:" << task.idParentTache;
-            }
-        }
-
-        return copiedCount > 0; // Success if we copied at least one task
+        return copiedCount > 0;
 
     }
     catch (const std::exception& e) {
         qCritical() << "Exception in copyProjectTasks:" << e.what();
         return false;
     }
+}
+
+std::vector<TaskData> ProjectController::getAllProjectTasksRecursive(int projectId) {
+    std::vector<TaskData> allTasks;
+
+    try {
+        // Get top-level tasks
+        std::vector<TaskData> topLevelTasks = m_dbManager->getTasksByProject(projectId);
+
+        // Recursively get subtasks for each task
+        std::function<void(const std::vector<TaskData>&)> collectTasks;
+        collectTasks = [&](const std::vector<TaskData>& tasks) {
+            for (const auto& task : tasks) {
+                allTasks.push_back(task);
+
+                // Get subtasks for this task
+                std::vector<TaskData> childTasks = m_dbManager->getSubTasksByTask(task.idTache);
+                if (!childTasks.empty()) {
+                    collectTasks(childTasks);
+                }
+            }
+        };
+
+        collectTasks(topLevelTasks);
+
+    }
+    catch (const std::exception& e) {
+        qCritical() << "Error getting all project tasks recursively:" << e.what();
+    }
+
+    return allTasks;
 }
 
 // Create project from template or existing project

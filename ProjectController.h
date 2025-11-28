@@ -83,6 +83,7 @@ private:
 
     bool copyProjectTasks(int sourceProjectId, int targetProjectId);
     bool copyTaskWithChildren(int sourceTaskId, int targetProjectId, int newParentId, std::map<int, int>& taskIdMap);
+    std::vector<TaskData> getAllProjectTasksRecursive(int projectId);
 
     void setLoading(bool loading);
     QVariantMap projectDataToVariantMap(const ProjectData& project) const;
