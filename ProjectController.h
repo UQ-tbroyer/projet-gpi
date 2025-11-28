@@ -33,6 +33,14 @@ public:
         double cost,
         const QString& projectDate = "");
 
+    Q_INVOKABLE bool createProjectFromTemplate(const QString& projectName,
+        int clientId,
+        const QString& repository,
+        double cost,
+        const QString& projectDate,
+        int sourceProjectId,
+        bool copyTasks = true);
+
     Q_INVOKABLE bool updateProject(int projectId,
         const QString& projectName,
         const QString& repository,
@@ -43,6 +51,9 @@ public:
     Q_INVOKABLE QVariantMap getProjectDetails(int projectId);
     Q_INVOKABLE QVariantList getClients();
     Q_INVOKABLE void loadClients();
+
+    Q_INVOKABLE QVariantList getTemplateProjects();
+    Q_INVOKABLE QVariantList getAllProjectsForTemplate();
 
     // Permission check methods for QML
     Q_INVOKABLE bool canCreateProject() const;
@@ -69,6 +80,9 @@ private:
     User* m_currentUser;
     QVariantList m_projects;
     bool m_loading;
+
+    bool copyProjectTasks(int sourceProjectId, int targetProjectId);
+    bool copyTaskWithChildren(int sourceTaskId, int targetProjectId, int newParentId, std::map<int, int>& taskIdMap);
 
     void setLoading(bool loading);
     QVariantMap projectDataToVariantMap(const ProjectData& project) const;

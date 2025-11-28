@@ -374,100 +374,20 @@ Page {
         id: projectCreationDialog
         title: "Nouveau Projet"
         anchors.centerIn: parent
-        width: 400
-        height: 450
+        width: 450
+        height: 600
         modal: true
-    
+
         property var clientsList: []
-    
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: 10
-        
-            Label { text: "Nom du projet"; font.bold: true }
-            TextField {
-                id: projectNameField
-                placeholderText: "Entrez le nom du projet"
-                Layout.fillWidth: true
-            }
-        
-            Label { text: "Client"; font.bold: true }
-            ComboBox {
-                id: clientComboBox
-                Layout.fillWidth: true
-                model: projectCreationDialog.clientsList
-                textRole: "nomClient"
-                valueRole: "idClient"
-            }
-        
-            Label { text: "Répertoire"; font.bold: true }
-            TextField {
-                id: repositoryField
-                placeholderText: "Répertoire du projet"
-                Layout.fillWidth: true
-            }
-        
-            Label { text: "Coût du service (€)"; font.bold: true }
-            TextField {
-                id: costField
-                placeholderText: "0.00"
-                validator: DoubleValidator { bottom: 0; decimals: 2 }
-                Layout.fillWidth: true
-                text: "0.00"
-            }
-        
-            Label { text: "Date du projet"; font.bold: true }
-            TextField {
-                id: projectDateField
-                placeholderText: "AAAA-MM-JJ"
-                Layout.fillWidth: true
-                text: new Date().toISOString().split('T')[0]
-            }
-        
-            RowLayout {
-                Layout.alignment: Qt.AlignRight
-                spacing: 10
-            
-                Button {
-                    text: "Annuler"
-                    onClicked: projectCreationDialog.close()
-                }
-            
-                Button {
-                    id: createProjectButton
-                    text: "Créer"
-                    enabled: projectNameField.text !== "" && clientComboBox.currentValue > 0
-                    onClicked: {
-                        console.log("Creating project with:", projectNameField.text, "client:", clientComboBox.currentValue)
-                        if (mainPage.projectController && mainPage.projectController.createProject) {
-                            var success = mainPage.projectController.createProject(
-                                projectNameField.text,
-                                clientComboBox.currentValue,
-                                repositoryField.text,
-                                parseFloat(costField.text || "0"),
-                                projectDateField.text
-                            )
-                        
-                            if (success) {
-                                projectCreationDialog.close()
-                                resetForm()
-                            }
-                        } else {
-                            console.log("ERROR: projectController or createProject not available")
-                            errorDialog.text = "Erreur: Contrôleur de projet non disponible"
-                            errorDialog.open()
-                        }
-                    }
-                }
-            }
-        }
-    
+        property var templatesList: []
+
+        // Functions defined at Dialog level so they're accessible everywhere
         function loadClientsData() {
             console.log("Loading clients data...")
             if (mainPage.projectController && mainPage.projectController.getClients) {
                 var clients = mainPage.projectController.getClients()
                 console.log("Number of clients:", clients ? clients.length : 0)
-        
+
                 projectCreationDialog.clientsList = clients || []
                 clientComboBox.model = projectCreationDialog.clientsList
                 if (clientComboBox.count > 0) {
@@ -477,21 +397,243 @@ Page {
                 console.log("ERROR: Cannot load clients - controller or method not available")
             }
         }
-    
+
+        function loadTemplatesData() {
+            console.log("Loading templates data...")
+            if (mainPage.projectController && mainPage.projectController.getTemplateProjects) {
+                var templates = mainPage.projectController.getTemplateProjects()
+                console.log("Number of templates:", templates ? templates.length : 0)
+
+                projectCreationDialog.templatesList = templates || []
+                templateComboBox.model = projectCreationDialog.templatesList
+                templateComboBox.currentIndex = -1
+            } else {
+                console.log("ERROR: Cannot load templates - controller or method not available")
+            }
+        }
+
+        function loadTemplateData(templateId) {
+            console.log("Loading template data for project:", templateId)
+            if (mainPage.projectController && mainPage.projectController.getProjectDetails) {
+                var projectDetails = mainPage.projectController.getProjectDetails(templateId)
+            
+                if (projectDetails && Object.keys(projectDetails).length > 0) {
+                    // Pre-fill fields with template data
+                    repositoryField.text = projectDetails.tempRepository || ""
+                    costField.text = projectDetails.coutService ? projectDetails.coutService.toFixed(2) : "0.00"
+                
+                    console.log("Template data loaded successfully")
+                }
+            }
+        }
+
         function resetForm() {
             projectNameField.text = ""
             repositoryField.text = ""
             costField.text = "0.00"
             projectDateField.text = new Date().toISOString().split('T')[0]
+        
+            fromScratchRadio.checked = true
+            fromTemplateRadio.checked = false
+            templateComboBox.currentIndex = -1
+            copyTasksCheckbox.checked = false
+        
             if (clientComboBox.count > 0) {
                 clientComboBox.currentIndex = 0
             }
         }
-    
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 10
+
+            // Template selection section
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 120
+                color: "#f0f0f0"
+                radius: 5
+                border.color: "#cccccc"
+                border.width: 1
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    spacing: 8
+
+                    Label { 
+                        text: "Créer à partir de :"
+                        font.bold: true 
+                        font.pointSize: 11
+                    }
+                
+                    Row {
+                        spacing: 10
+                        Layout.fillWidth: true
+                    
+                        RadioButton {
+                            id: fromScratchRadio
+                            text: "Projet vide"
+                            checked: true
+                            onCheckedChanged: {
+                                if (checked) {
+                                    templateComboBox.currentIndex = -1
+                                    copyTasksCheckbox.checked = false
+                                }
+                            }
+                        }
+                    
+                        RadioButton {
+                            id: fromTemplateRadio
+                            text: "Copier un projet"
+                            onCheckedChanged: {
+                                if (checked && templateComboBox.count > 0) {
+                                    templateComboBox.currentIndex = 0
+                                }
+                            }
+                        }
+                    }
+                
+                    ComboBox {
+                        id: templateComboBox
+                        Layout.fillWidth: true
+                        enabled: fromTemplateRadio.checked
+                        model: projectCreationDialog.templatesList
+                        textRole: "displayName"
+                        valueRole: "idProject"
+                        displayText: currentIndex === -1 ? "Sélectionnez un projet..." : currentText
+                    
+                        onActivated: {
+                            if (currentIndex >= 0) {
+                                projectCreationDialog.loadTemplateData(currentValue)
+                            }
+                        }
+                    }
+                
+                    CheckBox {
+                        id: copyTasksCheckbox
+                        text: "Copier les tâches"
+                        enabled: fromTemplateRadio.checked && templateComboBox.currentIndex >= 0
+                        checked: fromTemplateRadio.checked
+                    }
+                }
+            }
+
+            // Separator
+            Rectangle {
+                Layout.fillWidth: true
+                height: 1
+                color: "#cccccc"
+            }
+
+            // Project details section
+            Label { text: "Nom du projet"; font.bold: true }
+            TextField {
+                id: projectNameField
+                placeholderText: "Entrez le nom du projet"
+                Layout.fillWidth: true
+            }
+
+            Label { text: "Client"; font.bold: true }
+            ComboBox {
+                id: clientComboBox
+                Layout.fillWidth: true
+                model: projectCreationDialog.clientsList
+                textRole: "nomClient"
+                valueRole: "idClient"
+            }
+
+            Label { text: "Répertoire"; font.bold: true }
+            TextField {
+                id: repositoryField
+                placeholderText: "Répertoire du projet"
+                Layout.fillWidth: true
+            }
+
+            Label { text: "Coût du service (€)"; font.bold: true }
+            TextField {
+                id: costField
+                placeholderText: "0.00"
+                validator: DoubleValidator { bottom: 0; decimals: 2 }
+                Layout.fillWidth: true
+                text: "0.00"
+            }
+
+            Label { text: "Date du projet"; font.bold: true }
+            TextField {
+                id: projectDateField
+                placeholderText: "AAAA-MM-JJ"
+                Layout.fillWidth: true
+                text: new Date().toISOString().split('T')[0]
+            }
+
+            Item { Layout.fillHeight: true }
+
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                spacing: 10
+
+                Button {
+                    text: "Annuler"
+                    onClicked: {
+                        projectCreationDialog.close()
+                    }
+                }
+
+                Button {
+                    id: createProjectButton
+                    text: fromTemplateRadio.checked ? "Créer à partir du modèle" : "Créer"
+                    enabled: projectNameField.text !== "" && clientComboBox.currentValue > 0
+                    onClicked: {
+                        console.log("Creating project:", projectNameField.text)
+                        console.log("From template:", fromTemplateRadio.checked)
+                        console.log("Template ID:", templateComboBox.currentValue)
+                        console.log("Copy tasks:", copyTasksCheckbox.checked)
+                    
+                        var success = false
+                    
+                        if (fromTemplateRadio.checked && templateComboBox.currentValue > 0) {
+                            // Create from template
+                            console.log("=== CALLING createProjectFromTemplate ===")
+                            success = mainPage.projectController.createProjectFromTemplate(
+                                projectNameField.text,
+                                clientComboBox.currentValue,
+                                repositoryField.text,
+                                parseFloat(costField.text || "0"),
+                                projectDateField.text,
+                                templateComboBox.currentValue,
+                                copyTasksCheckbox.checked
+                            )
+                        } else {
+                            // Create from scratch
+                            console.log("=== CALLING createProject ===")
+                            success = mainPage.projectController.createProject(
+                                projectNameField.text,
+                                clientComboBox.currentValue,
+                                repositoryField.text,
+                                parseFloat(costField.text || "0"),
+                                projectDateField.text
+                            )
+                        }
+
+                        if (success) {
+                            projectCreationDialog.close()
+                        }
+                    }
+                }
+            }
+        }
+
         onOpened: {
-            console.log("Project dialog opened - loading clients")
+            console.log("Project dialog opened - loading data")
             loadClientsData()
+            loadTemplatesData()
             projectNameField.forceActiveFocus()
+        }
+    
+        onClosed: {
+            console.log("Dialog closed - resetting form")
+            resetForm()
         }
     }
 

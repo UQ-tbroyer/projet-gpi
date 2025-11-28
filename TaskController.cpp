@@ -458,14 +458,34 @@ QVariantList TaskController::getSubTasks(int taskId)
 
 
 
+// In TaskController.cpp - REPLACE the existing deleteSubTask method
+
 bool TaskController::deleteSubTask(int taskId)
 {
+    if (!canDeleteTask(taskId)) {
+        emit taskDeletionFailed("Vous n'avez pas la permission de supprimer cette sous-tâche");
+        return false;
+    }
+
     try {
-        bool success = m_dbManager->deleteSubTask(taskId);
+        bool success = m_dbManager->deleteTask(taskId); // Use the main deleteTask which is now recursive
         if (success) {
+            // Get parent task ID to notify the parent
+            try {
+                TaskData taskDetails = m_dbManager->getTaskById(taskId);
+                if (taskDetails.idParentTache > 0) {
+                    emit subTasksChanged(taskDetails.idParentTache);
+                    qDebug() << "Notified parent task about subtask deletion:" << taskDetails.idParentTache;
+                }
+            }
+            catch (const std::exception& e) {
+                qWarning() << "Error getting task details for notification:" << e.what();
+            }
+
             emit taskDeleted(taskId);
-            if (m_currentProjectId > 0)
+            if (m_currentProjectId > 0) {
                 loadTasksForProject(m_currentProjectId);
+            }
             return true;
         }
         else {

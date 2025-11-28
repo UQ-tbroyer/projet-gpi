@@ -1,4 +1,4 @@
-#include "ProjectController.h"
+﻿#include "ProjectController.h"
 #include "DatabaseManager.h"
 #include "PermissionManager.h"
 #include "User.h"
@@ -180,7 +180,7 @@ bool ProjectController::createProject(const QString& projectName,
     }
 
     if (!PermissionManager::canCreateProject(m_currentUser)) {
-        emit projectCreationFailed("Vous n'avez pas la permission de cr�er des projets");
+        emit projectCreationFailed("Vous n'avez pas la permission de créer des projets");
         return false;
     }
 
@@ -323,7 +323,7 @@ QVariantList ProjectController::getClients()
         // Add a default empty option
         //QVariantMap defaultClient;
         //defaultClient["idClient"] = 0;
-        //defaultClient["nomClient"] = "S�lectionnez un client";
+        //defaultClient["nomClient"] = "Sélectionnez un client";
         //clientList.append(defaultClient);
 
         for (const auto& client : clients) {
@@ -421,3 +421,314 @@ QString ProjectController::getUserRole() const {
     return PermissionManager::getUserRoleString(m_currentUser);
 }
 
+
+QVariantList ProjectController::getTemplateProjects()
+{
+    qDebug() << "ProjectController: Loading template projects";
+    QVariantList templateList;
+
+    try {
+        std::vector<ProjectData> projects;
+
+        // Get projects based on user role
+        if (PermissionManager::canViewAllProjects(m_currentUser)) {
+            projects = m_dbManager->getAllProjects();
+        }
+        else if (PermissionManager::canViewDepartmentProjects(m_currentUser)) {
+            projects = m_dbManager->getProjectsByDepartment(m_currentUser->getDepartementId());
+        }
+        else {
+            projects = m_dbManager->getProjectsByUser(m_currentUser->getId());
+        }
+
+        for (const auto& project : projects) {
+            QVariantMap projectMap;
+            projectMap["idProject"] = project.idProject;
+            projectMap["nomProject"] = QString::fromStdString(project.nomProject);
+            projectMap["displayName"] = QString::fromStdString(project.nomProject) +
+                " (" + QString::fromStdString(project.nomClient) + ")";
+            templateList.append(projectMap);
+        }
+
+        qDebug() << "ProjectController: Loaded" << templateList.size() << "template projects";
+    }
+    catch (const std::exception& e) {
+        qCritical() << "ProjectController: Error loading template projects:" << e.what();
+        emit errorOccurred(QString("Erreur: %1").arg(e.what()));
+    }
+
+    return templateList;
+}
+
+QVariantList ProjectController::getAllProjectsForTemplate()
+{
+    return getTemplateProjects();
+}
+
+// Copy tasks from source project to target project
+bool ProjectController::copyTaskWithChildren(int sourceTaskId, int targetProjectId, int newParentId, std::map<int, int>& taskIdMap)
+{
+    try {
+        // Get the source task
+        TaskData sourceTask = m_dbManager->getTaskById(sourceTaskId);
+
+        TaskData newTask = sourceTask;
+        newTask.idProject = targetProjectId;
+        newTask.idTache = 0;
+        newTask.idParentTache = newParentId;
+        newTask.etat = "A faire";
+
+        int newTaskId;
+        if (newParentId > 0) {
+            newTaskId = m_dbManager->createSubTask(newParentId, newTask);
+        }
+        else {
+            newTaskId = m_dbManager->createTask(newTask);
+        }
+
+        if (newTaskId <= 0) {
+            qWarning() << "Failed to create task:" << QString::fromStdString(sourceTask.nomTache);
+            return false;
+        }
+
+        taskIdMap[sourceTaskId] = newTaskId;
+        qDebug() << "✓ Created task:" << QString::fromStdString(sourceTask.nomTache) << "New ID:" << newTaskId;
+
+        // Recursively copy all children
+        std::vector<TaskData> childTasks = m_dbManager->getSubTasksByTask(sourceTaskId);
+        for (const auto& childTask : childTasks) {
+            copyTaskWithChildren(childTask.idTache, targetProjectId, newTaskId, taskIdMap);
+        }
+
+        return true;
+    }
+    catch (const std::exception& e) {
+        qCritical() << "Error copying task with children:" << e.what();
+        return false;
+    }
+}
+
+bool ProjectController::copyProjectTasks(int sourceProjectId, int targetProjectId)
+{
+    qDebug() << "=== ProjectController::copyProjectTasks START ===";
+    qDebug() << "Source Project ID:" << sourceProjectId;
+    qDebug() << "Target Project ID:" << targetProjectId;
+
+    if (!m_dbManager) {
+        qCritical() << "DatabaseManager is null!";
+        return false;
+    }
+
+    try {
+        // Get all tasks from source project
+        std::vector<TaskData> sourceTasks = m_dbManager->getTasksByProject(sourceProjectId);
+        qDebug() << "Found" << sourceTasks.size() << "tasks to copy";
+
+        if (sourceTasks.empty()) {
+            qDebug() << "No tasks found in source project - this is OK";
+            return true;
+        }
+
+        // Debug: Log all source tasks
+        for (const auto& task : sourceTasks) {
+            qDebug() << "Source Task:" << QString::fromStdString(task.nomTache)
+                << "ID:" << task.idTache
+                << "Parent:" << task.idParentTache
+                << "Assigned to:" << task.idEmploye
+                << "Status:" << QString::fromStdString(task.etat);
+        }
+
+        std::map<int, int> taskIdMap;
+        int copiedCount = 0;
+
+        // Keep copying until all tasks are processed or we stop making progress
+        bool progressMade;
+        int maxIterations = 20; // Increased for deep hierarchies
+        int iteration = 0;
+
+        do {
+            progressMade = false;
+            iteration++;
+            qDebug() << "--- Copy iteration" << iteration << "---";
+
+            for (const auto& sourceTask : sourceTasks) {
+                // Skip if already copied
+                if (taskIdMap.count(sourceTask.idTache)) {
+                    continue;
+                }
+
+                int newParentId = 0;
+
+                // Determine parent ID
+                if (sourceTask.idParentTache > 0) {
+                    auto parentIt = taskIdMap.find(sourceTask.idParentTache);
+                    if (parentIt == taskIdMap.end()) {
+                        // Parent not copied yet, skip for now
+                        continue;
+                    }
+                    newParentId = parentIt->second;
+                }
+
+                // Copy the task
+                TaskData newTask = sourceTask;
+                newTask.idProject = targetProjectId;
+                newTask.idTache = 0; // Reset for new task
+                newTask.idParentTache = newParentId;
+                newTask.etat = "A faire"; // Reset status
+
+                qDebug() << "Copying task:" << QString::fromStdString(newTask.nomTache)
+                    << "Parent (old->new):" << sourceTask.idParentTache << "->" << newParentId
+                    << "Assigned to:" << newTask.idEmploye;
+
+                int newTaskId;
+                if (newParentId > 0) {
+                    newTaskId = m_dbManager->createSubTask(newParentId, newTask);
+                }
+                else {
+                    newTaskId = m_dbManager->createTask(newTask);
+                }
+
+                if (newTaskId > 0) {
+                    taskIdMap[sourceTask.idTache] = newTaskId;
+                    copiedCount++;
+                    progressMade = true;
+                    qDebug() << "✓ Successfully copied task. New ID:" << newTaskId;
+                }
+                else {
+                    qWarning() << "✗ Failed to copy task:" << QString::fromStdString(newTask.nomTache);
+                    // Continue with other tasks
+                }
+            }
+
+            qDebug() << "Iteration" << iteration << "complete. Total copied:" << copiedCount;
+
+        } while (progressMade && iteration < maxIterations && copiedCount < sourceTasks.size());
+
+        // Final report
+        qDebug() << "=== COPYING COMPLETE ===";
+        qDebug() << "Source tasks:" << sourceTasks.size();
+        qDebug() << "Copied tasks:" << copiedCount;
+        qDebug() << "Tasks not copied:" << (sourceTasks.size() - copiedCount);
+
+        // Log any tasks that couldn't be copied
+        for (const auto& task : sourceTasks) {
+            if (!taskIdMap.count(task.idTache)) {
+                qWarning() << "Failed to copy:" << QString::fromStdString(task.nomTache)
+                    << "ID:" << task.idTache << "Parent:" << task.idParentTache;
+            }
+        }
+
+        return copiedCount > 0; // Success if we copied at least one task
+
+    }
+    catch (const std::exception& e) {
+        qCritical() << "Exception in copyProjectTasks:" << e.what();
+        return false;
+    }
+}
+
+// Create project from template or existing project
+bool ProjectController::createProjectFromTemplate(const QString& projectName,
+    int clientId,
+    const QString& repository,
+    double cost,
+    const QString& projectDate,
+    int sourceProjectId,
+    bool copyTasks)
+{
+    if (!m_currentUser) {
+        qWarning() << "ProjectController: No current user set";
+        emit projectCreationFailed("Aucun utilisateur connecte");
+        return false;
+    }
+
+    if (!PermissionManager::canCreateProject(m_currentUser)) {
+        emit projectCreationFailed("Vous n'avez pas la permission de créer des projets");
+        return false;
+    }
+
+    if (projectName.isEmpty()) {
+        emit projectCreationFailed("Le nom du projet est requis");
+        return false;
+    }
+
+    qDebug() << "ProjectController: Creating project from template:" << projectName;
+    qDebug() << "Source project ID:" << sourceProjectId;
+    qDebug() << "Copy tasks:" << copyTasks;
+
+    try {
+        // Create the new project
+        ProjectData newProject;
+        newProject.nomProject = projectName.toStdString();
+        newProject.idClient = clientId;
+        newProject.idDepartement = m_currentUser->getDepartementId();
+        newProject.tempRepository = repository.toStdString();
+        newProject.coutService = cost;
+
+        if (projectDate.isEmpty()) {
+            newProject.dataProject = QDateTime::currentDateTime().toString("yyyy-MM-dd").toStdString();
+        }
+        else {
+            newProject.dataProject = projectDate.toStdString();
+        }
+
+        // If sourceProjectId is provided, copy additional info from source project
+        if (sourceProjectId > 0) {
+            try {
+                ProjectData sourceProject = m_dbManager->getProjectById(sourceProjectId);
+
+                // Copy repository if not provided
+                if (repository.isEmpty()) {
+                    newProject.tempRepository = sourceProject.tempRepository;
+                }
+
+                // Copy cost if not provided (or is 0)
+                if (cost <= 0.0) {
+                    newProject.coutService = sourceProject.coutService;
+                }
+            }
+            catch (const std::exception& e) {
+                qWarning() << "Could not load source project details:" << e.what();
+                // Continue anyway - not critical
+            }
+        }
+
+        int projectId = m_dbManager->createProject(newProject);
+
+        if (projectId > 0) {
+            qDebug() << "ProjectController: Project created successfully with ID:" << projectId;
+
+            // Copy tasks if requested and source project exists
+            if (copyTasks && sourceProjectId > 0) {
+                qDebug() << "=== Starting task copy process ===";
+                bool tasksCopied = copyProjectTasks(sourceProjectId, projectId);
+
+                if (tasksCopied) {
+                    qDebug() << "✓ Tasks copied successfully";
+                }
+                else {
+                    qWarning() << "✗ Failed to copy some or all tasks, but project was created";
+                    emit errorOccurred("Projet créé mais certaines tâches n'ont pas pu être copiées");
+                    // Don't return false here - the project was created successfully
+                }
+            }
+            else {
+                qDebug() << "Skipping task copy - copyTasks:" << copyTasks << "sourceProjectId:" << sourceProjectId;
+            }
+
+            emit projectCreated(projectId);
+            loadProjectsByDepartment();
+            return true;
+        }
+        else {
+            emit projectCreationFailed("Echec de la creation du projet");
+            return false;
+        }
+    }
+    catch (const std::exception& e) {
+        qCritical() << "ProjectController: Error creating project from template:" << e.what();
+        QString errorMsg = QString("Erreur: %1").arg(e.what());
+        emit projectCreationFailed(errorMsg);
+        return false;
+    }
+}

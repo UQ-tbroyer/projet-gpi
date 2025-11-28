@@ -146,7 +146,7 @@ User* DatabaseManager::authenticateUser(const std::string& email, const std::str
             return nullptr;
         }
 
-        // Check if password matches email (your specific requirement)
+       
         //if (password == email) {
             //std::cout << "Authentication successful: Password matches email." << std::endl;
             //return user;
@@ -353,13 +353,31 @@ bool DatabaseManager::updateProject(const ProjectData& project) {
 
 
 
+// In DatabaseManager.cpp - REPLACE the existing deleteProject method
+
 bool DatabaseManager::deleteProject(int projectId) {
     try {
+        std::cout << "=== Deleting Project (Recursive) ===" << std::endl;
+        std::cout << "Project ID: " << projectId << std::endl;
+
+        // First, get all tasks for this project
+        std::vector<TaskData> projectTasks = getTasksByProject(projectId);
+        std::cout << "Found " << projectTasks.size() << " tasks to delete for project " << projectId << std::endl;
+
+        // Delete all tasks (this will recursively delete subtasks)
+        for (const auto& task : projectTasks) {
+            std::cout << "Deleting task: " << task.idTache << " - " << task.nomTache << std::endl;
+            deleteTask(task.idTache);
+        }
+
+        // Now delete the project itself
         const std::string sql = "DELETE FROM Project WHERE idProject = ?";
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
         stmt->setInt(1, projectId);
 
         int affectedRows = stmt->executeUpdate();
+        std::cout << "Project deleted. Affected rows: " << affectedRows << std::endl;
+
         return affectedRows > 0;
     }
     catch (const sql::SQLException& e) {
@@ -603,13 +621,30 @@ bool DatabaseManager::updateTask(const TaskData& task) {
 
 
 
+// In DatabaseManager.cpp - REPLACE the existing deleteTask method
+
 bool DatabaseManager::deleteTask(int taskId) {
     try {
+        std::cout << "=== Deleting Task (Recursive) ===" << std::endl;
+        std::cout << "Task ID: " << taskId << std::endl;
+
+        // First, recursively delete all subtasks
+        std::vector<TaskData> subTasks = getSubTasksByTask(taskId);
+        std::cout << "Found " << subTasks.size() << " subtasks to delete" << std::endl;
+
+        for (const auto& subTask : subTasks) {
+            std::cout << "Deleting subtask: " << subTask.idTache << " - " << subTask.nomTache << std::endl;
+            deleteTask(subTask.idTache); // Recursive call
+        }
+
+        // Now delete the main task
         const std::string sql = "DELETE FROM Tache WHERE idTache = ?";
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
         stmt->setInt(1, taskId);
 
         int affectedRows = stmt->executeUpdate();
+        std::cout << "Main task deleted. Affected rows: " << affectedRows << std::endl;
+
         return affectedRows > 0;
     }
     catch (const sql::SQLException& e) {
