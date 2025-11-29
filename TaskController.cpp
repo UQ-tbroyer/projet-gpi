@@ -761,7 +761,7 @@ bool TaskController::canChangeStatus(int taskId) const {
 
     try {
         TaskData task = m_dbManager->getTaskById(taskId);
-        return PermissionManager::canChangeTaskStatus(m_currentUser, task.memProcessigner);
+        return PermissionManager::canChangeTaskStatus(m_currentUser, task.idEmploye);
     }
     catch (const std::exception& e) {
         qWarning() << "Error checking status change permission:" << e.what();

@@ -642,75 +642,7 @@ std::vector<TaskData> ProjectController::getAllProjectTasksRecursive(int project
     return allTasks;
 }
 
-// Create project from template or existing project
-/*
-bool ProjectController::createProjectFromTemplate(const QString& projectName,
-    int clientId,
-    const QString& repository,
-    double cost,
-    const QString& projectDate)
-{
-    if (!m_currentUser) {
-        qWarning() << "ProjectController: No current user set";
-        emit projectCreationFailed("Aucun utilisateur connecte");
-        return false;
-    }
 
-    if (!PermissionManager::canCreateProject(m_currentUser)) {
-        emit projectCreationFailed("Vous n'avez pas la permission de créer des projets");
-        return false;
-    }
-
-    if (projectName.isEmpty()) {
-        emit projectCreationFailed("Le nom du projet est requis");
-        return false;
-    }
-
-    qDebug() << "ProjectController: Creating project from template:" << projectName;
-
-    try {
-        // Create the project first
-        ProjectData newProject;
-        newProject.nomProject = projectName.toStdString();
-        newProject.idClient = clientId;
-        newProject.idDepartement = m_currentUser->getDepartementId();
-        newProject.tempRepository = repository.toStdString();
-        newProject.coutService = cost;
-
-        // Use provided date or current date
-        if (projectDate.isEmpty()) {
-            newProject.dataProject = QDateTime::currentDateTime().toString("yyyy-MM-dd").toStdString();
-        }
-        else {
-            newProject.dataProject = projectDate.toStdString();
-        }
-
-        int projectId = m_dbManager->createProject(newProject);
-
-        if (projectId > 0) {
-            qDebug() << "ProjectController: Project created successfully with ID:" << projectId;
-
-            // Create the 4 predetermined tasks
-            createTemplateTasks(projectId);
-
-            emit projectCreated(projectId);
-            loadProjectsByDepartment();
-            return true;
-        }
-        else {
-            emit projectCreationFailed("Echec de la creation du projet");
-            return false;
-        }
-        return result;
-    }
-    catch (const std::exception& e) {
-        qCritical() << "ProjectController: Error creating project from template:" << e.what();
-        QString errorMsg = QString("Erreur: %1").arg(e.what());
-        emit projectCreationFailed(errorMsg);
-        return false;
-    }
-}
-*/
 void ProjectController::createTemplateTasks(int projectId)
 {
     try {
@@ -927,4 +859,34 @@ void ProjectController::createPredeterminedTemplateTasks(int projectId)
         qCritical() << "Error creating predetermined template tasks:" << e.what();
         // Don't throw here - the project was created successfully
     }
+}
+
+bool ProjectController::saveEmployeeHours(int projectId, int employeeId, double hours)
+{
+    if (m_currentUser == nullptr) return false;
+
+    try {
+        bool result = m_dbManager->assignHoursToProject(projectId, employeeId, hours);
+        if (result) {
+            emit employeeHoursSaved(projectId, employeeId, hours);
+        }
+        else {
+            emit employeeHoursSaveFailed("Erreur de sauvegarde");
+        }
+        return result;
+    }
+    catch (...) {
+        emit employeeHoursSaveFailed("Exception lors de la sauvegarde");
+        return false;
+    }
+}
+
+int ProjectController::getCurrentUserId()
+{
+    if (!m_currentUser) {
+        qWarning() << "ProjectController: No current user set";
+        return -1;
+    }
+
+    return m_currentUser->getId(); // Adaptez selon votre méthode pour obtenir l'ID
 }

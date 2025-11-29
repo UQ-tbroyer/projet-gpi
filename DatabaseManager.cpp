@@ -1,4 +1,4 @@
-#include "DatabaseManager.h"
+﻿#include "DatabaseManager.h"
 #include "Security.h"
 #include "ProjectController.h"
 #include "Taskcontroller.h"
@@ -102,10 +102,6 @@ bool DatabaseManager::testConnection() {
         std::cerr << "Connection test failed: " << e.what() << std::endl;
         return false;
     }
-    catch (const std::exception& e) {
-        qCritical() << "Database test connection FAILED:" << e.what();
-        throw; // <- AJOUT IMPORTANT
-    }
 }
 
 User* DatabaseManager::findUserByEmail(const std::string& email) {
@@ -160,22 +156,6 @@ User* DatabaseManager::authenticateUser(const std::string& email, const std::str
             //return user;
         //}
 
-        if (password == user->getEmail()) {
-            std::cout << "? Authentication successful: Password matches email." << std::endl;
-            return user;
-        }
-
-        // Check if password matches stored password (plain text)
-        std::cout << "Testing: password == stored password?" << std::endl;
-        std::cout << "   Input password: '" << password << "'" << std::endl;
-        std::cout << "   Stored password: '" << user->getPasswordHash() << "'" << std::endl;
-        std::cout << "   Result: " << (password == user->getPasswordHash() ? "MATCH" : "NO MATCH") << std::endl;
-
-        if (password == user->getPasswordHash()) {
-            std::cout << "? Authentication successful: Plain text password match." << std::endl;
-            return user;
-        }
-
         // Optional: Also check against stored hash for normal authentication
         if (Security::verifyPassword(password, user->getPasswordHash())) {
             std::cout << "Authentication successful: Password hash verified." << std::endl;
@@ -211,7 +191,6 @@ std::vector<ProjectData> DatabaseManager::getAllProjects() {
             ProjectData project;
             project.idProject = res->getInt("idProject");
             project.idClient = res->getInt("idClient");
-            project.idDepartement = res->getInt("idDepartement");
             project.nomProject = res->getString("nomProject");
             project.tempsProject = res->getDouble("tempsProject");
             project.coutService = res->getDouble("coutService");
@@ -235,7 +214,6 @@ std::vector<ProjectData> DatabaseManager::getProjectsByUser(int userId) {
     std::vector<ProjectData> projects;
 
     try {
-        // Only get projects where user is DIRECTLY assigned to tasks
         const std::string sql =
             "SELECT DISTINCT p.idProject, p.idClient, p.nomProject, "
             "p.tempsProject, p.coutService, p.etatProject, c.nomClient "
@@ -253,7 +231,6 @@ std::vector<ProjectData> DatabaseManager::getProjectsByUser(int userId) {
             ProjectData project;
             project.idProject = res->getInt("idProject");
             project.idClient = res->getInt("idClient");
-            project.idDepartement = res->getInt("idDepartement");
             project.nomProject = res->getString("nomProject");
             project.tempsProject = res->getDouble("tempsProject");
             project.coutService = res->getDouble("coutService");
@@ -294,7 +271,6 @@ std::vector<ProjectData> DatabaseManager::getProjectsByDepartment(int department
             ProjectData project;
             project.idProject = res->getInt("idProject");
             project.idClient = res->getInt("idClient");
-            project.idDepartement = res->getInt("idDepartement");
             project.nomProject = res->getString("nomProject");
             project.tempsProject = res->getDouble("tempsProject");
             project.coutService = res->getDouble("coutService");
@@ -336,7 +312,6 @@ int DatabaseManager::createProject(const ProjectData& project) {
         int affectedRows = stmt->executeUpdate();
 
         if (affectedRows > 0) {
-            // Get the last insert ID
             std::unique_ptr<sql::Statement> idStmt(connection->createStatement());
             std::unique_ptr<sql::ResultSet> res(idStmt->executeQuery("SELECT LAST_INSERT_ID()"));
             if (res->next()) {
@@ -451,8 +426,6 @@ ProjectData DatabaseManager::getProjectById(int projectId) {
             project.idClient = res->getInt("idClient");
             project.idDepartement = res->getInt("idDepartement");
             project.nomProject = res->getString("nomProject");
-            project.dataProject = res->getString("dataProject");
-            project.tempRepository = res->getString("tempRepository");
             project.coutService = res->getDouble("coutService");
 
             std::cout << "Project found:" << std::endl;
@@ -617,13 +590,6 @@ bool DatabaseManager::updateTask(const TaskData& task) {
     try {
         std::cout << "=== Updating Task ===" << std::endl;
         std::cout << "idTache: " << task.idTache << std::endl;
-        std::cout << "nomTache: " << task.nomTache << std::endl;
-        std::cout << "descTache: " << task.descTache << std::endl;
-        std::cout << "memProcessigner: " << task.memProcessigner << std::endl;
-        std::cout << "tempsTache: " << task.tempsTache << std::endl;
-        std::cout << "dateDebut: " << task.dateDebut << std::endl;
-        std::cout << "dateFin: " << task.dateFin << std::endl;
-        std::cout << "etat: " << task.etat << std::endl;
 
         const std::string sql =
             "UPDATE Tache SET nomTache = ?, descTache = ?, idEmploye = ?, "
@@ -646,16 +612,13 @@ bool DatabaseManager::updateTask(const TaskData& task) {
         stmt->setString(8, task.etat);
         stmt->setInt(9, task.idTache);
 
-        std::cout << "Executing UPDATE..." << std::endl;
         int affectedRows = stmt->executeUpdate();
         std::cout << "Affected rows: " << affectedRows << std::endl;
 
         return affectedRows > 0;
     }
     catch (const sql::SQLException& e) {
-        std::cerr << "=== SQL Error in updateTask ===" << std::endl;
-        std::cerr << "Error message: " << e.what() << std::endl;
-        std::cerr << "Error code: " << e.getErrorCode() << std::endl;
+        std::cerr << "SQL Error in updateTask: " << e.what() << std::endl;
         throw std::runtime_error("Failed to update task in database");
     }
 }
@@ -729,12 +692,6 @@ TaskData DatabaseManager::getTaskById(int taskId) {
             task.etat = res->getString("etatTache");
 
             std::cout << "Task found: " << task.nomTache << std::endl;
-            std::cout << "  ID: " << task.idTache << std::endl;
-            std::cout << "  etat: " << task.etat << std::endl;
-            std::cout << "  dateDebut: " << task.dateDebut << std::endl;
-            std::cout << "  dateFin: " << task.dateFin << std::endl;
-            std::cout << "  tempsTache: " << task.tempsTache << std::endl;
-            std::cout << "  memProcessigner: " << task.memProcessigner << std::endl;
         }
         else {
             std::cerr << "Task not found with ID: " << taskId << std::endl;
@@ -774,8 +731,6 @@ std::vector<TaskData> DatabaseManager::getSubTasksByTask(int parentTaskId) {
     std::vector<TaskData> subTasks;
 
     try {
-        std::cout << "=== Getting SubTasks for parent task: " << parentTaskId << " ===" << std::endl;
-
         const std::string sql =
             "SELECT t.idTache, t.idProject, t.nomTache, t.etatTache, "
             "COALESCE(t.idEmploye, 0) as idEmploye, "
@@ -785,7 +740,7 @@ std::vector<TaskData> DatabaseManager::getSubTasksByTask(int parentTaskId) {
             "COALESCE(t.dateFin, '') as dateFin, "
             "COALESCE(t.heuresEstimees, 0) as heuresEstimees, "
             "COALESCE(t.heuresUtilisees, 0) as heuresUtilisees, "
-            "COALESCE(CONCAT(e.prenomEmploye, ' ', e.nomEmploye), 'Non assign�') as assigneeName "
+            "COALESCE(CONCAT(e.prenomEmploye, ' ', e.nomEmploye), 'Non assign�') as assigneeName "
             "FROM Tache t "
             "LEFT JOIN Employe e ON t.idEmploye = e.idEmploye "
             "WHERE t.idParentTache = ? "
@@ -810,17 +765,11 @@ std::vector<TaskData> DatabaseManager::getSubTasksByTask(int parentTaskId) {
             task.etat = res->getString("etatTache");
             task.assigneeName = res->getString("assigneeName");
 
-            std::cout << "Found subtask: " << task.nomTache << " (ID: " << task.idTache
-                << ", etat: " << task.etat << ", dateDebut: " << task.dateDebut << ")" << std::endl;
-
             subTasks.push_back(task);
         }
-
-        std::cout << "Total subtasks found: " << subTasks.size() << std::endl;
     }
     catch (const sql::SQLException& e) {
         std::cerr << "SQL Error in getSubTasksByTask: " << e.what() << std::endl;
-        throw std::runtime_error("Failed to load subtasks from database");
     }
 
     return subTasks;
@@ -992,7 +941,7 @@ std::vector<TaskData> DatabaseManager::getTasksByProject(int projectId) {
             "COALESCE(t.dateFin, '') as dateFin, "
             "COALESCE(t.heuresEstimees, 0) as heuresEstimees, "
             "COALESCE(t.heuresUtilisees, 0) as heuresUtilisees, "
-            "COALESCE(CONCAT(e.prenomEmploye, ' ', e.nomEmploye), 'Non assign�') as assigneeName "
+            "COALESCE(CONCAT(e.prenomEmploye, ' ', e.nomEmploye), 'Non assign�') as assigneeName "
             "FROM Tache t "
             "LEFT JOIN Employe e ON t.idEmploye = e.idEmploye "
             "WHERE t.idProject = ? AND (t.idParentTache IS NULL OR t.idParentTache = 0) "
@@ -1022,7 +971,6 @@ std::vector<TaskData> DatabaseManager::getTasksByProject(int projectId) {
     }
     catch (const sql::SQLException& e) {
         std::cerr << "SQL Error in getTasksByProject: " << e.what() << std::endl;
-        throw std::runtime_error("Failed to load tasks from database");
     }
 
     return tasks;
@@ -1032,7 +980,7 @@ bool DatabaseManager::assignHoursToProject(int projectId, int employeeId, double
     try {
         qDebug() << "DatabaseManager: Assigning" << hours << "hours to employee" << employeeId << "on project" << projectId;
 
-        // Vérifier d'abord si l'employé et le projet existent
+        // VÃ©rifier d'abord si l'employÃ© et le projet existent
         const std::string checkSql =
             "SELECT COUNT(*) as count FROM Employe WHERE idEmploye = ?";
         std::unique_ptr<sql::PreparedStatement> checkStmt(connection->prepareStatement(checkSql));
@@ -1044,7 +992,7 @@ bool DatabaseManager::assignHoursToProject(int projectId, int employeeId, double
             return false;
         }
 
-        // Vérifier si une entrée existe déjà pour cet employé sur ce projet
+        // VÃ©rifier si une entrÃ©e existe dÃ©jÃ  pour cet employÃ© sur ce projet
         const std::string selectSql =
             "SELECT idHeuresProjet FROM HeuresProjet WHERE idProject = ? AND idEmploye = ?";
         std::unique_ptr<sql::PreparedStatement> selectStmt(connection->prepareStatement(selectSql));
@@ -1053,7 +1001,7 @@ bool DatabaseManager::assignHoursToProject(int projectId, int employeeId, double
         std::unique_ptr<sql::ResultSet> selectRes(selectStmt->executeQuery());
 
         if (selectRes->next()) {
-            // Mise à jour des heures existantes
+            // Mise Ã  jour des heures existantes
             int heuresProjetId = selectRes->getInt("idHeuresProjet");
             const std::string updateSql =
                 "UPDATE HeuresProjet SET heuresTravaillees = ?, dateModification = NOW() WHERE idHeuresProjet = ?";
@@ -1066,7 +1014,7 @@ bool DatabaseManager::assignHoursToProject(int projectId, int employeeId, double
             return affectedRows > 0;
         }
         else {
-            // Création d'une nouvelle entrée
+            // CrÃ©ation d'une nouvelle entrÃ©e
             const std::string insertSql =
                 "INSERT INTO HeuresProjet (idProject, idEmploye, heuresTravaillees, dateSaisie, dateModification) "
                 "VALUES (?, ?, ?, NOW(), NOW())";
@@ -1093,7 +1041,7 @@ bool DatabaseManager::updateTaskHours(int taskId, double hours) {
     try {
         qDebug() << "DatabaseManager: Updating task" << taskId << "with" << hours << "hours";
 
-        // Convertir les heures en minutes (si votre système utilise des minutes)
+        // Convertir les heures en minutes (si votre systÃ¨me utilise des minutes)
         int minutes = static_cast<int>(hours * 60);
 
         const std::string sql =
@@ -1119,7 +1067,7 @@ bool DatabaseManager::updateTaskHours(int taskId, double hours) {
 bool DatabaseManager::saveEmployeeTaskHours(int employeeId, int taskId, double hours)
 {
     try {
-        // Vérifier d'abord si l'employé existe
+        // VÃ©rifier d'abord si l'employÃ© existe
         std::unique_ptr<sql::PreparedStatement> checkEmployeeStmt(
             connection->prepareStatement("SELECT idEmploye FROM employe WHERE idEmploye = ?")
         );
@@ -1131,7 +1079,7 @@ bool DatabaseManager::saveEmployeeTaskHours(int employeeId, int taskId, double h
             return false;
         }
 
-        // Vérifier si la tâche existe
+        // VÃ©rifier si la tÃ¢che existe
         std::unique_ptr<sql::PreparedStatement> checkTaskStmt(
             connection->prepareStatement("SELECT idTache FROM tache WHERE idTache = ?")
         );
@@ -1161,7 +1109,7 @@ bool DatabaseManager::saveEmployeeTaskHours(int employeeId, int taskId, double h
         std::cout << "Successfully saved " << hours << " hours for employee "
             << employeeId << " on task " << taskId << std::endl;
 
-        return true; // Retourner true même si 0 rows affected (UPDATE sans changement)
+        return true; // Retourner true mÃªme si 0 rows affected (UPDATE sans changement)
 
     }
     catch (const sql::SQLException& e) {
@@ -1197,7 +1145,7 @@ double DatabaseManager::getEmployeeTaskHours(int employeeId, int taskId)
             return hours;
         }
 
-        // Aucune entrée trouvée
+        // Aucune entrÃ©e trouvÃ©e
         return 0.0;
 
     }

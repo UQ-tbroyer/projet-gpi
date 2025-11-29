@@ -304,13 +304,6 @@ Page {
                     }
                 }
             }
-        
-        // Sauvegarder les heures des tâches
-        for (let i = 0; i < currentProjectTasks.length; i++) {
-            var task = currentProjectTasks[i]
-            console.log("Tâche:", task.name, "Heures:", task.hours)
-            // Ici, appelez votre méthode de sauvegarde si elle existe
-            // taskController.saveTaskHours(projectId, task.id, task.hours)
         }
         
         if (hasChanges) {

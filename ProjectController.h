@@ -32,15 +32,6 @@ public:
         const QString& repository,
         double cost,
         const QString& projectDate = "");
-    /*
-    Q_INVOKABLE bool createProjectFromTemplate(const QString& projectName,
-        int clientId,
-        const QString& repository,
-        double cost,
-        const QString& projectDate,
-        int sourceProjectId,
-        bool copyTasks = true);
-    */
 
     Q_INVOKABLE bool updateProject(int projectId,
         const QString& projectName,
@@ -65,6 +56,7 @@ public:
 
     Q_INVOKABLE bool saveEmployeeHours(int projectId, int employeeId, double hours);
     Q_INVOKABLE int getCurrentUserId();
+
 signals:
     void projectsChanged();
     void loadingChanged();
@@ -77,6 +69,8 @@ signals:
     void clientsLoaded();
     void errorOccurred(const QString& error);
     void currentUserChanged(); 
+    void employeeHoursSaved(int projectId, int employeeId, double hours);
+    void employeeHoursSaveFailed(const QString& errorMessage);
 
 public slots:
     bool createProjectFromPredeterminedTemplate(const QString& projectName,
