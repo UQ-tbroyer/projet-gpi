@@ -180,7 +180,7 @@ bool ProjectController::createProject(const QString& projectName,
     }
 
     if (!PermissionManager::canCreateProject(m_currentUser)) {
-        emit projectCreationFailed("Vous n'avez pas la permission de créer des projets");
+        emit projectCreationFailed("Vous n'avez pas la permission de cr�er des projets");
         return false;
     }
 
@@ -323,7 +323,7 @@ QVariantList ProjectController::getClients()
         // Add a default empty option
         //QVariantMap defaultClient;
         //defaultClient["idClient"] = 0;
-        //defaultClient["nomClient"] = "Sélectionnez un client";
+        //defaultClient["nomClient"] = "S�lectionnez un client";
         //clientList.append(defaultClient);
 
         for (const auto& client : clients) {
@@ -701,6 +701,7 @@ bool ProjectController::createProjectFromTemplate(const QString& projectName,
             emit projectCreationFailed("Echec de la creation du projet");
             return false;
         }
+        return result;
     }
     catch (const std::exception& e) {
         qCritical() << "ProjectController: Error creating project from template:" << e.what();
@@ -859,7 +860,7 @@ void ProjectController::createPredeterminedTemplateTasks(int projectId)
         TaskData task1;
         task1.idProject = projectId;
         task1.nomTache = "Planification et analyse des besoins";
-        task1.descTache = "Définir les objectifs, analyser les besoins et établir le plan de projet";
+        task1.descTache = "D�finir les objectifs, analyser les besoins et �tablir le plan de projet";
         task1.idEmploye = 0; // Unassigned initially
         task1.idParentTache = 0;
         task1.dateDebut = today.toStdString();
@@ -875,7 +876,7 @@ void ProjectController::createPredeterminedTemplateTasks(int projectId)
         TaskData task2;
         task2.idProject = projectId;
         task2.nomTache = "Conception et architecture";
-        task2.descTache = "Concevoir l'architecture technique et les spécifications détaillées";
+        task2.descTache = "Concevoir l'architecture technique et les sp�cifications d�taill�es";
         task2.idEmploye = 0;
         task2.idParentTache = 0;
         task2.dateDebut = QDate::currentDate().addDays(3).toString("yyyy-MM-dd").toStdString();
@@ -887,11 +888,11 @@ void ProjectController::createPredeterminedTemplateTasks(int projectId)
         int task2Id = m_dbManager->createTask(task2);
         qDebug() << "Created template task 2 with ID:" << task2Id;
 
-        // Task 3: Développement
+        // Task 3: D�veloppement
         TaskData task3;
         task3.idProject = projectId;
-        task3.nomTache = "Développement et implémentation";
-        task3.descTache = "Développer les fonctionnalités principales et implémenter la solution";
+        task3.nomTache = "D�veloppement et impl�mentation";
+        task3.descTache = "D�velopper les fonctionnalit�s principales et impl�menter la solution";
         task3.idEmploye = 0;
         task3.idParentTache = 0;
         task3.dateDebut = QDate::currentDate().addDays(6).toString("yyyy-MM-dd").toStdString();
@@ -907,7 +908,7 @@ void ProjectController::createPredeterminedTemplateTasks(int projectId)
         TaskData task4;
         task4.idProject = projectId;
         task4.nomTache = "Tests et livraison finale";
-        task4.descTache = "Effectuer les tests de validation et préparer la livraison";
+        task4.descTache = "Effectuer les tests de validation et pr�parer la livraison";
         task4.idEmploye = 0;
         task4.idParentTache = 0;
         task4.dateDebut = QDate::currentDate().addDays(11).toString("yyyy-MM-dd").toStdString();

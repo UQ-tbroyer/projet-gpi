@@ -90,6 +90,7 @@ QVariantMap TaskController::taskDataToVariantMap(const TaskData& task) const
     return map;
 }
 
+
 void TaskController::loadTasksForProject(int projectId)
 {
     qDebug() << "TaskController: Loading tasks for project" << projectId;
@@ -168,6 +169,8 @@ bool TaskController::createTask(int projectId,
         newTask.heuresEstimees = estimatedTime;
         newTask.etat = etat.toStdString();
         newTask.assigneeName = "";  // ADD THIS LINE - will be populated by database query
+
+        // assigneeName laissé par défaut : ""
 
         int taskId = m_dbManager->createTask(newTask);
         if (taskId > 0) {
@@ -696,6 +699,7 @@ bool TaskController::canCreateTask(int projectId) const {
         return false;
     }
 }
+
 bool TaskController::canEditTask(int taskId) const {
     if (!m_currentUser) {
         qDebug() << "canEditTask: No current user";
@@ -753,22 +757,11 @@ bool TaskController::canAssignTask(int projectId) const {
 }
 
 bool TaskController::canChangeStatus(int taskId) const {
-    if (!m_currentUser) {
-        qDebug() << "canChangeStatus: No current user";
-        return false;
-    }
+    if (!m_currentUser) return false;
 
     try {
         TaskData task = m_dbManager->getTaskById(taskId);
-
-        qDebug() << "=== DEBUG canChangeStatus ===";
-        qDebug() << "Current user ID:" << m_currentUser->getId();
-        qDebug() << "Task assigned to:" << task.idEmploye;
-
-        bool canChange = PermissionManager::canChangeTaskStatus(m_currentUser, task.idEmploye);
-        qDebug() << "Permission result:" << canChange;
-
-        return canChange;
+        return PermissionManager::canChangeTaskStatus(m_currentUser, task.memProcessigner);
     }
     catch (const std::exception& e) {
         qWarning() << "Error checking status change permission:" << e.what();
@@ -780,5 +773,100 @@ bool TaskController::isEmployeeView() const {
     return PermissionManager::isEmploye(m_currentUser);
 }
 
+bool TaskController::saveTaskHours(int projectId, int taskId, double hours)
+{
+    // Backward compatibility - saves hours for current user
+    if (!m_currentUser) {
+        qWarning() << "TaskController: No current user set";
+        emit taskHoursSaveFailed("Aucun utilisateur connecté");
+        return false;
+    }
 
+    return saveEmployeeTaskHours(projectId, m_currentUser->getId(), taskId, hours);
+}
 
+bool TaskController::saveEmployeeTaskHours(int projectId, int employeeId, int taskId, double hours)
+{
+    if (!m_currentUser) {
+        qWarning() << "TaskController: No current user set";
+        emit taskHoursSaveFailed("Aucun utilisateur connecté");
+        return false;
+    }
+
+    if (hours < 0) {
+        emit taskHoursSaveFailed("Le nombre d'heures ne peut pas être négatif");
+        return false;
+    }
+
+    if (taskId <= 0 || employeeId <= 0) {
+        emit taskHoursSaveFailed("ID de tâche ou d'employé invalide");
+        return false;
+    }
+
+    qDebug() << "TaskController: Saving" << hours << "hours for employee" << employeeId
+        << "on task" << taskId << "in project" << projectId;
+
+    try {
+        // Vérifier si la tâche existe et appartient au projet
+        TaskData task = m_dbManager->getTaskById(taskId);
+
+        if (task.idProject != projectId) {
+            emit taskHoursSaveFailed("La tâche n'appartient pas au projet spécifié");
+            return false;
+        }
+
+        // Vérifier les permissions
+        if (PermissionManager::isEmploye(m_currentUser)) {
+            // Un employé ne peut sauvegarder que ses propres heures
+            if (employeeId != m_currentUser->getId()) {
+                emit taskHoursSaveFailed("Vous ne pouvez modifier que vos propres heures");
+                return false;
+            }
+        }
+
+        // Sauvegarder les heures dans la base de données
+        // Note: Vous devrez créer cette méthode dans DatabaseManager
+        bool success = m_dbManager->saveEmployeeTaskHours(employeeId, taskId, hours);
+
+        if (success) {
+            qDebug() << "TaskController: Employee task hours saved successfully";
+            emit taskHoursSaved(projectId, taskId, hours);
+
+            // Recharger les tâches pour mettre à jour l'affichage
+            if (m_currentProjectId == projectId) {
+                loadTasksForProject(projectId);
+            }
+
+            return true;
+        }
+        else {
+            emit taskHoursSaveFailed("Échec de la sauvegarde des heures");
+            return false;
+        }
+    }
+    catch (const std::exception& e) {
+        qCritical() << "TaskController: Error saving employee task hours:" << e.what();
+        QString errorMsg = QString("Erreur lors de la sauvegarde des heures: %1").arg(e.what());
+        emit taskHoursSaveFailed(errorMsg);
+        return false;
+    }
+}
+double TaskController::getEmployeeTaskHours(int projectId, int employeeId, int taskId)
+{
+    try {
+        // Vérifier si la tâche appartient au projet
+        TaskData task = m_dbManager->getTaskById(taskId);
+        if (task.idProject != projectId) {
+            return 0.0;
+        }
+
+        // Récupérer les heures depuis la base de données
+        // Vous devrez implémenter cette méthode dans DatabaseManager
+        return m_dbManager->getEmployeeTaskHours(employeeId, taskId);
+
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Error getting employee task hours:" << e.what();
+        return 0.0;
+    }
+}

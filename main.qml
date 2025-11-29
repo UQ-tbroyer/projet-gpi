@@ -113,7 +113,11 @@ ApplicationWindow {
                 busyIndicator.running = true
                 loginController.handleLogin(emailField.text, passwordField.text)
             }
-            
+             // Fonction publique pour la déconnexion
+             function handleLogout() {
+            console.log("Handling logout...")
+            stackView.pop(null) // Retour au login
+            }
             Connections {
                 target: loginController
     
@@ -132,10 +136,11 @@ ApplicationWindow {
                         
                         if (component.status === Component.Ready) {
                             var main2Page = component.createObject(stackView, {
-                                projectController: projectController,
-                                taskController: taskController,
-                                loginController: loginController
-                            })
+                            projectController: projectController,
+                            taskController: taskController,
+                            loginController: loginController,
+                            mainAppWindow: root  // Passe la référence
+                             })
                             
                             if (main2Page) {
                                 stackView.push(main2Page)

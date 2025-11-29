@@ -1,2 +1,23 @@
- # Ignore the 'temp' folder
-    x64/
+# Ignore Visual Studio x64 build directory
+x64/
+
+# Ignore all Visual Studio project files
+*.vcxproj
+*.vcxproj.*
+
+# (Optional) Common Visual Studio ignores — recommended
+# Build results
+bin/
+obj/
+Debug/
+Release/
+
+# User-specific files
+*.user
+*.suo
+*.cache
+*.pdb
+*.ipch
+
+# VS Code
+.vscode/

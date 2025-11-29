@@ -8,9 +8,10 @@
 #include "TaskController.h"
 #include "config.h"
 #include "User.h"
-
+#include <iostream>
 int main(int argc, char* argv[])
 {
+    std::cout << "=== TEST CONSOLE ===" << std::endl;
     QGuiApplication app(argc, argv);
 
     // Initialize database connection using config.h credentials

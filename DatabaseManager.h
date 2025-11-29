@@ -69,6 +69,13 @@ public:
     // Employee methods
     std::vector<std::tuple<int, std::string, std::string>> getAllEmployees();
     std::vector<std::tuple<int, std::string, std::string>> getEmployeesByDepartment(int departmentId);
+
+    //sauvegarde d'heures
+    bool assignHoursToProject(int projectId, int employeeId, double hours);
+    bool updateTaskHours(int taskId, double hours);
+
+    bool saveEmployeeTaskHours(int employeeId, int taskId, double hours);
+    double getEmployeeTaskHours(int employeeId, int taskId);
 };
 
 #endif

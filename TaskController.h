@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QVariantList>
 #include <QVariantMap>
+#include <QTimer>
 
 #include "DatabaseManager.h"
 #include "User.h"
@@ -47,7 +48,8 @@ public:
     Q_INVOKABLE bool canAssignTask(int projectId) const;
     Q_INVOKABLE bool canChangeStatus(int taskId) const;
     Q_INVOKABLE bool isEmployeeView() const;
-
+    Q_INVOKABLE bool saveEmployeeTaskHours(int projectId, int employeeId, int taskId, double hours);
+    Q_INVOKABLE double getEmployeeTaskHours(int projectId, int employeeId, int taskId);
     void loadTasksForProjectThrottled(int projectId);
 
 
@@ -83,6 +85,9 @@ public slots:
 
     bool deleteTask(int taskId);
     bool assignTask(int taskId, int employeeId);
+
+    // --- Gestion des heures ---
+    Q_INVOKABLE bool saveTaskHours(int projectId, int taskId, double hours);
 
     // --- Détails ---
     QVariantMap getTaskDetails(int taskId);
@@ -132,6 +137,7 @@ signals:
     void taskUpdated(int taskId);
     void taskDeleted(int taskId);
     void taskAssigned(int taskId, int employeeId);
+    void taskHoursSaved(int projectId, int taskId, double hours);
 
     // Errors
     void errorOccurred(const QString& errorMessage);
@@ -139,7 +145,7 @@ signals:
     void taskUpdateFailed(const QString& errorMessage);
     void taskDeletionFailed(const QString& errorMessage);
     void taskAssignmentFailed(const QString& errorMessage);
-
+    void taskHoursSaveFailed(const QString& errorMessage);
 
 private:
     DatabaseManager* m_dbManager;

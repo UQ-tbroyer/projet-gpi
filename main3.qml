@@ -1,6 +1,7 @@
 ﻿import QtQuick 6.5
 import QtQuick.Controls 6.5
 import QtQuick.Layouts 6.5
+import QtQuick.Shapes 6.5
 import QtQuick.Window 6.5
 
 ApplicationWindow {
@@ -161,6 +162,7 @@ ApplicationWindow {
     // --- Top Bar ---
     Rectangle {
         id: topBar
+        spacing: 20
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
@@ -193,18 +195,18 @@ ApplicationWindow {
                 visible: projectController && projectController.canEditProject && 
                         projectController.canEditProject(projectId)
                 onClicked: editProjectDialog.open()
-            }
+        }
 
             Button {
                 text: "🗑️ Supprimer"
                 visible: projectController && projectController.canDeleteProject && 
                         projectController.canDeleteProject(projectId)
                 onClicked: deleteProjectDialog.open()
-            }
+    }
         }
     }
 
-    // --- Left Menu ---
+    // --- Menu latéral gauche ---
     Column {
         id: sideMenu
         spacing: 10
@@ -218,6 +220,11 @@ ApplicationWindow {
             text: "Kanban"
             width: 80
             height: 40
+            background: Rectangle {
+                color: stackView.currentIndex === 0 ? "green" : "white"
+                border.color: "black"
+                border.width: 1
+            }
             onClicked: stackView.currentIndex = 0
         }
 
@@ -226,11 +233,16 @@ ApplicationWindow {
             text: "Gantt"
             width: 80
             height: 40
+            background: Rectangle {
+                color: stackView.currentIndex === 1 ? "green" : "white"
+                border.color: "black"
+                border.width: 1
+            }
             onClicked: stackView.currentIndex = 1
         }
     }
 
-    // --- Main Content ---
+    // --- Contenu central (Kanban / Gantt) ---
     StackLayout {
         id: stackView
         anchors.top: topBar.bottom
@@ -240,9 +252,7 @@ ApplicationWindow {
         anchors.margins: 20
         currentIndex: 0
 
-        // =====================
-        // ===== KANBAN VIEW ===
-        // =====================
+        // ======= PAGE KANBAN =======
         Flickable {
             clip: true
             contentWidth: kanbanRow.width
@@ -251,6 +261,7 @@ ApplicationWindow {
                 id: kanbanRow
                 spacing: 20
 
+                // Exemple de 4 colonnes Kanban
                 Repeater {
                     model: ["A faire", "En cours", "A Tester", "Termine"]
 
@@ -263,16 +274,16 @@ ApplicationWindow {
                             height: 450
                             radius: 10
                             border.color: "black"
-
+                            border.width: 1
                             Column {
                                 anchors.fill: parent
                                 anchors.margins: 12
                                 spacing: 10
 
-                                Text { 
+                                Text {
                                     text: columnName
                                     font.bold: true
-                                    anchors.horizontalCenter: parent.horizontalCenter 
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                 }
 
                                 // === Tasks filtered by status ===
@@ -366,7 +377,7 @@ ApplicationWindow {
             
                                                 contentItem: Text {
                                                     text: taskEmployeeStatusButton.text
-                                                    color: "white"
+                                        color: "white"
                                                     font.pixelSize: 10
                                                     horizontalAlignment: Text.AlignHCenter
                                                     verticalAlignment: Text.AlignVCenter
@@ -474,8 +485,8 @@ ApplicationWindow {
                                             border.color: "#d1d5db"
                                             border.width: 1
 
-                                            Text {
-                                                anchors.centerIn: parent
+                                        Text {
+                                            anchors.centerIn: parent
                                                 text: modelData.name
                                                 font.bold: true
                                                 font.pixelSize: 12
@@ -483,9 +494,9 @@ ApplicationWindow {
                                         }
                                     }
                                 }
-                            }
-                        }
-                    }
+                                        }
+                                    }
+                                }
 
                     // Task rows with Gantt bars
                     Repeater {
@@ -496,9 +507,9 @@ ApplicationWindow {
                             spacing: 0
 
                             // Parent task row
-                            Rectangle {
+                                Rectangle {
                                 width: parent.width
-                                height: 40
+                                    height: 40
                                 color: index % 2 === 0 ? "white" : "#f9fafb"
                                 border.color: "#e5e7eb"
                                 border.width: 1
@@ -510,7 +521,7 @@ ApplicationWindow {
                                     Rectangle {
                                         width: 250
                                         height: parent.height
-                                        color: "transparent"
+                                    color: "transparent"
                                         border.color: "#e5e7eb"
                                         border.width: 1
 
@@ -560,16 +571,16 @@ ApplicationWindow {
                                                             width: 200
                                                         }
 
-                                                        Text {
+                                    Text {
                                                             text: modelData.assigneeName || "Non assigné"
                                                             font.pixelSize: 9
                                                             color: "#6b7280"
                                                         }
                                                     }
-                                                }
-                                            }
-                                        }
                                     }
+                                }
+                            }
+                        }
 
                                     // Gantt bar
                                     Item {
@@ -584,11 +595,11 @@ ApplicationWindow {
                                                 width: 1
                                                 height: parent.height
                                                 color: "#e5e7eb"
-                                            }
-                                        }
+                    }
+                }
 
                                         // Task bar
-                                        Rectangle {
+                Rectangle {
                                             property var pos: calculateTaskPosition(modelData)
                                             x: (pos.left / 100) * parent.width
                                             width: (pos.width / 100) * parent.width
@@ -597,10 +608,10 @@ ApplicationWindow {
                                             color: getStatusColor(modelData.etat)
                                             radius: 4
                                             border.color: Qt.darker(color, 1.2)
-                                            border.width: 1
+                    border.width: 1
 
-                                            Text {
-                                                anchors.centerIn: parent
+                    Text {
+                        anchors.centerIn: parent
                                                 text: modelData.nomTache
                                                 color: "white"
                                                 font.pixelSize: 10
@@ -608,7 +619,7 @@ ApplicationWindow {
                                                 elide: Text.ElideRight
                                                 width: parent.width - 8
                                                 horizontalAlignment: Text.AlignHCenter
-                                            }
+                    }
 
                                             MouseArea {
                                                 anchors.fill: parent
@@ -620,9 +631,9 @@ ApplicationWindow {
                                                           modelData.dateDebut + " → " + modelData.dateFin + "\n" +
                                                           "Statut: " + modelData.etat
                                                     delay: 500
-                                                }
-                                            }
-                                        }
+                }
+            }
+        }
                                     }
                                 }
                             }
@@ -631,7 +642,7 @@ ApplicationWindow {
                             Repeater {
                                 model: modelData.children
 
-                                Rectangle {
+            Rectangle {
                                     width: ganttContent.width
                                     height: 35
                                     color: "white"
@@ -639,7 +650,7 @@ ApplicationWindow {
                                     border.width: 1
 
                                     Row {
-                                        anchors.fill: parent
+                anchors.fill: parent
 
                                         // Task name (indented)
                                         Rectangle {
@@ -647,13 +658,13 @@ ApplicationWindow {
                                             height: parent.height
                                             color: "transparent"
                                             border.color: "#e5e7eb"
-                                            border.width: 1
+                border.width: 1
 
                                             MouseArea {
-                                                anchors.fill: parent
+                    anchors.fill: parent
                                                 hoverEnabled: true
                                                 cursorShape: Qt.PointingHandCursor
-                                                
+
                                                 onClicked: {
                                                     var component = Qt.createComponent("TaskDetailsView.qml")
                                                     if (component.status === Component.Ready) {
@@ -665,14 +676,14 @@ ApplicationWindow {
                                                             projectController: window.projectController
                                                         })
                                                         taskWindow.show()
-                                                    }
+                    }
                                                 }
 
                                                 Rectangle {
                                                     anchors.fill: parent
                                                     color: parent.containsMouse ? "#fef3c7" : "transparent"
                                                     
-                                                    Row {
+                    Row {
                                                         anchors.left: parent.left
                                                         anchors.leftMargin: 30
                                                         anchors.verticalCenter: parent.verticalCenter
@@ -684,7 +695,7 @@ ApplicationWindow {
                                                             color: "#9ca3af"
                                                         }
 
-                                                        Column {
+                        Column {
                                                             spacing: 2
 
                                                             Text {
@@ -692,7 +703,7 @@ ApplicationWindow {
                                                                 font.pixelSize: 11
                                                                 elide: Text.ElideRight
                                                                 width: 180
-                                                            }
+                        }
 
                                                             Text {
                                                                 text: modelData.assigneeName || "Non assigné"
@@ -713,7 +724,7 @@ ApplicationWindow {
                                             // Vertical grid lines
                                             Repeater {
                                                 model: ganttMonths.length
-                                                Rectangle {
+                        Rectangle {
                                                     x: (index / ganttMonths.length) * parent.width
                                                     width: 1
                                                     height: parent.height
@@ -722,7 +733,7 @@ ApplicationWindow {
                                             }
 
                                             // Task bar
-                                            Rectangle {
+                            Rectangle {
                                                 property var pos: calculateTaskPosition(modelData)
                                                 x: (pos.left / 100) * parent.width
                                                 width: (pos.width / 100) * parent.width
@@ -736,12 +747,12 @@ ApplicationWindow {
                                                 Text {
                                                     anchors.centerIn: parent
                                                     text: modelData.nomTache
-                                                    color: "white"
+                                color: "white"
                                                     font.pixelSize: 9
                                                     elide: Text.ElideRight
                                                     width: parent.width - 6
                                                     horizontalAlignment: Text.AlignHCenter
-                                                }
+                            }
 
                                                 MouseArea {
                                                     anchors.fill: parent
@@ -764,7 +775,7 @@ ApplicationWindow {
                     }
 
                     // Legend
-                    Rectangle {
+                            Rectangle {
                         width: parent.width
                         height: 50
                         color: "#f9fafb"
@@ -1011,7 +1022,7 @@ ApplicationWindow {
                     break
                 }
             }
-        }
+                            }
 
         onAccepted: {
             var success = projectController.updateProject(
@@ -1024,8 +1035,13 @@ ApplicationWindow {
             if (success) {
                 window.projectName = editProjectNameField.text
                 window.title = editProjectNameField.text
-            }
-        }
+                            }
+                            Rectangle {
+                                x: 360; y: 140
+                                width: 100; height: 20
+                                border.color: "black"
+                                color: "white"
+                            }
 
         contentItem: ColumnLayout {
             spacing: 10
@@ -1034,28 +1050,28 @@ ApplicationWindow {
             TextField {
                 id: editProjectNameField
                 Layout.fillWidth: true
-            }
+                                }
 
             Label { text: "Client:" }
             ComboBox {
                 id: editClientCombo
                 Layout.fillWidth: true
                 textRole: "nomClient"
-            }
+                                }
 
             Label { text: "Repository:" }
             TextField {
                 id: editRepositoryField
                 Layout.fillWidth: true
-            }
+                            }
 
             Label { text: "Coût du service:" }
             TextField {
                 id: editCostField
                 Layout.fillWidth: true
-            }
-        }
-    }
+                        }
+                    }
+                }
 
     // Delete Project Dialog
     Dialog {
@@ -1071,14 +1087,14 @@ ApplicationWindow {
                   "⚠️ Cette action est irréversible!"
             wrapMode: Text.WordWrap
             width: 350
-        }
+            }
 
         onAccepted: {
             var success = projectController.deleteProject(projectId)
             if (success) {
                 window.close()
-            }
         }
     }
+}
 
 } // End ApplicationWindow

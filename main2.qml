@@ -1,4 +1,5 @@
-﻿import QtQuick 6.5
+﻿pragma ComponentBehavior: Bound
+import QtQuick 6.5
 import QtQuick.Controls 6.5
 import QtQuick.Controls.impl 6.5
 import QtQuick.Layouts 6.5
@@ -13,6 +14,7 @@ Page {
     required property var projectController
     required property var taskController
     required property var loginController
+   
 
     // --- Rectangle Accueil ---
     Rectangle {
@@ -347,27 +349,27 @@ Page {
     }
 
     // --- Bouton gestion de temps ---
-    Button {
-        id: btntemps
-        width: 200
-        height: 60
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 40
-        text: "Gestion de temps"
+   Button {
+    id: btntemps
+    width: 200
+    height: 60
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.bottom: parent.bottom
+    anchors.bottomMargin: 40
+    text: "Gestion de temps"
 
-        onClicked: {
-            console.log("Gestion de temps cliquée")
+    onClicked: {
+        console.log("Gestion de temps cliquée")
         
-            if (mainPage.parent && mainPage.parent.push) {
-                mainPage.parent.push("main4.qml", {
-                    projectController: mainPage.projectController,
-                    taskController: mainPage.taskController,
-                    loginController: mainPage.loginController
-                })
-            }
+        if (mainPage.parent && mainPage.parent.push) {
+            mainPage.parent.push("main4.qml", {
+                projectController: mainPage.projectController,
+                taskController: mainPage.taskController,
+                loginController: mainPage.loginController
+            })
         }
     }
+}
 
     // --- Dialogue de création de projet ---
     Dialog {
@@ -377,7 +379,7 @@ Page {
         width: 450
         height: 600
         modal: true
-
+    
         property var clientsList: []
         property var templatesList: []
 
@@ -438,7 +440,7 @@ Page {
             fromPredeterminedTemplateRadio.checked = false
             templateComboBox.currentIndex = -1
             copyTasksCheckbox.checked = false
-
+    
             if (clientComboBox.count > 0) {
                 clientComboBox.currentIndex = 0
             }
@@ -447,7 +449,7 @@ Page {
         ColumnLayout {
             anchors.fill: parent
             spacing: 10
-
+        
             
             // Template selection section - SIMPLIFIED VERSION (no green part)
             Rectangle {
@@ -549,7 +551,7 @@ Page {
                 placeholderText: "Entrez le nom du projet"
                 Layout.fillWidth: true
             }
-
+        
             Label { text: "Client"; font.bold: true }
             ComboBox {
                 id: clientComboBox
@@ -558,14 +560,14 @@ Page {
                 textRole: "nomClient"
                 valueRole: "idClient"
             }
-
+        
             Label { text: "Répertoire"; font.bold: true }
             TextField {
                 id: repositoryField
                 placeholderText: "Répertoire du projet"
                 Layout.fillWidth: true
             }
-
+        
             Label { text: "Coût du service (€)"; font.bold: true }
             TextField {
                 id: costField
@@ -574,7 +576,7 @@ Page {
                 Layout.fillWidth: true
                 text: "0.00"
             }
-
+        
             Label { text: "Date du projet"; font.bold: true }
             TextField {
                 id: projectDateField
@@ -582,20 +584,20 @@ Page {
                 Layout.fillWidth: true
                 text: new Date().toISOString().split('T')[0]
             }
-
+        
             Item { Layout.fillHeight: true }
 
             RowLayout {
                 Layout.alignment: Qt.AlignRight
                 spacing: 10
-
+            
                 Button {
                     text: "Annuler"
                     onClicked: {
                         projectCreationDialog.close()
-                    }
                 }
-
+                }
+            
                 Button {
                     id: createProjectButton
                     text: {
@@ -650,15 +652,47 @@ Page {
                                 projectDateField.text
                             )
                         }
-
-                        if (success) {
-                            projectCreationDialog.close()
+                        
+                            if (success) {
+                                projectCreationDialog.close()
+                                resetForm()
+                            }
+                        } else {
+                            console.log("ERROR: projectController or createProject not available")
+                            errorDialog.text = "Erreur: Contrôleur de projet non disponible"
+                            errorDialog.open()
                         }
                     }
                 }
             }
         }
-
+    
+        function loadClientsData() {
+            console.log("Loading clients data...")
+            if (mainPage.projectController && mainPage.projectController.getClients) {
+                var clients = mainPage.projectController.getClients()
+                console.log("Number of clients:", clients ? clients.length : 0)
+        
+                projectCreationDialog.clientsList = clients || []
+                clientComboBox.model = projectCreationDialog.clientsList
+                if (clientComboBox.count > 0) {
+                    clientComboBox.currentIndex = 0
+                }
+            } else {
+                console.log("ERROR: Cannot load clients - controller or method not available")
+            }
+        }
+    
+        function resetForm() {
+            projectNameField.text = ""
+            repositoryField.text = ""
+            costField.text = "0.00"
+            projectDateField.text = new Date().toISOString().split('T')[0]
+            if (clientComboBox.count > 0) {
+                clientComboBox.currentIndex = 0
+            }
+        }
+    
         onOpened: {
             console.log("Project dialog opened - loading data")
             loadClientsData()

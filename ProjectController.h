@@ -63,6 +63,8 @@ public:
     Q_INVOKABLE bool canViewAllProjects() const;
     Q_INVOKABLE QString getUserRole() const;
 
+    Q_INVOKABLE bool saveEmployeeHours(int projectId, int employeeId, double hours);
+    Q_INVOKABLE int getCurrentUserId();
 signals:
     void projectsChanged();
     void loadingChanged();
