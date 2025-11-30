@@ -22,207 +22,482 @@ Page {
     // Données pour les heures
     property var currentProjectEmployees: []
     property var currentProjectTasks: []
+    property var currentSubTasks: ({}) // Stocke les sous-tâches par tâche parente
     property var employeeTaskHours: ({}) // Stocke les heures par employé par tâche
+    property var employeeSubTaskHours: ({}) // Stocke les heures par employé par sous-tâche
+
+    // Propriétés pour les totaux
+    property real projectTotalHours: 0
+    property real projectOriginalHours: 0 // Total des heures originales des tâches
 
     function updateProjectData() {
-        if (main4Page.projects.length > 0) {
-            main4Page.currentProjectIndex = projectComboBox.currentIndex
-            loadProjectDetails()
-        }
-    }
-
-   function loadProjectDetails() {
-    if (main4Page.projects.length === 0) return
-    
-    main4Page.currentProjectId = main4Page.projects[main4Page.currentProjectIndex].idProject
-    var projectName = main4Page.projects[main4Page.currentProjectIndex].nomProject
-    console.log("Chargement des détails pour le projet:", projectName, "ID:", main4Page.currentProjectId)
-    
-    // Charger les employés disponibles
-    loadAvailableEmployees()
-    
-    // Charger les tâches du projet
-    loadProjectTasks()
-    
-    // Initialiser la structure des heures par employé par tâche
-    initializeEmployeeTaskHours()
-    
-    // CHARGER LES HEURES EXISTANTES depuis la base de données
-    loadExistingHours()
-    }
-
-    function isEmployeeRole() {
-    if (!main4Page.projectController || !main4Page.projectController.getUserRole) return false
-    return main4Page.projectController.getUserRole() === "Employe"
-    }
-
-    function getCurrentUserId() {
-    if (!main4Page.projectController || !main4Page.projectController.getCurrentUserId) return -1
-    return main4Page.projectController.getCurrentUserId()
-    }
-
-    function loadExistingHours() {
-        if (main4Page.currentProjectId <= 0) return
-    
-        console.log("Chargement des heures existantes pour le projet:", main4Page.currentProjectId)
-    
-        try {
-            // Pour chaque employé et chaque tâche, charger les heures depuis la BD
-            for (var i = 0; i < main4Page.currentProjectEmployees.length; i++) {
-                var employee = main4Page.currentProjectEmployees[i]
-            
-                for (var j = 0; j < main4Page.currentProjectTasks.length; j++) {
-                    var task = main4Page.currentProjectTasks[j]
-                
-                    // Récupérer les heures depuis le contrôleur
-                    var existingHours = taskController.getEmployeeTaskHours(
-                        parseInt(main4Page.currentProjectId),
-                        parseInt(employee.id),
-                        parseInt(task.id)
-                    )
-                
-                    if (existingHours > 0) {
-                        console.log("Heures trouvées - Employé:", employee.id, "Tâche:", task.id, "Heures:", existingHours)
-                        setEmployeeTaskHours(employee.id, task.id, existingHours)
-                    }
-                }
-            }
-            console.log("Chargement des heures existantes terminé")
-        } catch (error) {
-            console.error("Erreur lors du chargement des heures existantes:", error)
-        }
-    }
-    function loadAvailableEmployees() {
-    try {
-        var employees = []
-        
-        if (isEmployeeRole()) {
-            // Mode EMPLOYÉ : charger seulement l'utilisateur courant
-            var currentUserId = getCurrentUserId()
-            console.log("=== DEBUG MODE EMPLOYÉ ===")
-            console.log("ID utilisateur courant:", currentUserId)
-            console.log("Type de currentUserId:", typeof currentUserId)
-            
-            if (currentUserId > 0) {
-                // Récupérer tous les employés d'abord pour debugger
-                var allEmployees = taskController.getAvailableEmployees()
-                console.log("Tous les employés disponibles:", allEmployees.length)
-                
-                // Afficher tous les employés pour debugger
-                for (var i = 0; i < allEmployees.length; i++) {
-                    var emp = allEmployees[i]
-                    console.log("Employé", i, "ID:", emp.idEmploye || emp.id, "Type:", typeof (emp.idEmploye || emp.id))
-                    console.log("  Nom:", emp.prenom + " " + emp.nom)
-                }
-                
-                // Rechercher l'employé courant
-                var currentEmployee = allEmployees.find(function(employee) {
-                    var empId = employee.idEmploye || employee.id
-                    console.log("Comparaison: currentUserId=", currentUserId, "empId=", empId, "Égal?", empId == currentUserId)
-                    return empId == currentUserId
-                })
-                
-                if (currentEmployee) {
-                    employees = [currentEmployee]
-                    console.log("✓ Employé courant trouvé:", currentEmployee.prenom + " " + currentEmployee.nom)
-                } else {
-                    console.error("✗ Employé courant NON trouvé avec ID:", currentUserId)
-                    // Fallback: prendre le premier employé
-                    if (allEmployees.length > 0) {
-                        employees = [allEmployees[0]]
-                        console.log("Fallback: utilisation du premier employé")
-                    }
-                }
-            }
-        } else {
-            // Mode GESTIONNAIRE : charger tous les employés
-            employees = taskController.getAvailableEmployees()
-            console.log("Mode gestionnaire - Chargement de tous les employés:", employees.length)
-        }
-        
-        if (employees && employees.length > 0) {
-            main4Page.currentProjectEmployees = employees.map(function(employee) {
-                return {
-                    id: employee.idEmploye || employee.id,
-                    name: (employee.prenomEmploye || employee.prenom) + " " + (employee.nomEmploye || employee.nom),
-                    totalHours: 0
-                }
-            })
-            console.log("Employés chargés:", main4Page.currentProjectEmployees.length)
-        } else {
-            console.warn("Aucun employé trouvé")
-            main4Page.currentProjectEmployees = []
-        }
-    } catch (error) {
-        console.error("Erreur lors du chargement des employés:", error)
-        main4Page.currentProjectEmployees = []
+    if (main4Page.projects.length > 0 && projectComboBox && projectComboBox.currentIndex >= 0) {
+        main4Page.currentProjectIndex = projectComboBox.currentIndex
+        loadProjectDetails()
+    } else {
+        console.warn("Impossible de mettre à jour les données: projets=" + main4Page.projects.length + 
+                    ", comboBox=" + (projectComboBox ? "disponible" : "indisponible") +
+                    ", index=" + (projectComboBox ? projectComboBox.currentIndex : "N/A"))
     }
 }
 
-    function loadProjectTasks() {
-        try {
-            if (main4Page.currentProjectId <= 0) return
+    function loadProjectDetails() {
+        if (main4Page.projects.length === 0) return
+        
+        main4Page.currentProjectId = main4Page.projects[main4Page.currentProjectIndex].idProject
+        var projectName = main4Page.projects[main4Page.currentProjectIndex].nomProject
+        console.log("Chargement des détails pour le projet:", projectName, "ID:", main4Page.currentProjectId)
+        
+        // Réinitialiser les totaux
+        main4Page.projectTotalHours = 0
+        main4Page.projectOriginalHours = 0
+        
+        // Charger les employés disponibles
+        loadAvailableEmployees()
+        
+        // Charger les tâches du projet
+        loadProjectTasks()
+        
+        // Initialiser la structure des heures par employé par tâche
+        initializeEmployeeTaskHours()
+        
+        // CHARGER LES HEURES EXISTANTES depuis la base de données
+        loadExistingHours()
+        
+        // CALCULER LE TOTAL INITIAL DU PROJET
+        calculateProjectTotalHours()
+    }
+
+    function isEmployeeRole() {
+        if (!main4Page.projectController || !main4Page.projectController.getUserRole) return false
+        return main4Page.projectController.getUserRole() === "Employe"
+    }
+
+    function getCurrentUserId() {
+        if (!main4Page.projectController || !main4Page.projectController.getCurrentUserId) return -1
+        return main4Page.projectController.getCurrentUserId()
+    }
+
+    function loadSubTasksForAllTasks() {
+    try {
+        main4Page.currentSubTasks = {}
+        var subTaskCount = 0
+        
+        console.log("=== CHARGEMENT DES SOUS-TÂCHES RÉELLES ===")
+        
+        for (var i = 0; i < main4Page.currentProjectTasks.length; i++) {
+            var parentTask = main4Page.currentProjectTasks[i]
             
-            // Utiliser la méthode du taskController pour récupérer les tâches
-            var tasks = taskController.getTasksForProject(main4Page.currentProjectId)
-            if (tasks && tasks.length > 0) {
-                main4Page.currentProjectTasks = tasks.map(function(task) {
+            console.log("Recherche sous-tâches pour:", parentTask.name, "ID:", parentTask.id)
+            
+            // Vérifier que la méthode existe
+            if (typeof taskController.getSubTasksByTask !== 'function') {
+                console.error("❌ La méthode getSubTasksByTask n'existe pas dans TaskController")
+                return
+            }
+            
+            try {
+                var subTasks = taskController.getSubTasksByTask(parentTask.id)
+                
+                console.log("Résultat getSubTasksByTask pour", parentTask.id + ":", subTasks.length, "sous-tâches")
+                
+                if (subTasks && subTasks.length > 0) {
+                    console.log("✅ Sous-tâches trouvées pour", parentTask.name + ":", subTasks.length)
+                    
+                    main4Page.currentSubTasks[parentTask.id] = subTasks.map(function(subTask) {
+                        return {
+                            id: subTask.idTache || subTask.id,
+                            parentId: parentTask.id,
+                            name: subTask.nomTache || subTask.nom,
+                            totalHours: 0, // Initialisé à 0
+                            originalHours: subTask.tempsTache ? subTask.tempsTache / 60.0 : 0,
+                            assignedEmployeeId: subTask.memProcessigner,
+                            assigneeName: subTask.assigneeName || "",
+                            description: subTask.descTache || "",
+                            state: subTask.etat || "",
+                            isSubTask: true
+                        }
+                    })
+                    
+                    parentTask.hasSubTasks = true
+                    subTaskCount += subTasks.length
+                    
+                    // Debug détaillé des sous-tâches
+                    console.log("Détail des sous-tâches pour", parentTask.name + ":")
+                    for (var j = 0; j < main4Page.currentSubTasks[parentTask.id].length; j++) {
+                        var st = main4Page.currentSubTasks[parentTask.id][j]
+                        console.log("  -", st.name, 
+                                  "ID:", st.id, 
+                                  "Employé:", st.assignedEmployeeId,
+                                  "Heures prévues:", st.originalHours + "h")
+                    }
+                } else {
+                    console.log("❌ Aucune sous-tâche pour", parentTask.name)
+                    parentTask.hasSubTasks = false
+                }
+            } catch (error) {
+                console.error("💥 Erreur lors du chargement des sous-tâches pour", parentTask.name + ":", error)
+                parentTask.hasSubTasks = false
+            }
+        }
+        
+        console.log("=== CHARGEMENT SOUS-TÂCHES TERMINÉ ===")
+        console.log("📊 Sous-tâches chargées:", subTaskCount, "pour", Object.keys(main4Page.currentSubTasks).length, "tâches parentes")
+        
+        // Debug final
+        if (subTaskCount === 0) {
+            console.warn("⚠️ Aucune sous-tâche n'a été chargée. Vérifiez:")
+            console.warn("  1. La méthode getSubTasksByTask dans TaskController")
+            console.warn("  2. Les données dans la table tache (colonnes idParentTache)")
+            console.warn("  3. Les IDs des tâches parentes")
+        }
+        
+    } catch (error) {
+        console.error("💥 Erreur générale chargement sous-tâches:", error)
+    }
+}
+
+    function loadAvailableEmployees() {
+        try {
+            var employees = []
+            
+            if (isEmployeeRole()) {
+                // Mode EMPLOYÉ : charger seulement l'utilisateur courant
+                var currentUserId = getCurrentUserId()
+                console.log("=== DEBUG MODE EMPLOYÉ ===")
+                console.log("ID utilisateur courant:", currentUserId)
+                
+                if (currentUserId > 0) {
+                    var allEmployees = taskController.getAvailableEmployees()
+                    console.log("Tous les employés disponibles:", allEmployees.length)
+                    
+                    // Rechercher l'employé courant
+                    var currentEmployee = allEmployees.find(function(employee) {
+                        var empId = employee.idEmploye || employee.id
+                        return empId == currentUserId
+                    })
+                    
+                    if (currentEmployee) {
+                        employees = [currentEmployee]
+                        console.log("✓ Employé courant trouvé:", currentEmployee.prenom + " " + currentEmployee.nom)
+                    } else {
+                        console.error("✗ Employé courant NON trouvé avec ID:", currentUserId)
+                        if (allEmployees.length > 0) {
+                            employees = [allEmployees[0]]
+                            console.log("Fallback: utilisation du premier employé")
+                        }
+                    }
+                }
+            } else {
+                // Mode GESTIONNAIRE : charger tous les employés
+                employees = taskController.getAvailableEmployees()
+                console.log("Mode gestionnaire - Chargement de tous les employés:", employees.length)
+            }
+            
+            if (employees && employees.length > 0) {
+                main4Page.currentProjectEmployees = employees.map(function(employee) {
                     return {
-                        id: task.idTache || task.id,
-                        name: task.nomTache || task.nom,
-                        totalHours: task.tempsTache ? task.tempsTache / 60.0 : 0, // Convertir minutes en heures
-                        originalHours: task.tempsTache ? task.tempsTache / 60.0 : 0
+                        id: employee.idEmploye || employee.id,
+                        name: (employee.prenomEmploye || employee.prenom) + " " + (employee.nomEmploye || employee.nom),
+                        totalHours: 0
                     }
                 })
-                console.log("Tâches chargées:", main4Page.currentProjectTasks.length)
+                console.log("Employés chargés:", main4Page.currentProjectEmployees.length)
             } else {
-                console.log("Aucune tâche trouvée pour ce projet")
-                main4Page.currentProjectTasks = []
+                console.warn("Aucun employé trouvé")
+                main4Page.currentProjectEmployees = []
             }
         } catch (error) {
-            console.error("Erreur lors du chargement des tâches:", error)
-            main4Page.currentProjectTasks = []
+            console.error("Erreur lors du chargement des employés:", error)
+            main4Page.currentProjectEmployees = []
         }
     }
 
-    function initializeEmployeeTaskHours() {
-        // Initialiser la structure pour stocker les heures par employé par tâche
-        main4Page.employeeTaskHours = {}
+    function loadProjectTasks() {
+    try {
+        if (main4Page.currentProjectId <= 0) return
         
-        for (var i = 0; i < main4Page.currentProjectEmployees.length; i++) {
-            var employee = main4Page.currentProjectEmployees[i]
-            main4Page.employeeTaskHours[employee.id] = {}
+        var allTasks = taskController.getTasksForProject(main4Page.currentProjectId)
+        
+        if (!allTasks || allTasks.length === 0) {
+            console.log("Aucune tâche trouvée pour ce projet")
+            main4Page.currentProjectTasks = []
+            return
+        }
+        
+        console.log("=== CHARGEMENT TÂCHES ===")
+        console.log("Projet ID:", main4Page.currentProjectId)
+        console.log("Rôle:", isEmployeeRole() ? "Employé" : "Gestionnaire")
+        console.log("Tâches totales:", allTasks.length)
+        
+        var filteredTasks = []
+        var currentUserId = getCurrentUserId()
+        
+        if (isEmployeeRole()) {
+            console.log("=== FILTRAGE POUR EMPLOYÉ ===")
+            console.log("ID employé courant:", currentUserId)
             
-            for (var j = 0; j < main4Page.currentProjectTasks.length; j++) {
-                var task = main4Page.currentProjectTasks[j]
-                main4Page.employeeTaskHours[employee.id][task.id] = 0
+            // Filtrer par memProcessigner
+            filteredTasks = allTasks.filter(function(task) {
+                var assignedId = task.memProcessigner
+                var isAssigned = assignedId !== undefined && assignedId !== null && 
+                               Number(assignedId) === Number(currentUserId)
+                
+                if (isAssigned) {
+                    console.log("✓ Tâche assignée:", task.nomTache || task.nom)
+                }
+                return isAssigned
+            })
+            
+            console.log("Tâches assignées trouvées:", filteredTasks.length)
+            
+            if (filteredTasks.length === 0) {
+                console.log("Aucune tâche assignée, utilisation du fallback")
+                filteredTasks = allTasks
+            }
+            
+        } else {
+            filteredTasks = allTasks
+        }
+        
+        main4Page.currentProjectTasks = filteredTasks.map(function(task) {
+            return {
+                id: task.idTache || task.id,
+                name: task.nomTache || task.nom,
+                totalHours: task.tempsTache ? task.tempsTache / 60.0 : 0,
+                originalHours: task.tempsTache ? task.tempsTache / 60.0 : 0,
+                assignedEmployeeId: task.memProcessigner,
+                hasSubTasks: false // Sera mis à jour après le chargement des sous-tâches
+            }
+        })
+        
+        console.log("✓ Tâches chargées:", main4Page.currentProjectTasks.length)
+        
+        // CHARGER LES SOUS-TÂCHES pour chaque tâche
+        loadSubTasksForAllTasks()
+        
+    } catch (error) {
+        console.error("Erreur chargement tâches:", error)
+        main4Page.currentProjectTasks = []
+    }
+}
+
+   function initializeEmployeeTaskHours() {
+    main4Page.employeeTaskHours = {}
+    main4Page.employeeSubTaskHours = {}
+    
+    for (var i = 0; i < main4Page.currentProjectEmployees.length; i++) {
+        var employee = main4Page.currentProjectEmployees[i]
+        main4Page.employeeTaskHours[employee.id] = {}
+        main4Page.employeeSubTaskHours[employee.id] = {}
+        
+        // Initialiser les heures pour les tâches principales
+        for (var j = 0; j < main4Page.currentProjectTasks.length; j++) {
+            var task = main4Page.currentProjectTasks[j]
+            main4Page.employeeTaskHours[employee.id][task.id] = 0
+            
+            // Initialiser les heures pour les sous-tâches de cette tâche
+            if (main4Page.currentSubTasks[task.id]) {
+                for (var k = 0; k < main4Page.currentSubTasks[task.id].length; k++) {
+                    var subTask = main4Page.currentSubTasks[task.id][k]
+                    if (!main4Page.employeeSubTaskHours[employee.id][task.id]) {
+                        main4Page.employeeSubTaskHours[employee.id][task.id] = {}
+                    }
+                    main4Page.employeeSubTaskHours[employee.id][task.id][subTask.id] = 0
+                }
             }
         }
-        console.log("Structure heures employé-tâche initialisée")
+    }
+    console.log("Structure heures employé-tâche-sous-tâche initialisée")
     }
 
-    function getEmployeeTaskHours(employeeId, taskId) {
-        if (main4Page.employeeTaskHours[employeeId] && main4Page.employeeTaskHours[employeeId][taskId] !== undefined) {
-            return main4Page.employeeTaskHours[employeeId][taskId]
-        }
-        return 0
+function getEmployeeTaskHours(employeeId, taskId) {
+    if (!employeeId || !taskId) return 0
+    if (main4Page.employeeTaskHours[employeeId] && main4Page.employeeTaskHours[employeeId][taskId] !== undefined) {
+        return main4Page.employeeTaskHours[employeeId][taskId]
     }
+    return 0
+}
+function getEmployeeSubTaskHours(employeeId, parentTaskId, subTaskId) {
+    if (main4Page.employeeSubTaskHours[employeeId] && 
+        main4Page.employeeSubTaskHours[employeeId][parentTaskId] &&
+        main4Page.employeeSubTaskHours[employeeId][parentTaskId][subTaskId] !== undefined) {
+        return main4Page.employeeSubTaskHours[employeeId][parentTaskId][subTaskId]
+    }
+    return 0
+}
+
+function setEmployeeSubTaskHours(employeeId, parentTaskId, subTaskId, hours) {
+    if (!main4Page.employeeSubTaskHours[employeeId]) {
+        main4Page.employeeSubTaskHours[employeeId] = {}
+    }
+    if (!main4Page.employeeSubTaskHours[employeeId][parentTaskId]) {
+        main4Page.employeeSubTaskHours[employeeId][parentTaskId] = {}
+    }
+    
+    main4Page.employeeSubTaskHours[employeeId][parentTaskId][subTaskId] = hours
+    
+    // Mettre à jour le total de la sous-tâche
+    updateSubTaskTotalHours(parentTaskId, subTaskId)
+    
+    // Mettre à jour le total de la tâche parente
+    updateTaskTotalHours(parentTaskId)
+    
+    // RECALCULER LE TOTAL DU PROJET
+    calculateProjectTotalHours()
+    
+    // Forcer la mise à jour de l'interface
+    main4Page.currentProjectTasksChanged()
+}
+
+function updateSubTaskTotalHours(parentTaskId, subTaskId) {
+    var total = 0
+    for (var employeeId in main4Page.employeeSubTaskHours) {
+        if (main4Page.employeeSubTaskHours[employeeId][parentTaskId] &&
+            main4Page.employeeSubTaskHours[employeeId][parentTaskId][subTaskId]) {
+            total += main4Page.employeeSubTaskHours[employeeId][parentTaskId][subTaskId]
+        }
+    }
+    
+    // Mettre à jour la sous-tâche dans la liste
+    if (main4Page.currentSubTasks[parentTaskId]) {
+        for (var i = 0; i < main4Page.currentSubTasks[parentTaskId].length; i++) {
+            if (main4Page.currentSubTasks[parentTaskId][i].id === subTaskId) {
+                main4Page.currentSubTasks[parentTaskId][i].totalHours = total
+                break
+            }
+        }
+    }
+}
+
+   function loadExistingHours() {
+    if (main4Page.currentProjectId <= 0) return
+    
+    console.log("Chargement des heures existantes pour le projet:", main4Page.currentProjectId)
+    
+    try {
+        for (var i = 0; i < main4Page.currentProjectEmployees.length; i++) {
+            var employee = main4Page.currentProjectEmployees[i]
+            
+            // Charger les heures des tâches principales
+            for (var j = 0; j < main4Page.currentProjectTasks.length; j++) {
+                var task = main4Page.currentProjectTasks[j]
+                
+                if (isEmployeeRole()) {
+                    var currentUserId = getCurrentUserId()
+                    if (task.assignedEmployeeId && Number(task.assignedEmployeeId) !== Number(currentUserId)) {
+                        continue
+                    }
+                }
+                
+                var existingHours = taskController.getEmployeeTaskHours(
+                    parseInt(main4Page.currentProjectId),
+                    parseInt(employee.id),
+                    parseInt(task.id)
+                )
+                
+                if (existingHours > 0) {
+                    console.log("Heures trouvées - Employé:", employee.id, "Tâche:", task.id, "Heures:", existingHours)
+                    setEmployeeTaskHours(employee.id, task.id, existingHours)
+                }
+                
+                // Charger les heures des sous-tâches
+                if (main4Page.currentSubTasks[task.id]) {
+                    for (var k = 0; k < main4Page.currentSubTasks[task.id].length; k++) {
+                        var subTask = main4Page.currentSubTasks[task.id][k]
+                        
+                        var existingSubTaskHours = taskController.getEmployeeTaskHours(
+                            parseInt(main4Page.currentProjectId),
+                            parseInt(employee.id),
+                            parseInt(subTask.id)
+                        )
+                        
+                        if (existingSubTaskHours > 0) {
+                            console.log("Heures sous-tâche trouvées - Employé:", employee.id, "Sous-tâche:", subTask.id, "Heures:", existingSubTaskHours)
+                            setEmployeeSubTaskHours(employee.id, task.id, subTask.id, existingSubTaskHours)
+                        }
+                    }
+                }
+            }
+        }
+        console.log("Chargement des heures existantes terminé")
+    } catch (error) {
+        console.error("Erreur lors du chargement des heures existantes:", error)
+    }
+    }
+
+   function calculateProjectTotalHours() {
+    var total = 0
+    var originalTotal = 0
+    
+    // Ajouter les heures des tâches principales
+    for (var employeeId in main4Page.employeeTaskHours) {
+        for (var taskId in main4Page.employeeTaskHours[employeeId]) {
+            total += main4Page.employeeTaskHours[employeeId][taskId]
+        }
+    }
+    
+    // Ajouter les heures des sous-tâches
+    for (var empId in main4Page.employeeSubTaskHours) {
+        for (var parentTaskId in main4Page.employeeSubTaskHours[empId]) {
+            for (var subTaskId in main4Page.employeeSubTaskHours[empId][parentTaskId]) {
+                total += main4Page.employeeSubTaskHours[empId][parentTaskId][subTaskId]
+            }
+        }
+    }
+    
+    // Calculer le total des heures originales
+    for (var i = 0; i < main4Page.currentProjectTasks.length; i++) {
+        var task = main4Page.currentProjectTasks[i]
+        if (task.originalHours) {
+            originalTotal += task.originalHours
+        }
+        
+        // Ajouter les heures originales des sous-tâches
+        if (main4Page.currentSubTasks[task.id]) {
+            for (var j = 0; j < main4Page.currentSubTasks[task.id].length; j++) {
+                var subTask = main4Page.currentSubTasks[task.id][j]
+                if (subTask.originalHours) {
+                    originalTotal += subTask.originalHours
+                }
+            }
+        }
+    }
+    
+    main4Page.projectTotalHours = total
+    main4Page.projectOriginalHours = originalTotal
+    
+    console.log("Total projet calculé - Heures saisies:", total.toFixed(1), 
+                "Heures originales:", originalTotal.toFixed(1))
+    
+    return total
+}
+
+ 
 
     function setEmployeeTaskHours(employeeId, taskId, hours) {
-        if (!main4Page.employeeTaskHours[employeeId]) {
-            main4Page.employeeTaskHours[employeeId] = {}
-        }
-        main4Page.employeeTaskHours[employeeId][taskId] = hours
-        
-        // Mettre à jour le total des heures de l'employé
-        updateEmployeeTotalHours(employeeId)
-        
-        // Mettre à jour le total des heures de la tâche
-        updateTaskTotalHours(taskId)
-        
-        // Forcer la mise à jour de l'interface
-        main4Page.currentProjectEmployeesChanged()
-        main4Page.currentProjectTasksChanged()
+    if (!employeeId || !taskId) {
+        console.error("setEmployeeTaskHours: employeeId ou taskId undefined")
+        return
+    }
+    
+    if (!main4Page.employeeTaskHours[employeeId]) {
+        main4Page.employeeTaskHours[employeeId] = {}
+    }
+    main4Page.employeeTaskHours[employeeId][taskId] = hours
+    
+    // Mettre à jour le total des heures de l'employé
+    updateEmployeeTotalHours(employeeId)
+    
+    // Mettre à jour le total des heures de la tâche
+    updateTaskTotalHours(taskId)
+    
+    // RECALCULER LE TOTAL DU PROJET
+    calculateProjectTotalHours()
+    
+    // Forcer la mise à jour de l'interface
+    main4Page.currentProjectEmployeesChanged()
+    main4Page.currentProjectTasksChanged()
     }
 
     function updateEmployeeTotalHours(employeeId) {
@@ -260,64 +535,96 @@ Page {
     }
 
     function saveTimeEntries() {
-        if (main4Page.projects.length === 0 || main4Page.currentProjectId <= 0) {
-            showError("Aucun projet sélectionné")
-            return
+    if (main4Page.projects.length === 0 || main4Page.currentProjectId <= 0) {
+        showError("Aucun projet sélectionné")
+        return
+    }
+    
+    var projectName = main4Page.projects[main4Page.currentProjectIndex].nomProject
+    var hasChanges = false
+    var successCount = 0
+    var errorCount = 0
+    
+    console.log("=== SAUVEGARDE DES HEURES ===")
+    console.log("Projet:", projectName, "ID:", main4Page.currentProjectId)
+    
+    // Sauvegarder les heures des tâches principales
+    for (var employeeId in main4Page.employeeTaskHours) {
+        for (var taskId in main4Page.employeeTaskHours[employeeId]) {
+            var hours = main4Page.employeeTaskHours[employeeId][taskId]
+            if (hours > 0) {
+                console.log("Sauvegarde heures - Projet:", main4Page.currentProjectId, 
+                          "Employé:", employeeId, "Tâche:", taskId, "Heures:", hours)
+                
+                try {
+                    var success = taskController.saveEmployeeTaskHours(
+                        parseInt(main4Page.currentProjectId),
+                        parseInt(employeeId),
+                        parseInt(taskId),
+                        hours
+                    )
+                    
+                    if (success) {
+                        console.log("✓ Heures sauvegardées pour employé", employeeId, "tâche", taskId)
+                        successCount++
+                        hasChanges = true
+                    } else {
+                        console.error("✗ Échec sauvegarde heures pour employé", employeeId, "tâche", taskId)
+                        errorCount++
+                    }
+                } catch (error) {
+                    console.error("Erreur lors de la sauvegarde:", error)
+                    errorCount++
+                }
+            }
         }
-        
-        var projectName = main4Page.projects[main4Page.currentProjectIndex].nomProject
-        var hasChanges = false
-        var successCount = 0
-        var errorCount = 0
-        
-        console.log("=== SAUVEGARDE DES HEURES ===")
-        console.log("Projet:", projectName, "ID:", main4Page.currentProjectId)
-        
-        // Sauvegarder les heures par employé par tâche
-        for (var employeeId in main4Page.employeeTaskHours) {
-            for (var taskId in main4Page.employeeTaskHours[employeeId]) {
-                var hours = main4Page.employeeTaskHours[employeeId][taskId]
-                if (hours > 0) {
-                    console.log("Sauvegarde heures - Projet:", main4Page.currentProjectId, 
-                              "Employé:", employeeId, "Tâche:", taskId, "Heures:", hours)
+    }
+    
+    // Sauvegarder les heures des sous-tâches
+    for (var empId in main4Page.employeeSubTaskHours) {
+        for (var parentTaskId in main4Page.employeeSubTaskHours[empId]) {
+            for (var subTaskId in main4Page.employeeSubTaskHours[empId][parentTaskId]) {
+                var subTaskHours = main4Page.employeeSubTaskHours[empId][parentTaskId][subTaskId]
+                if (subTaskHours > 0) {
+                    console.log("Sauvegarde sous-tâche - Projet:", main4Page.currentProjectId, 
+                              "Employé:", empId, "Sous-tâche:", subTaskId, "Heures:", subTaskHours)
                     
                     try {
-                        // Appeler la méthode avec les bons paramètres dans le bon ordre
-                        var success = taskController.saveEmployeeTaskHours(
+                        var subTaskSuccess = taskController.saveEmployeeTaskHours(
                             parseInt(main4Page.currentProjectId),
-                            parseInt(employeeId),
-                            parseInt(taskId),
-                            hours  // Déjà en heures, pas besoin de conversion
+                            parseInt(empId),
+                            parseInt(subTaskId),
+                            subTaskHours
                         )
                         
-                        if (success) {
-                            console.log("✓ Heures sauvegardées pour employé", employeeId, "tâche", taskId)
+                        if (subTaskSuccess) {
+                            console.log("✓ Heures sous-tâche sauvegardées pour employé", empId, "sous-tâche", subTaskId)
                             successCount++
                             hasChanges = true
                         } else {
-                            console.error("✗ Échec sauvegarde heures pour employé", employeeId, "tâche", taskId)
+                            console.error("✗ Échec sauvegarde sous-tâche pour employé", empId, "sous-tâche", subTaskId)
                             errorCount++
                         }
                     } catch (error) {
-                        console.error("Erreur lors de la sauvegarde:", error)
+                        console.error("Erreur lors de la sauvegarde sous-tâche:", error)
                         errorCount++
                     }
                 }
             }
         }
-        
-        if (hasChanges) {
-            if (errorCount === 0) {
-                saveConfirmationDialog.text = "Toutes les heures ont été sauvegardées avec succès! (" + successCount + " entrées)"
-                saveConfirmationDialog.open()
-            } else {
-                showError("Certaines heures n'ont pas pu être sauvegardées. Réussites: " + successCount + ", Échecs: " + errorCount)
-            }
-        } else {
-            showInfo("Aucune modification à sauvegarder")
-        }
     }
-
+    
+    if (hasChanges) {
+        if (errorCount === 0) {
+            saveConfirmationDialog.text = "Toutes les heures ont été sauvegardées avec succès! (" + successCount + " entrées)"
+            saveConfirmationDialog.open()
+        } else {
+            showError("Certaines heures n'ont pas pu être sauvegardées. Réussites: " + successCount + ", Échecs: " + errorCount)
+        }
+    } else {
+        showInfo("Aucune modification à sauvegarder")
+    }
+}
     function showError(message) {
         errorDialog.text = message
         errorDialog.open()
@@ -384,15 +691,73 @@ Page {
             }
 
             // Liste déroulante des projets réels
-            ComboBox {
+           ComboBox {
                 id: projectComboBox
                 Layout.fillWidth: true
                 model: main4Page.projects.map(project => project.nomProject + (project.nomClient ? " - " + project.nomClient : ""))
-                currentIndex: 0
-                onCurrentIndexChanged: updateProjectData()
+                currentIndex: main4Page.projects.length > 0 ? 0 : -1
+    
+                Component.onCompleted: {
+                    console.log("ComboBox créé, projets:", main4Page.projects.length, "index:", currentIndex)
+                    if (main4Page.projects.length > 0 && currentIndex >= 0) {
+                        Qt.callLater(updateProjectData)
+                    }
+                }
+    
+                onCurrentIndexChanged: {
+                    console.log("Index ComboBox changé:", currentIndex, "projets:", main4Page.projects.length)
+                    if (currentIndex >= 0 && main4Page.projects.length > 0) {
+                        Qt.callLater(updateProjectData)
+                    }
+                }
+            }}
+        // Section TOTAL DU PROJET (version compacte)
+ColumnLayout {
+    spacing: 8
+    Layout.fillWidth: true
+    visible: main4Page.projects.length > 0 && main4Page.currentProjectId > 0 && !isEmployeeRole()
+
+    Label {
+        text: 'TOTAL DU PROJET'
+        font.bold: true
+        font.pixelSize: 16
+        color: "#2c3e50"
+    }
+
+    Rectangle {
+        Layout.fillWidth: true
+        height: 60
+        border.color: "#bdc3c7"
+        border.width: 1
+        radius: 6
+        color: "#f8f9fa"
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 10
+            spacing: 20
+
+            // Heures saisies
+            ColumnLayout {
+                spacing: 2
+                Layout.alignment: Qt.AlignVCenter
+
+                Label {
+                    text: "Heures saisies"
+                    font.pixelSize: 11
+                    color: "#7f8c8d"
+                }
+
+                Label {
+                    text: main4Page.projectTotalHours.toFixed(1) + " h"
+                    font.bold: true
+                    font.pixelSize: 16
+                    color: "#e74c3c"
+                }
             }
         }
-
+    }
+}
         // Section HEURES PAR EMPLOYÉ
         ColumnLayout {
             spacing: 10
@@ -482,179 +847,326 @@ Page {
             }
         }
 
-        // Section DÉTAIL DES HEURES PAR TÂCHE (avec slider)
-       ColumnLayout {
-        spacing: 10
+       // Section DÉTAIL DES HEURES PAR TÂCHE (avec slider)
+ColumnLayout {
+    spacing: 10
+    Layout.fillWidth: true
+    Layout.fillHeight: true
+    visible: main4Page.projects.length > 0 && main4Page.currentProjectEmployees.length > 0 && main4Page.currentProjectTasks.length > 0
+
+    Label {
+        text: {
+            if (isEmployeeRole()) {
+                return 'MES HEURES PAR TÂCHE'
+            } else {
+                return 'DÉTAIL DES HEURES PAR TÂCHE'
+            }
+        }
+        font.bold: true
+        font.pixelSize: 16
+        wrapMode: Text.WordWrap
+    }
+
+    // Conteneur avec slider pour les boîtes d'ajout d'heures
+    Rectangle {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        visible: main4Page.projects.length > 0 && main4Page.currentProjectEmployees.length > 0 && main4Page.currentProjectTasks.length > 0
+        border.color: "lightgray"
+        border.width: 1
+        radius: 5
+        clip: true
 
-        Label {
-            text: {
-                if (isEmployeeRole()) {
-                    return 'MES HEURES PAR TÂCHE'
-                } else {
-                    return 'DÉTAIL DES HEURES PAR TÂCHE'
-                }
-            }
-            font.bold: true
-            font.pixelSize: 16
-            wrapMode: Text.WordWrap
-        }
+        ScrollView {
+            id: employeeTasksScrollView
+            anchors.fill: parent
+            anchors.margins: 5
+            contentWidth: parent.width - 20
 
-            // Conteneur avec slider pour les boîtes d'ajout d'heures
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                border.color: "lightgray"
-                border.width: 1
-                radius: 5
-                clip: true
+            ColumnLayout {
+                id: employeeTasksColumn
+                width: parent.width
+                spacing: 10
 
-                ScrollView {
-                    id: employeeTasksScrollView
-                    anchors.fill: parent
-                    anchors.margins: 5
-                    contentWidth: parent.width - 20
-
-                    ColumnLayout {
-                        id: employeeTasksColumn
-                        width: parent.width
-                        spacing: 10
-
-                        // Répéteur pour chaque employé
-                        Repeater {
-                            model: main4Page.currentProjectEmployees
+                // Répéteur pour chaque employé
+                Repeater {
+                    model: main4Page.currentProjectEmployees
+                    
+                    Rectangle {
+                        id: employeeCard
+                        Layout.fillWidth: true
+                        height: taskColumn.height + 40
+                        border.color: "#d0d0d0"
+                        border.width: 1
+                        radius: 5
+                        
+                        property var currentEmployee: modelData
+                        
+                        ColumnLayout {
+                            id: taskColumn
+                            width: parent.width
+                            anchors.margins: 10
+                            spacing: 5
                             
-                            Rectangle {
-                                id: employeeCard
-                                Layout.fillWidth: true
-                                height: taskColumn.height + 40
-                                border.color: "#d0d0d0"
-                                border.width: 1
-                                radius: 5
-                                
-                                property var currentEmployee: modelData
+                            // En-tête de l'employé
+                            Label {
+                                text: {
+                                    if (isEmployeeRole()) {
+                                        return "MES HEURES PAR TÂCHE:"
+                                    } else if (employeeCard.currentEmployee && employeeCard.currentEmployee.name) {
+                                        return employeeCard.currentEmployee.name + " - Heures par tâche:"
+                                    } else {
+                                        return "Heures par tâche:"
+                                    }
+                                }
+                                font.bold: true
+                                font.pixelSize: 14
+                                color: "#2c3e50"
+                                Layout.topMargin: 10
+                                Layout.leftMargin: 10
+                            }
+                            
+                            // Répéteur pour les tâches de cet employé
+                            Repeater {
+                                model: main4Page.currentProjectTasks
                                 
                                 ColumnLayout {
-                                    id: taskColumn
-                                    width: parent.width
-                                    anchors.margins: 10
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: 20
+                                    Layout.rightMargin: 20
                                     spacing: 5
                                     
-                                    // En-tête de l'employé
-                                    Label {
-                                        text: employeeCard.currentEmployee.name + " - Heures par tâche:"
-                                        font.bold: true
-                                        font.pixelSize: 14
-                                        color: "#2c3e50"
-                                        Layout.topMargin: 10
-                                        Layout.leftMargin: 10
-                                    }
+                                    property var currentTask: modelData
+                                    property var currentEmployee: employeeCard.currentEmployee
                                     
-                                    // Répéteur pour les tâches de cet employé
-                                    Repeater {
-                                        model: main4Page.currentProjectTasks
+                                    // TÂCHE PRINCIPALE
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 10
                                         
-                                        RowLayout {
+                                        Label {
+                                            text: {
+                                                if (currentTask && currentTask.name) {
+                                                    return currentTask.name + (currentTask.hasSubTasks ? " 🗂️" : "")
+                                                } else {
+                                                    return "Tâche sans nom"
+                                                }
+                                            }
+                                            Layout.preferredWidth: 200
+                                            elide: Text.ElideRight
+                                            font.bold: true
+                                        }
+                                        
+                                        // Bouton -
+                                        Button {
+                                            text: "-"
+                                            width: 30
+                                            height: 30
+                                            enabled: currentEmployee && currentTask
+                                            onClicked: {
+                                                if (!currentEmployee || !currentTask) return
+                                                var currentHours = getEmployeeTaskHours(currentEmployee.id, currentTask.id)
+                                                if (currentHours > 0) {
+                                                    var newHours = currentHours - 0.5
+                                                    setEmployeeTaskHours(currentEmployee.id, currentTask.id, Math.max(0, newHours))
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Affichage des heures
+                                        Label {
+                                            text: {
+                                                if (currentEmployee && currentTask) {
+                                                    return getEmployeeTaskHours(currentEmployee.id, currentTask.id).toFixed(1) + " h"
+                                                } else {
+                                                    return "0.0 h"
+                                                }
+                                            }
+                                            Layout.preferredWidth: 60
+                                            horizontalAlignment: Text.AlignHCenter
+                                            font.bold: true
+                                            background: Rectangle {
+                                                color: "#e8f4fd"
+                                                border.color: "#3498db"
+                                                border.width: 1
+                                                radius: 3
+                                            }
+                                            padding: 5
+                                        }
+                                        
+                                        // Bouton +
+                                        Button {
+                                            text: "+"
+                                            width: 30
+                                            height: 30
+                                            enabled: currentEmployee && currentTask
+                                            onClicked: {
+                                                if (!currentEmployee || !currentTask) return
+                                                var currentHours = getEmployeeTaskHours(currentEmployee.id, currentTask.id)
+                                                var newHours = currentHours + 0.5
+                                                setEmployeeTaskHours(currentEmployee.id, currentTask.id, newHours)
+                                            }
+                                        }
+                                        
+                                        // Total de la tâche
+                                        Label {
+                                            text: {
+                                                if (currentTask && currentTask.totalHours !== undefined) {
+                                                    return "Total: " + currentTask.totalHours.toFixed(1) + " h"
+                                                } else {
+                                                    return "Total: 0.0 h"
+                                                }
+                                            }
                                             Layout.fillWidth: true
-                                            Layout.leftMargin: 20
-                                            Layout.rightMargin: 20
-                                            spacing: 10
-                                            
-                                            property var currentTask: modelData
-                                            property var currentEmployee: employeeCard.currentEmployee
-                                            
-                                            Label {
-                                                text: currentTask.name
-                                                Layout.preferredWidth: 200
-                                                elide: Text.ElideRight
-                                            }
-                                            
-                                            // Bouton -
-                                            Button {
-                                                text: "-"
-                                                width: 30
-                                                height: 30
-                                                onClicked: {
-                                                    var currentHours = getEmployeeTaskHours(parent.currentEmployee.id, parent.currentTask.id)
-                                                    if (currentHours > 0) {
-                                                        var newHours = currentHours - 0.5
-                                                        setEmployeeTaskHours(parent.currentEmployee.id, parent.currentTask.id, Math.max(0, newHours))
-                                                    }
-                                                }
-                                            }
-                                            
-                                            // Affichage des heures
-                                            Label {
-                                                text: getEmployeeTaskHours(parent.currentEmployee.id, parent.currentTask.id).toFixed(1) + " h"
-                                                Layout.preferredWidth: 60
-                                                horizontalAlignment: Text.AlignHCenter
-                                                font.bold: true
-                                                background: Rectangle {
-                                                    color: "#e8f4fd"
-                                                    border.color: "#3498db"
-                                                    border.width: 1
-                                                    radius: 3
-                                                }
-                                                padding: 5
-                                            }
-                                            
-                                            // Bouton +
-                                            Button {
-                                                text: "+"
-                                                width: 30
-                                                height: 30
-                                                onClicked: {
-                                                    var currentHours = getEmployeeTaskHours(parent.currentEmployee.id, parent.currentTask.id)
-                                                    var newHours = currentHours + 0.5
-                                                    setEmployeeTaskHours(parent.currentEmployee.id, parent.currentTask.id, newHours)
-                                                }
-                                            }
-                                            
-                                            // Total de la tâche (pour information)
-                                            Label {
-                                                text: "Total tâche: " + parent.currentTask.totalHours.toFixed(1) + " h"
-                                                Layout.fillWidth: true
-                                                horizontalAlignment: Text.AlignRight
-                                                color: "gray"
-                                                font.pixelSize: 12
-                                            }
+                                            horizontalAlignment: Text.AlignRight
+                                            color: "gray"
+                                            font.pixelSize: 12
                                         }
                                     }
                                     
-                                    // Séparateur
-                                    Rectangle {
+                                    // SOUS-TÂCHES (si elles existent)
+                                    ColumnLayout {
                                         Layout.fillWidth: true
-                                        height: 1
-                                        color: "lightgray"
-                                        Layout.topMargin: 5
-                                        Layout.bottomMargin: 5
+                                        Layout.leftMargin: 20
+                                        spacing: 5
+                                        visible: currentTask && currentTask.hasSubTasks && main4Page.currentSubTasks && main4Page.currentSubTasks[currentTask.id]
+                                        
+                                        Repeater {
+                                            model: {
+                                                if (currentTask && main4Page.currentSubTasks && main4Page.currentSubTasks[currentTask.id]) {
+                                                    return main4Page.currentSubTasks[currentTask.id]
+                                                } else {
+                                                    return []
+                                                }
+                                            }
+                                            
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 10
+                                                
+                                                property var currentSubTask: modelData
+                                                property var currentEmployee: parent.parent.parent.currentEmployee
+                                                property var parentTask: parent.parent.parent.currentTask
+                                                
+                                                Label {
+                                                    text: {
+                                                        if (currentSubTask && currentSubTask.name) {
+                                                            return "  └─ " + currentSubTask.name
+                                                        } else {
+                                                            return "  └─ Sous-tâche sans nom"
+                                                        }
+                                                    }
+                                                    Layout.preferredWidth: 180
+                                                    elide: Text.ElideRight
+                                                    font.pixelSize: 12
+                                                    color: "#7f8c8d"
+                                                }
+                                                
+                                                // Bouton - pour sous-tâche
+                                                Button {
+                                                    text: "-"
+                                                    width: 25
+                                                    height: 25
+                                                    font.pixelSize: 10
+                                                    enabled: currentEmployee && parentTask && currentSubTask
+                                                    onClicked: {
+                                                        if (!currentEmployee || !parentTask || !currentSubTask) return
+                                                        var currentHours = getEmployeeSubTaskHours(currentEmployee.id, parentTask.id, currentSubTask.id)
+                                                        if (currentHours > 0) {
+                                                            var newHours = currentHours - 0.5
+                                                            setEmployeeSubTaskHours(currentEmployee.id, parentTask.id, currentSubTask.id, Math.max(0, newHours))
+                                                        }
+                                                    }
+                                                }
+                                                
+                                                // Affichage des heures sous-tâche
+                                                Label {
+                                                    text: {
+                                                        if (currentEmployee && parentTask && currentSubTask) {
+                                                            return getEmployeeSubTaskHours(currentEmployee.id, parentTask.id, currentSubTask.id).toFixed(1) + " h"
+                                                        } else {
+                                                            return "0.0 h"
+                                                        }
+                                                    }
+                                                    Layout.preferredWidth: 50
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    font.bold: true
+                                                    font.pixelSize: 11
+                                                    background: Rectangle {
+                                                        color: "#f0f8ff"
+                                                        border.color: "#85c1e9"
+                                                        border.width: 1
+                                                        radius: 2
+                                                    }
+                                                    padding: 3
+                                                }
+                                                
+                                                // Bouton + pour sous-tâche
+                                                Button {
+                                                    text: "+"
+                                                    width: 25
+                                                    height: 25
+                                                    font.pixelSize: 10
+                                                    enabled: currentEmployee && parentTask && currentSubTask
+                                                    onClicked: {
+                                                        if (!currentEmployee || !parentTask || !currentSubTask) return
+                                                        var currentHours = getEmployeeSubTaskHours(currentEmployee.id, parentTask.id, currentSubTask.id)
+                                                        var newHours = currentHours + 0.5
+                                                        setEmployeeSubTaskHours(currentEmployee.id, parentTask.id, currentSubTask.id, newHours)
+                                                    }
+                                                }
+                                                
+                                                // Total de la sous-tâche
+                                                Label {
+                                                    text: {
+                                                        if (currentSubTask && currentSubTask.totalHours !== undefined) {
+                                                            return "Sous-total: " + currentSubTask.totalHours.toFixed(1) + " h"
+                                                        } else {
+                                                            return "Sous-total: 0.0 h"
+                                                        }
+                                                    }
+                                                    Layout.fillWidth: true
+                                                    horizontalAlignment: Text.AlignRight
+                                                    color: "gray"
+                                                    font.pixelSize: 10
+                                                }
+                                            }
+                                        }
                                     }
                                 }
+                            }
+                            
+                            // Séparateur
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: "lightgray"
+                                Layout.topMargin: 5
+                                Layout.bottomMargin: 5
                             }
                         }
                     }
                 }
-
-                // Indicateur de scroll (optionnel)
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    width: 100
-                    height: 20
-                    color: "transparent"
-                    visible: employeeTasksScrollView.contentHeight > employeeTasksScrollView.height
-
-                    Label {
-                        anchors.centerIn: parent
-                        text: "↓ Défiler ↓"
-                        color: "gray"
-                        font.pixelSize: 10
-                    }
-                }
             }
         }
+
+        // Indicateur de scroll (optionnel)
+        Rectangle {
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: 100
+            height: 20
+            color: "transparent"
+            visible: employeeTasksScrollView.contentHeight > employeeTasksScrollView.height
+
+            Label {
+                anchors.centerIn: parent
+                text: "↓ Défiler ↓"
+                color: "gray"
+                font.pixelSize: 10
+            }
+        }
+    }
+} 
 
         // Message si pas d'employés/tâches
         Label {
@@ -742,14 +1254,17 @@ Page {
 
     // Initialisation
     Component.onCompleted: {
-        console.log("Main4 chargé - Projets disponibles:", main4Page.projects.length)
-        console.log("ProjectController disponible:", projectController !== null)
-        console.log("TaskController disponible:", taskController !== null)
-        
+    console.log("Main4 chargé - Projets disponibles:", main4Page.projects.length)
+    console.log("ProjectController disponible:", projectController !== null)
+    console.log("TaskController disponible:", taskController !== null)
+    
+    // Attendre que l'interface soit complètement chargée
+    Qt.callLater(function() {
         if (main4Page.projects.length > 0) {
             updateProjectData()
         }
-    }
+    })
+}
 
     // Connexion aux signaux
     Connections {
@@ -779,4 +1294,4 @@ Page {
     Settings {
         id: settings
     }
-}
+                }

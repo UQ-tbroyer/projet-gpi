@@ -813,3 +813,50 @@ double TaskController::getEmployeeTaskHours(int projectId, int employeeId, int t
         return 0.0;
     }
 }
+QVariantList TaskController::getSubTasksByTask(int parentTaskId)
+{
+    QVariantList subTasks;
+
+    try {
+        if (parentTaskId <= 0) {
+            qWarning() << "TaskController: Invalid parent task ID:" << parentTaskId;
+            return subTasks;
+        }
+
+        qDebug() << "TaskController: Getting subtasks for parent task" << parentTaskId;
+
+        auto taskList = m_dbManager->getSubTasksByTask(parentTaskId);
+
+        for (const auto& task : taskList) {
+            QVariantMap taskMap;
+            taskMap["id"] = task.idTache;
+            taskMap["idTache"] = task.idTache;
+            taskMap["idProject"] = task.idProject;
+            taskMap["memProcessigner"] = task.memProcessigner;
+            taskMap["idParentTache"] = task.idParentTache;
+            taskMap["nomTache"] = QString::fromStdString(task.nomTache);
+            taskMap["nom"] = QString::fromStdString(task.nomTache);
+            taskMap["descTache"] = QString::fromStdString(task.descTache);
+            taskMap["tempsTache"] = task.tempsTache;
+            taskMap["dateDebut"] = QString::fromStdString(task.dateDebut);
+            taskMap["dateFin"] = QString::fromStdString(task.dateFin);
+            taskMap["etat"] = QString::fromStdString(task.etat);
+            taskMap["assigneeName"] = QString::fromStdString(task.assigneeName);
+            taskMap["isSubTask"] = true;
+
+            subTasks.append(taskMap);
+
+            qDebug() << "  - Subtask:" << QString::fromStdString(task.nomTache)
+                << "ID:" << task.idTache
+                << "Assignee:" << task.memProcessigner;
+        }
+
+        qDebug() << "TaskController: Returning" << subTasks.size() << "subtasks for parent task" << parentTaskId;
+
+    }
+    catch (const std::exception& e) {
+        qCritical() << "TaskController: Error getting subtasks for parent" << parentTaskId << ":" << e.what();
+    }
+
+    return subTasks;
+}
