@@ -50,6 +50,7 @@ public:
     Q_INVOKABLE bool isEmployeeView() const;
     Q_INVOKABLE bool saveEmployeeTaskHours(int projectId, int employeeId, int taskId, double hours);
     Q_INVOKABLE double getEmployeeTaskHours(int projectId, int employeeId, int taskId);
+    Q_INVOKABLE QVariantList getSubTasksByTask(int parentTaskId);
     void loadTasksForProjectThrottled(int projectId);
 
 
