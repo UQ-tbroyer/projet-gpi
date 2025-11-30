@@ -1,4 +1,4 @@
-﻿import QtQuick 2.15
+import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Qt.labs.settings 1.0
@@ -282,9 +282,13 @@ Page {
     }
 }
 
-   function initializeEmployeeTaskHours() {
+function initializeEmployeeTaskHours() {
     main4Page.employeeTaskHours = {}
     main4Page.employeeSubTaskHours = {}
+    
+    console.log("Initialisation des structures heures...")
+    console.log("Employés:", main4Page.currentProjectEmployees.length)
+    console.log("Tâches:", main4Page.currentProjectTasks.length)
     
     for (var i = 0; i < main4Page.currentProjectEmployees.length; i++) {
         var employee = main4Page.currentProjectEmployees[i]
@@ -309,7 +313,7 @@ Page {
         }
     }
     console.log("Structure heures employé-tâche-sous-tâche initialisée")
-    }
+}
 
 function getEmployeeTaskHours(employeeId, taskId) {
     if (!employeeId || !taskId) return 0
@@ -319,6 +323,8 @@ function getEmployeeTaskHours(employeeId, taskId) {
     return 0
 }
 function getEmployeeSubTaskHours(employeeId, parentTaskId, subTaskId) {
+    if (!employeeId || !parentTaskId || !subTaskId) return 0
+    
     if (main4Page.employeeSubTaskHours[employeeId] && 
         main4Page.employeeSubTaskHours[employeeId][parentTaskId] &&
         main4Page.employeeSubTaskHours[employeeId][parentTaskId][subTaskId] !== undefined) {
@@ -328,6 +334,14 @@ function getEmployeeSubTaskHours(employeeId, parentTaskId, subTaskId) {
 }
 
 function setEmployeeSubTaskHours(employeeId, parentTaskId, subTaskId, hours) {
+    if (!employeeId || !parentTaskId || !subTaskId) {
+        console.error("setEmployeeSubTaskHours: paramètres manquants")
+        return
+    }
+    
+    console.log("=== SET HEURES SOUS-TÂCHE ===")
+    console.log("Employé:", employeeId, "Parent:", parentTaskId, "Sous-tâche:", subTaskId, "Heures:", hours)
+    
     if (!main4Page.employeeSubTaskHours[employeeId]) {
         main4Page.employeeSubTaskHours[employeeId] = {}
     }
@@ -346,8 +360,25 @@ function setEmployeeSubTaskHours(employeeId, parentTaskId, subTaskId, hours) {
     // RECALCULER LE TOTAL DU PROJET
     calculateProjectTotalHours()
     
-    // Forcer la mise à jour de l'interface
+    // FORCER LA MISE À JOUR DE L'INTERFACE
+    main4Page.employeeSubTaskHoursChanged()
     main4Page.currentProjectTasksChanged()
+    main4Page.currentSubTasksChanged()
+    
+    // Forcer la mise à jour des bindings
+    for (var i = 0; i < main4Page.currentProjectTasks.length; i++) {
+        var task = main4Page.currentProjectTasks[i]
+        if (task.id === parentTaskId && main4Page.currentSubTasks[parentTaskId]) {
+            for (var j = 0; j < main4Page.currentSubTasks[parentTaskId].length; j++) {
+                if (main4Page.currentSubTasks[parentTaskId][j].id === subTaskId) {
+                    // Cette ligne force la mise à jour du binding
+                    main4Page.currentSubTasks[parentTaskId][j].totalHours = main4Page.currentSubTasks[parentTaskId][j].totalHours
+                    break
+                }
+            }
+            break
+        }
+    }
 }
 
 function updateSubTaskTotalHours(parentTaskId, subTaskId) {
@@ -358,6 +389,10 @@ function updateSubTaskTotalHours(parentTaskId, subTaskId) {
             total += main4Page.employeeSubTaskHours[employeeId][parentTaskId][subTaskId]
         }
     }
+    
+    console.log("Mise à jour total sous-tâche - Parent:", parentTaskId, 
+                "Sous-tâche:", subTaskId, 
+                "Total:", total)
     
     // Mettre à jour la sous-tâche dans la liste
     if (main4Page.currentSubTasks[parentTaskId]) {
@@ -430,10 +465,16 @@ function updateSubTaskTotalHours(parentTaskId, subTaskId) {
     var total = 0
     var originalTotal = 0
     
+    console.log("=== CALCUL TOTAL PROJET ===")
+    
     // Ajouter les heures des tâches principales
     for (var employeeId in main4Page.employeeTaskHours) {
         for (var taskId in main4Page.employeeTaskHours[employeeId]) {
-            total += main4Page.employeeTaskHours[employeeId][taskId]
+            var hours = main4Page.employeeTaskHours[employeeId][taskId]
+            if (hours > 0) {
+                console.log("Heures tâche principale - Employé:", employeeId, "Tâche:", taskId, "Heures:", hours)
+            }
+            total += hours
         }
     }
     
@@ -441,7 +482,11 @@ function updateSubTaskTotalHours(parentTaskId, subTaskId) {
     for (var empId in main4Page.employeeSubTaskHours) {
         for (var parentTaskId in main4Page.employeeSubTaskHours[empId]) {
             for (var subTaskId in main4Page.employeeSubTaskHours[empId][parentTaskId]) {
-                total += main4Page.employeeSubTaskHours[empId][parentTaskId][subTaskId]
+                var subHours = main4Page.employeeSubTaskHours[empId][parentTaskId][subTaskId]
+                if (subHours > 0) {
+                    console.log("Heures sous-tâche - Employé:", empId, "Sous-tâche:", subTaskId, "Heures:", subHours)
+                }
+                total += subHours
             }
         }
     }
@@ -467,7 +512,7 @@ function updateSubTaskTotalHours(parentTaskId, subTaskId) {
     main4Page.projectTotalHours = total
     main4Page.projectOriginalHours = originalTotal
     
-    console.log("Total projet calculé - Heures saisies:", total.toFixed(1), 
+    console.log("Total projet - Heures saisies:", total.toFixed(1), 
                 "Heures originales:", originalTotal.toFixed(1))
     
     return total
@@ -553,7 +598,7 @@ function updateSubTaskTotalHours(parentTaskId, subTaskId) {
         for (var taskId in main4Page.employeeTaskHours[employeeId]) {
             var hours = main4Page.employeeTaskHours[employeeId][taskId]
             if (hours > 0) {
-                console.log("Sauvegarde heures - Projet:", main4Page.currentProjectId, 
+                console.log("💾 Sauvegarde tâche principale - Projet:", main4Page.currentProjectId, 
                           "Employé:", employeeId, "Tâche:", taskId, "Heures:", hours)
                 
                 try {
@@ -565,15 +610,15 @@ function updateSubTaskTotalHours(parentTaskId, subTaskId) {
                     )
                     
                     if (success) {
-                        console.log("✓ Heures sauvegardées pour employé", employeeId, "tâche", taskId)
+                        console.log("✅ Tâche principale sauvegardée")
                         successCount++
                         hasChanges = true
                     } else {
-                        console.error("✗ Échec sauvegarde heures pour employé", employeeId, "tâche", taskId)
+                        console.error("❌ Échec tâche principale")
                         errorCount++
                     }
                 } catch (error) {
-                    console.error("Erreur lors de la sauvegarde:", error)
+                    console.error("💥 Erreur tâche principale:", error)
                     errorCount++
                 }
             }
@@ -586,7 +631,7 @@ function updateSubTaskTotalHours(parentTaskId, subTaskId) {
             for (var subTaskId in main4Page.employeeSubTaskHours[empId][parentTaskId]) {
                 var subTaskHours = main4Page.employeeSubTaskHours[empId][parentTaskId][subTaskId]
                 if (subTaskHours > 0) {
-                    console.log("Sauvegarde sous-tâche - Projet:", main4Page.currentProjectId, 
+                    console.log("💾 Sauvegarde sous-tâche - Projet:", main4Page.currentProjectId, 
                               "Employé:", empId, "Sous-tâche:", subTaskId, "Heures:", subTaskHours)
                     
                     try {
@@ -598,15 +643,15 @@ function updateSubTaskTotalHours(parentTaskId, subTaskId) {
                         )
                         
                         if (subTaskSuccess) {
-                            console.log("✓ Heures sous-tâche sauvegardées pour employé", empId, "sous-tâche", subTaskId)
+                            console.log("✅ Sous-tâche sauvegardée")
                             successCount++
                             hasChanges = true
                         } else {
-                            console.error("✗ Échec sauvegarde sous-tâche pour employé", empId, "sous-tâche", subTaskId)
+                            console.error("❌ Échec sous-tâche")
                             errorCount++
                         }
                     } catch (error) {
-                        console.error("Erreur lors de la sauvegarde sous-tâche:", error)
+                        console.error("💥 Erreur sous-tâche:", error)
                         errorCount++
                     }
                 }
@@ -1023,69 +1068,102 @@ ColumnLayout {
                                         }
                                     }
                                     
-                                    // SOUS-TÂCHES (si elles existent)
+                                   // SOUS-TÂCHES 
+                                    
                                     ColumnLayout {
+                                        id: subTasksSection
                                         Layout.fillWidth: true
                                         Layout.leftMargin: 20
                                         spacing: 5
-                                        visible: currentTask && currentTask.hasSubTasks && main4Page.currentSubTasks && main4Page.currentSubTasks[currentTask.id]
-                                        
+    
+                                        // Condition de visibilité améliorée
+                                        visible: {
+                                            var hasSubTasks = currentTask.hasSubTasks
+                                            var hasSubTasksData = main4Page.currentSubTasks && main4Page.currentSubTasks[currentTask.id]
+                                            var subTasksCount = hasSubTasksData ? main4Page.currentSubTasks[currentTask.id].length : 0
+        
+                                            console.log("Visibilité sous-tâches pour", currentTask.name + ":", 
+                                                        "hasSubTasks:", hasSubTasks,
+                                                        "hasSubTasksData:", hasSubTasksData,
+                                                        "subTasksCount:", subTasksCount)
+        
+                                            return hasSubTasks && hasSubTasksData && subTasksCount > 0
+                                        }
+    
                                         Repeater {
                                             model: {
-                                                if (currentTask && main4Page.currentSubTasks && main4Page.currentSubTasks[currentTask.id]) {
-                                                    return main4Page.currentSubTasks[currentTask.id]
-                                                } else {
-                                                    return []
-                                                }
+                                                var subTasks = main4Page.currentSubTasks && main4Page.currentSubTasks[currentTask.id] ? main4Page.currentSubTasks[currentTask.id] : []
+                                                console.log("Repeater sous-tâches pour", currentTask.name + ":", subTasks.length, "éléments")
+                                                return subTasks
                                             }
-                                            
+        
                                             RowLayout {
+                                                id: subTaskRow
                                                 Layout.fillWidth: true
-                                                spacing: 10
-                                                
-                                                property var currentSubTask: modelData
-                                                property var currentEmployee: parent.parent.parent.currentEmployee
-                                                property var parentTask: parent.parent.parent.currentTask
-                                                
+                                                spacing: 8
+            
+                                                // Stocker les références explicitement
+                                                property var subTaskData: modelData
+                                                property var theEmployee: currentEmployee
+                                                property var theParentTask: currentTask
+            
+                                                Component.onCompleted: {
+                                                    console.log("Sous-tâche créée:", subTaskData ? subTaskData.name : "undefined", 
+                                                                "Employé:", theEmployee ? theEmployee.name : "undefined",
+                                                                "Tâche parente:", theParentTask ? theParentTask.name : "undefined")
+                                                }
+            
                                                 Label {
-                                                    text: {
-                                                        if (currentSubTask && currentSubTask.name) {
-                                                            return "  └─ " + currentSubTask.name
-                                                        } else {
-                                                            return "  └─ Sous-tâche sans nom"
-                                                        }
-                                                    }
+                                                    text: "  └─ " + (subTaskData.name || "Sous-tâche")
                                                     Layout.preferredWidth: 180
                                                     elide: Text.ElideRight
                                                     font.pixelSize: 12
                                                     color: "#7f8c8d"
                                                 }
-                                                
-                                                // Bouton - pour sous-tâche
+            
                                                 Button {
                                                     text: "-"
                                                     width: 25
                                                     height: 25
                                                     font.pixelSize: 10
-                                                    enabled: currentEmployee && parentTask && currentSubTask
+                                                    font.bold: true
+                                                    background: Rectangle {
+                                                        color: "transparent"
+                                                        border.color: "grey"
+                                                        border.width: 1
+                                                        radius: 3
+                                                    }
+                                                    contentItem: Text {
+                                                        text: parent.text
+                                                        color: "gray"
+                                                        font.bold: true
+                                                        font.pixelSize: 10
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                
                                                     onClicked: {
-                                                        if (!currentEmployee || !parentTask || !currentSubTask) return
-                                                        var currentHours = getEmployeeSubTaskHours(currentEmployee.id, parentTask.id, currentSubTask.id)
-                                                        if (currentHours > 0) {
-                                                            var newHours = currentHours - 0.5
-                                                            setEmployeeSubTaskHours(currentEmployee.id, parentTask.id, currentSubTask.id, Math.max(0, newHours))
+                                                        console.log("Bouton - cliqué pour:", subTaskData.name)
+                                                        if (theEmployee && theParentTask && subTaskData) {
+                                                            var hours = getEmployeeSubTaskHours(theEmployee.id, theParentTask.id, subTaskData.id)
+                                                            console.log("Heures avant:", hours)
+                                                            if (hours > 0) {
+                                                                setEmployeeSubTaskHours(theEmployee.id, theParentTask.id, subTaskData.id, hours - 0.5)
+                                                            }
+                                                        } else {
+                                                            console.error("❌ Références manquantes dans bouton -")
                                                         }
                                                     }
                                                 }
-                                                
-                                                // Affichage des heures sous-tâche
+            
                                                 Label {
+                                                    id: hoursDisplay
                                                     text: {
-                                                        if (currentEmployee && parentTask && currentSubTask) {
-                                                            return getEmployeeSubTaskHours(currentEmployee.id, parentTask.id, currentSubTask.id).toFixed(1) + " h"
-                                                        } else {
-                                                            return "0.0 h"
+                                                        var hours = 0
+                                                        if (theEmployee && theParentTask && subTaskData) {
+                                                            hours = getEmployeeSubTaskHours(theEmployee.id, theParentTask.id, subTaskData.id)
                                                         }
+                                                        return hours.toFixed(1) + " h"
                                                     }
                                                     Layout.preferredWidth: 50
                                                     horizontalAlignment: Text.AlignHCenter
@@ -1099,31 +1177,42 @@ ColumnLayout {
                                                     }
                                                     padding: 3
                                                 }
-                                                
-                                                // Bouton + pour sous-tâche
+            
                                                 Button {
                                                     text: "+"
                                                     width: 25
                                                     height: 25
                                                     font.pixelSize: 10
-                                                    enabled: currentEmployee && parentTask && currentSubTask
-                                                    onClicked: {
-                                                        if (!currentEmployee || !parentTask || !currentSubTask) return
-                                                        var currentHours = getEmployeeSubTaskHours(currentEmployee.id, parentTask.id, currentSubTask.id)
-                                                        var newHours = currentHours + 0.5
-                                                        setEmployeeSubTaskHours(currentEmployee.id, parentTask.id, currentSubTask.id, newHours)
+                                                    font.bold: true
+                                                    background: Rectangle {
+                                                        color: "transparent"
+                                                        border.color: "grey"
+                                                        border.width: 1
+                                                        radius: 3
                                                     }
-                                                }
-                                                
-                                                // Total de la sous-tâche
-                                                Label {
-                                                    text: {
-                                                        if (currentSubTask && currentSubTask.totalHours !== undefined) {
-                                                            return "Sous-total: " + currentSubTask.totalHours.toFixed(1) + " h"
+                                                    contentItem: Text {
+                                                        text: parent.text
+                                                        color: "grey"
+                                                        font.bold: true
+                                                        font.pixelSize: 10
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                
+                                                    onClicked: {
+                                                        console.log("Bouton + cliqué pour:", subTaskData.name)
+                                                        if (theEmployee && theParentTask && subTaskData) {
+                                                            var hours = getEmployeeSubTaskHours(theEmployee.id, theParentTask.id, subTaskData.id)
+                                                            console.log("Heures avant:", hours)
+                                                            setEmployeeSubTaskHours(theEmployee.id, theParentTask.id, subTaskData.id, hours + 0.5)
                                                         } else {
-                                                            return "Sous-total: 0.0 h"
+                                                            console.error("❌ Références manquantes dans bouton +")
                                                         }
                                                     }
+                                                }
+            
+                                                Label {
+                                                    text: "Sous-total: " + (subTaskData.totalHours || 0).toFixed(1) + " h"
                                                     Layout.fillWidth: true
                                                     horizontalAlignment: Text.AlignRight
                                                     color: "gray"
@@ -1149,22 +1238,7 @@ ColumnLayout {
             }
         }
 
-        // Indicateur de scroll (optionnel)
-        Rectangle {
-            anchors.bottom: parent.bottom
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: 100
-            height: 20
-            color: "transparent"
-            visible: employeeTasksScrollView.contentHeight > employeeTasksScrollView.height
-
-            Label {
-                anchors.centerIn: parent
-                text: "↓ Défiler ↓"
-                color: "gray"
-                font.pixelSize: 10
-            }
-        }
+        
     }
 } 
 
