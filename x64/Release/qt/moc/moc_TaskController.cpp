@@ -101,6 +101,7 @@ static constexpr auto qt_meta_stringdata_ZN14TaskControllerE = QtMocHelpers::str
     "isEmployeeView",
     "saveEmployeeTaskHours",
     "getEmployeeTaskHours",
+    "getSubTasksByTask",
     "currentProjectId",
     "loading",
     "tasks"
@@ -115,61 +116,62 @@ Q_CONSTINIT static const uint qt_meta_data_ZN14TaskControllerE[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-      43,   14, // methods
-       3,  455, // properties
+      44,   14, // methods
+       3,  464, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
       15,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,  272,    2, 0x06,    4 /* Public */,
-       3,    0,  273,    2, 0x06,    5 /* Public */,
-       4,    0,  274,    2, 0x06,    6 /* Public */,
-       5,    1,  275,    2, 0x06,    7 /* Public */,
-       7,    1,  278,    2, 0x06,    9 /* Public */,
-       9,    1,  281,    2, 0x06,   11 /* Public */,
-      10,    1,  284,    2, 0x06,   13 /* Public */,
-      11,    2,  287,    2, 0x06,   15 /* Public */,
-      13,    3,  292,    2, 0x06,   18 /* Public */,
-      16,    1,  299,    2, 0x06,   22 /* Public */,
-      18,    1,  302,    2, 0x06,   24 /* Public */,
-      19,    1,  305,    2, 0x06,   26 /* Public */,
-      20,    1,  308,    2, 0x06,   28 /* Public */,
-      21,    1,  311,    2, 0x06,   30 /* Public */,
-      22,    1,  314,    2, 0x06,   32 /* Public */,
+       1,    0,  278,    2, 0x06,    4 /* Public */,
+       3,    0,  279,    2, 0x06,    5 /* Public */,
+       4,    0,  280,    2, 0x06,    6 /* Public */,
+       5,    1,  281,    2, 0x06,    7 /* Public */,
+       7,    1,  284,    2, 0x06,    9 /* Public */,
+       9,    1,  287,    2, 0x06,   11 /* Public */,
+      10,    1,  290,    2, 0x06,   13 /* Public */,
+      11,    2,  293,    2, 0x06,   15 /* Public */,
+      13,    3,  298,    2, 0x06,   18 /* Public */,
+      16,    1,  305,    2, 0x06,   22 /* Public */,
+      18,    1,  308,    2, 0x06,   24 /* Public */,
+      19,    1,  311,    2, 0x06,   26 /* Public */,
+      20,    1,  314,    2, 0x06,   28 /* Public */,
+      21,    1,  317,    2, 0x06,   30 /* Public */,
+      22,    1,  320,    2, 0x06,   32 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-      23,    1,  317,    2, 0x0a,   34 /* Public */,
-      24,    0,  320,    2, 0x0a,   36 /* Public */,
-      25,    9,  321,    2, 0x0a,   37 /* Public */,
-      34,    8,  340,    2, 0x0a,   47 /* Public */,
-      35,    2,  357,    2, 0x0a,   56 /* Public */,
-      36,    1,  362,    2, 0x0a,   59 /* Public */,
-      37,    2,  365,    2, 0x0a,   61 /* Public */,
-      38,    3,  370,    2, 0x0a,   64 /* Public */,
-      39,    1,  377,    2, 0x0a,   68 /* Public */,
-      41,    1,  380,    2, 0x0a,   70 /* Public */,
-      43,    8,  383,    2, 0x0a,   72 /* Public */,
-      45,    1,  400,    2, 0x0a,   81 /* Public */,
-      46,    1,  403,    2, 0x0a,   83 /* Public */,
-      47,    0,  406,    2, 0x0a,   85 /* Public */,
-      48,    0,  407,    2, 0x0a,   86 /* Public */,
-      49,    1,  408,    2, 0x0a,   87 /* Public */,
-      50,    0,  411,    2, 0x0a,   89 /* Public */,
+      23,    1,  323,    2, 0x0a,   34 /* Public */,
+      24,    0,  326,    2, 0x0a,   36 /* Public */,
+      25,    9,  327,    2, 0x0a,   37 /* Public */,
+      34,    8,  346,    2, 0x0a,   47 /* Public */,
+      35,    2,  363,    2, 0x0a,   56 /* Public */,
+      36,    1,  368,    2, 0x0a,   59 /* Public */,
+      37,    2,  371,    2, 0x0a,   61 /* Public */,
+      38,    3,  376,    2, 0x0a,   64 /* Public */,
+      39,    1,  383,    2, 0x0a,   68 /* Public */,
+      41,    1,  386,    2, 0x0a,   70 /* Public */,
+      43,    8,  389,    2, 0x0a,   72 /* Public */,
+      45,    1,  406,    2, 0x0a,   81 /* Public */,
+      46,    1,  409,    2, 0x0a,   83 /* Public */,
+      47,    0,  412,    2, 0x0a,   85 /* Public */,
+      48,    0,  413,    2, 0x0a,   86 /* Public */,
+      49,    1,  414,    2, 0x0a,   87 /* Public */,
+      50,    0,  417,    2, 0x0a,   89 /* Public */,
 
  // methods: name, argc, parameters, tag, flags, initial metatype offsets
-      51,    0,  412,    2, 0x102,   90 /* Public | MethodIsConst  */,
-      53,    2,  413,    2, 0x02,   91 /* Public */,
-      55,    2,  418,    2, 0x02,   94 /* Public */,
-      56,    1,  423,    2, 0x102,   97 /* Public | MethodIsConst  */,
-      57,    1,  426,    2, 0x102,   99 /* Public | MethodIsConst  */,
-      58,    1,  429,    2, 0x102,  101 /* Public | MethodIsConst  */,
-      59,    1,  432,    2, 0x102,  103 /* Public | MethodIsConst  */,
-      60,    1,  435,    2, 0x102,  105 /* Public | MethodIsConst  */,
-      61,    0,  438,    2, 0x102,  107 /* Public | MethodIsConst  */,
-      62,    4,  439,    2, 0x02,  108 /* Public */,
-      63,    3,  448,    2, 0x02,  113 /* Public */,
+      51,    0,  418,    2, 0x102,   90 /* Public | MethodIsConst  */,
+      53,    2,  419,    2, 0x02,   91 /* Public */,
+      55,    2,  424,    2, 0x02,   94 /* Public */,
+      56,    1,  429,    2, 0x102,   97 /* Public | MethodIsConst  */,
+      57,    1,  432,    2, 0x102,   99 /* Public | MethodIsConst  */,
+      58,    1,  435,    2, 0x102,  101 /* Public | MethodIsConst  */,
+      59,    1,  438,    2, 0x102,  103 /* Public | MethodIsConst  */,
+      60,    1,  441,    2, 0x102,  105 /* Public | MethodIsConst  */,
+      61,    0,  444,    2, 0x102,  107 /* Public | MethodIsConst  */,
+      62,    4,  445,    2, 0x02,  108 /* Public */,
+      63,    3,  454,    2, 0x02,  113 /* Public */,
+      64,    1,  461,    2, 0x02,  117 /* Public */,
 
  // signals: parameters
     QMetaType::Void,
@@ -219,11 +221,12 @@ Q_CONSTINIT static const uint qt_meta_data_ZN14TaskControllerE[] = {
     QMetaType::Bool,
     QMetaType::Bool, QMetaType::Int, QMetaType::Int, QMetaType::Int, QMetaType::Double,   14,   12,    8,   15,
     QMetaType::Double, QMetaType::Int, QMetaType::Int, QMetaType::Int,   14,   12,    8,
+    0x80000000 | 42, QMetaType::Int,    6,
 
  // properties: name, type, flags, notifyId, revision
-      64, QMetaType::Int, 0x00015103, uint(0), 0,
-      65, QMetaType::Bool, 0x00015103, uint(1), 0,
-      66, 0x80000000 | 42, 0x00015009, uint(2), 0,
+      65, QMetaType::Int, 0x00015103, uint(0), 0,
+      66, QMetaType::Bool, 0x00015103, uint(1), 0,
+      67, 0x80000000 | 42, 0x00015009, uint(2), 0,
 
        0        // eod
 };
@@ -398,6 +401,9 @@ Q_CONSTINIT const QMetaObject TaskController::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<double, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        // method 'getSubTasksByTask'
+        QtPrivate::TypeAndForceComplete<QVariantList, std::false_type>,
         QtPrivate::TypeAndForceComplete<int, std::false_type>
     >,
     nullptr
@@ -476,6 +482,8 @@ void TaskController::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
         case 42: { double _r = _t->getEmployeeTaskHours((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[3])));
             if (_a[0]) *reinterpret_cast< double*>(_a[0]) = std::move(_r); }  break;
+        case 43: { QVariantList _r = _t->getSubTasksByTask((*reinterpret_cast< std::add_pointer_t<int>>(_a[1])));
+            if (_a[0]) *reinterpret_cast< QVariantList*>(_a[0]) = std::move(_r); }  break;
         default: ;
         }
     }
@@ -625,14 +633,14 @@ int TaskController::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 43)
+        if (_id < 44)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 43;
+        _id -= 44;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 43)
+        if (_id < 44)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 43;
+        _id -= 44;
     }
     if (_c == QMetaObject::ReadProperty || _c == QMetaObject::WriteProperty
             || _c == QMetaObject::ResetProperty || _c == QMetaObject::BindableProperty
