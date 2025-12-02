@@ -1,8 +1,8 @@
 ﻿#include "DatabaseManager.h"
-#include "Security.h"
-#include "ProjectController.h"
-#include "Taskcontroller.h"
-#include "User.h"
+#include "security/Security.h"
+#include "controllers/ProjectController.h"
+#include "controllers/Taskcontroller.h"
+#include "models/User.h"
 #include <memory>
 #include <mysql_driver.h>
 #include <mysql_connection.h>

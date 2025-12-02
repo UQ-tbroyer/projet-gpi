@@ -1,6 +1,6 @@
 
 #include "TaskController.h"
-#include "PermissionManager.h"
+#include "../security/PermissionManager.h"
 #include <QDebug>
 #include <QDateTime>
 #include <QTimer>

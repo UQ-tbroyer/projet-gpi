@@ -1,7 +1,7 @@
 #ifndef PERMISSIONMANAGER_H
 #define PERMISSIONMANAGER_H
 
-#include "User.h"
+#include "../models/User.h"
 #include "Role.h"
 #include <QObject>
 

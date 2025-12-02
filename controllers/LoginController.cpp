@@ -1,6 +1,6 @@
 #include "LoginController.h"
-#include "DatabaseManager.h"
-#include "User.h"
+#include "../DatabaseManager.h"
+#include "../models/User.h"
 #include <QDebug>
 
 LoginController::LoginController(DatabaseManager* dbManager, QObject* parent)

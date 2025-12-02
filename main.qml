@@ -20,7 +20,7 @@ ApplicationWindow {
     Component {
         id: main2Component
         Loader {
-            source: "main2.qml"
+            source: "acceuil.qml"
         }
     }
     
@@ -128,7 +128,7 @@ ApplicationWindow {
                     // IMPORTANT: Wait a tiny bit for the user to be fully set in controllers
                     Qt.callLater(function() {
                         // Create the main2 page with properties set at creation time
-                        var component = Qt.createComponent("main2.qml")
+                        var component = Qt.createComponent("acceuil.qml")
                         
                         if (component.status === Component.Ready) {
                             var main2Page = component.createObject(stackView, {

@@ -1,7 +1,7 @@
 ﻿#include "ProjectController.h"
-#include "DatabaseManager.h"
-#include "PermissionManager.h"
-#include "User.h"
+#include "../DatabaseManager.h"
+#include "../security/PermissionManager.h"
+#include "../models/User.h"
 #include <QDebug>
 #include <QDateTime>
 

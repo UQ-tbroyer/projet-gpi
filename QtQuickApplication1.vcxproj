@@ -78,7 +78,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\Thomas\mysql-connector-c++-9.5.0-winx64\mysql-connector-c++-9.5.0-winx64\include\jdbc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Thomas\mysql-connector-c++-9.5.0-winx64\mysql-connector-c++-9.5.0-winx64\include\jdbc;C:\Users\Thomas\mysql-connector-c++-9.5.0-winx64\mysql-connector-c++-9.5.0-winx64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:\Users\Thomas\mysql-connector-c++-9.5.0-winx64\mysql-connector-c++-9.5.0-winx64\lib64\vs14;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -114,40 +114,35 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="controllers\LoginController.cpp" />
+    <ClCompile Include="controllers\ProjectController.cpp" />
+    <ClCompile Include="controllers\TaskController.cpp" />
     <ClCompile Include="DatabaseManager.cpp" />
-    <ClCompile Include="LoginController.cpp">
-      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">input</DynamicSource>
-      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).moc</QtMocFileName>
-      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Release|x64'">input</DynamicSource>
-      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).moc</QtMocFileName>
-    </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="PermissionManager.cpp" />
-    <ClCompile Include="ProjectController.cpp" />
-    <ClCompile Include="Security.cpp" />
-    <ClCompile Include="TaskController.cpp" />
-    <ClCompile Include="User.cpp" />
+    <ClCompile Include="models\User.cpp" />
+    <ClCompile Include="security\PermissionManager.cpp" />
+    <ClCompile Include="security\Security.cpp" />
     <QtRcc Include="qml.qrc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
+    <QtMoc Include="controllers\LoginController.h" />
+    <QtMoc Include="controllers\ProjectController.h" />
+    <QtMoc Include="controllers\TaskController.h" />
     <ClInclude Include="DatabaseManager.h" />
-    <QtMoc Include="LoginController.h" />
-    <QtMoc Include="ProjectController.h" />
-    <QtMoc Include="PermissionManager.h" />
-    <ClInclude Include="ProjectData.h" />
-    <ClInclude Include="Role.h" />
-    <ClInclude Include="Security.h" />
-    <QtMoc Include="TaskController.h" />
-    <ClInclude Include="TaskData.h" />
-    <ClInclude Include="User.h" />
+    <ClInclude Include="models\ProjectData.h" />
+    <ClInclude Include="models\TaskData.h" />
+    <ClInclude Include="models\User.h" />
+    <ClInclude Include="security\Role.h" />
+    <ClInclude Include="security\Security.h" />
+    <QtMoc Include="security\PermissionManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="acceuil.qml" />
     <None Include="createProjectTemplateDialog.qml" />
+    <None Include="feuilleTemps.qml" />
     <None Include="main.qml" />
-    <None Include="main2.qml" />
-    <None Include="main3.qml" />
-    <None Include="main4.qml" />
+    <None Include="projet.qml" />
     <None Include="TaskDetailsView.qml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

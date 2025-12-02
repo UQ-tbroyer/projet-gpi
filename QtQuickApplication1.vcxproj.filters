@@ -29,82 +29,82 @@
     <QtRcc Include="qml.qrc">
       <Filter>Resource Files</Filter>
     </QtRcc>
-    <ClCompile Include="User.cpp">
+    <ClCompile Include="controllers\LoginController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Security.cpp">
+    <ClCompile Include="controllers\ProjectController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="controllers\TaskController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="models\User.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="security\PermissionManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="security\Security.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DatabaseManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LoginController.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ProjectController.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TaskController.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PermissionManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="User.h">
+    <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Role.h">
+    <ClInclude Include="security\Role.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Security.h">
+    <ClInclude Include="security\Security.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="models\ProjectData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="models\TaskData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="models\User.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DatabaseManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ProjectData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TaskData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="LoginController.h">
+    <QtMoc Include="security\PermissionManager.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="ProjectController.h">
+    <QtMoc Include="controllers\LoginController.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="TaskController.h">
+    <QtMoc Include="controllers\ProjectController.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="PermissionManager.h">
+    <QtMoc Include="controllers\TaskController.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
-    <None Include="main.qml">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="main2.qml">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="main3.qml">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="TaskDetailsView.qml">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="main4.qml">
+    <None Include="acceuil.qml">
       <Filter>Source Files</Filter>
     </None>
     <None Include="createProjectTemplateDialog.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="feuilleTemps.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="main.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="projet.qml">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="TaskDetailsView.qml">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>

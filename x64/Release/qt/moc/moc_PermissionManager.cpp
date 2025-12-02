@@ -6,7 +6,7 @@
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#include "../../../../PermissionManager.h"
+#include "../../../../security/PermissionManager.h"
 #include <QtCore/qmetatype.h>
 
 #include <QtCore/qtmochelpers.h>

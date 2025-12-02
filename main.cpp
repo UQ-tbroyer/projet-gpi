@@ -3,11 +3,11 @@
 #include <QQmlContext>
 #include <QDebug>
 #include "DatabaseManager.h"
-#include "LoginController.h"
-#include "ProjectController.h"
-#include "TaskController.h"
+#include "controllers/LoginController.h"
+#include "controllers/ProjectController.h"
+#include "controllers/TaskController.h"
 #include "config.h"
-#include "User.h"
+#include "models/User.h"
 #include <iostream>
 int main(int argc, char* argv[])
 {
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
     engine.rootContext()->setContextProperty("taskController", taskController);
 
     // Load the login QML file
-    const QUrl url(QUrl::fromLocalFile("C:/Users/Thomas/Documents/projet_gpi/QtQuickApplication1/QtQuickApplication1/QtQuickApplication1/main.qml"));
+    const QUrl url(QUrl::fromLocalFile("main.qml"));
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
         &app, []() { QCoreApplication::exit(-1); },

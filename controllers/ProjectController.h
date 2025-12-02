@@ -4,8 +4,8 @@
 #include <QObject>
 #include <QVariantList>
 #include <QVariantMap>
-#include "DatabaseManager.h"
-#include "User.h"
+#include "../DatabaseManager.h"
+#include "../models/User.h"
 
 class ProjectController : public QObject
 {

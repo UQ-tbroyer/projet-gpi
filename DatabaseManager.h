@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include "ProjectData.h"
-#include "TaskData.h"
+#include "models/ProjectData.h"
+#include "models/TaskData.h"
 
 // Forward declarations only - no <memory> in header!
 namespace sql {

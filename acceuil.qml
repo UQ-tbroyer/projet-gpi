@@ -285,7 +285,7 @@ Page {
                                 console.log("Project Name:", projectName)
                                 console.log("taskController exists:", mainPage.taskController !== null)
                                 
-                                var component = Qt.createComponent("main3.qml")
+                                var component = Qt.createComponent("projet.qml")
                                 if (component.status === Component.Ready) {
                                     var projectDetailWindow = component.createObject(null, {
                                         projectId: projectId,
@@ -360,7 +360,7 @@ Page {
             console.log("Gestion de temps cliquée")
         
             if (mainPage.parent && mainPage.parent.push) {
-                mainPage.parent.push("main4.qml", {
+                mainPage.parent.push("feuilleTemps.qml", {
                     projectController: mainPage.projectController,
                     taskController: mainPage.taskController,
                     loginController: mainPage.loginController

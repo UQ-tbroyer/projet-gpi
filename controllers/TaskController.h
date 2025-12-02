@@ -6,9 +6,9 @@
 #include <QVariantMap>
 #include <QTimer>
 
-#include "DatabaseManager.h"
-#include "User.h"
-#include "TaskData.h"
+#include "../DatabaseManager.h"
+#include "../models/User.h"
+#include "../models/TaskData.h"
 
 
 class TaskController : public QObject

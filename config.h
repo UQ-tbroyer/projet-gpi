@@ -1,5 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
+
 #include <string>
 // Database configuration - in real application, load from config file
 const std::string DB_SERVER = "localhost";
