@@ -48,7 +48,7 @@ public:
     bool updateProject(const ProjectData& project);
     bool deleteProject(int projectId);
     ProjectData getProjectById(int projectId);
-
+    std::vector<TaskData> getSubTasksByTask(int parentTaskId);
     // Client methods
     std::vector<std::pair<int, std::string>> getAllClients();
 
@@ -62,7 +62,7 @@ public:
     bool assignTaskToEmployee(int taskId, int employeeId);
 
     // Recursive SubTask methods (subtasks are tasks with parent references)
-    std::vector<TaskData> getSubTasksByTask(int parentTaskId);
+  
     int createSubTask(int parentTaskId, const TaskData& subTask);
     bool deleteSubTask(int taskId);  // Recursively deletes task and all children
 
@@ -73,6 +73,7 @@ public:
     //sauvegarde d'heures
     bool assignHoursToProject(int projectId, int employeeId, double hours);
     bool updateTaskHours(int taskId, double hours);
+
 
     bool saveEmployeeTaskHours(int employeeId, int taskId, double hours);
     double getEmployeeTaskHours(int employeeId, int taskId);
