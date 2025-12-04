@@ -913,25 +913,36 @@ std::vector<TaskData> DatabaseManager::getTasksByProject(int projectId) {
     std::vector<TaskData> tasks;
 
     try {
+        // MODIFIEZ LA REQUÊTE : supprimez la condition sur idParentTache
         const std::string sql =
             "SELECT t.idTache, t.idProject, t.memProcessigner, t.idParentTache, "
             "t.nomTache, t.descTache, t.dateDebut, t.dateFin, t.tempsTache, t.etat, "
             "CONCAT(e.prenomEmploye, ' ', e.nomEmploye) as assigneeName "
             "FROM Tache t "
             "LEFT JOIN Employe e ON t.memProcessigner = e.idEmploye "
-            "WHERE t.idProject = ? AND (t.idParentTache IS NULL OR t.idParentTache = 0) "
-            "ORDER BY t.dateDebut ASC";
+            "WHERE t.idProject = ? "
+            "ORDER BY t.idParentTache, t.idTache";  // <-- IMPORTANT: trier par parent d'abord
 
         std::unique_ptr<sql::PreparedStatement> stmt(connection->prepareStatement(sql));
         stmt->setInt(1, projectId);
         std::unique_ptr<sql::ResultSet> res(stmt->executeQuery());
+
+        qDebug() << "📊 DatabaseManager::getTasksByProject - Chargement de toutes les tâches";
 
         while (res->next()) {
             TaskData task;
             task.idTache = res->getInt("idTache");
             task.idProject = res->getInt("idProject");
             task.memProcessigner = res->getInt("memProcessigner");
-            task.idParentTache = res->isNull("idParentTache") ? 0 : res->getInt("idParentTache");
+
+            // CRITIQUE: Récupérer idParentTache (même si NULL)
+            if (res->isNull("idParentTache")) {
+                task.idParentTache = 0;  // Tâche racine
+            }
+            else {
+                task.idParentTache = res->getInt("idParentTache");
+            }
+
             task.nomTache = res->getString("nomTache");
             task.descTache = res->getString("descTache");
             task.dateDebut = res->getString("dateDebut");
@@ -940,8 +951,15 @@ std::vector<TaskData> DatabaseManager::getTasksByProject(int projectId) {
             task.etat = res->getString("etat");
             task.assigneeName = res->getString("assigneeName");
 
+            qDebug() << "  Tâche:" << task.idTache << "-" << task.nomTache
+                << "Parent:" << task.idParentTache;
+
             tasks.push_back(task);
         }
+
+        qDebug() << "✅ DatabaseManager::getTasksByProject -" << tasks.size()
+            << "tâches chargées (inclut sous-tâches)";
+
     }
     catch (const sql::SQLException& e) {
         std::cerr << "SQL Error in getTasksByProject: " << e.what() << std::endl;
