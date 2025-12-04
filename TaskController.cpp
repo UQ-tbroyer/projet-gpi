@@ -1,10 +1,11 @@
-﻿#include "TaskController.h"
+#include "TaskController.h"
 #include "PermissionManager.h"
 #include <QDebug>
 #include <QDateTime>
 #include <QTimer>
 #include <QThread>
 #include <QtConcurrent/QtConcurrent>
+
 
 
 TaskController::TaskController(DatabaseManager* dbManager, User* currentUser, QObject* parent)
@@ -546,8 +547,33 @@ QVariantList TaskController::getDepartmentEmployees()
 }
 
 QVariantList TaskController::getTasksForProject(int projectId) {
-    loadTasksForProject(projectId); 
-    return m_tasks;
+    QVariantList tasks;
+
+    try {
+        qDebug() << "📋 TaskController::getTasksForProject - Projet:" << projectId;
+
+        // Récupère TOUTES les tâches (avec sous-tâches)
+        std::vector<TaskData> allTasks = m_dbManager->getTasksByProject(projectId);
+
+        for (const TaskData& task : allTasks) {
+            QVariantMap taskMap = taskDataToVariantMap(task);
+            tasks.append(taskMap);
+        }
+
+        qDebug() << "✅ TaskController::getTasksForProject - Retourne"
+            << tasks.size() << "tâches";
+
+        // Mettre à jour m_tasks pour compatibilité
+        m_tasks = tasks;
+        emit tasksChanged();
+
+    }
+    catch (const std::exception& e) {
+        qCritical() << "❌ Erreur TaskController::getTasksForProject:" << e.what();
+        emit errorOccurred(QString("Erreur chargement tâches: %1").arg(e.what()));
+    }
+
+    return tasks;
 }
 
 QVariantList TaskController::getTasksForProjectByStatus(int projectId, const QString& status)
