@@ -1,4 +1,4 @@
-#include "TaskController.h"
+﻿#include "TaskController.h"
 #include "PermissionManager.h"
 #include <QDebug>
 #include <QDateTime>

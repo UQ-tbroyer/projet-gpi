@@ -113,7 +113,7 @@ ApplicationWindow {
                 busyIndicator.running = true
                 loginController.handleLogin(emailField.text, passwordField.text)
             }
-             // Fonction publique pour la dÃ©connexion
+             // Fonction publique pour la déconnexion
              function handleLogout() {
             console.log("Handling logout...")
             stackView.pop(null) // Retour au login
@@ -139,7 +139,7 @@ ApplicationWindow {
                             projectController: projectController,
                             taskController: taskController,
                             loginController: loginController,
-                            mainAppWindow: root  // Passe la rÃ©fÃ©rence
+                            mainAppWindow: root  // Passe la référence
                              })
                             
                             if (main2Page) {

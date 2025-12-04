@@ -1,4 +1,4 @@
-#include "DatabaseManager.h"
+﻿#include "DatabaseManager.h"
 #include "Security.h"
 #include "ProjectController.h"
 #include "Taskcontroller.h"
